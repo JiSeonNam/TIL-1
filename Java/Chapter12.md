@@ -227,6 +227,7 @@ class EnumEx1 {
 
 ##### 2.2 java.lang.Enum
 - 모든 열거형은 Enum의 자손이며, 아래의 메서드를 상속받는다.
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/12_1.png)
 
 ##### 2.3 열거형에 멤버 추가하기
 - 불연속적인 열거형 상수의 경우, 원하는 값을 괄호( ) 안에 적는다.

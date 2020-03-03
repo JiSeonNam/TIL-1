@@ -4,11 +4,11 @@
 - 컬렉션(다수의 객체)을 다루기 위한 표준화된 프로그래밍 방식이다.
 - 컬렉션을 쉽고 편리하게 다룰 수 있는 다양한 클래스를 제공한다
 - java.util패키지에 포함되어 있으며 JDK1.2부터 제공되었다
-img < 컬렉션 프레임웍의 핵심 인터페이스 >
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_1.png)
 
 ### 1. List 인터페이스
 - 중복을 허용하면서 저장 순서가 유지되는 컬렉션을 구현하는 데 사용된다.
-img< List의 상속계층도 >
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_2.png)
 
 ### 2. ArrayList
 - 기존의 Vector를 개선한 것으로 Vector와 구현원리와 기능적인 측면에서 거의 동일하다.
@@ -16,7 +16,7 @@ img< List의 상속계층도 >
 - Object배열을 이용해서 데이터를 순차적으로 저장한다.
 
 ### 3. LinkedList
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_3.png)
 - 실제로 LinkedList클래스는 이름과 달리 linked list가 아닌 doubly linked list로 구현되어 있다.
 - 순차적으로 추가/삭제하는 경우에는 ArrayList가 LinkedList보다 빠르다
 - 중간 데이터를 추가/삭제하는 경우에는 LinkedList가 ArrayList보다 빠르다.
@@ -76,4 +76,4 @@ while(it.hasNext()) {
 - 그 밖에도 컬렉션의 동기화, 변경 불가(readOnly) 컬렉션 만들기, singleton 컬렉션 만들기, 한 종류의 객체만 저장하는 컬렉션 만들기 등의 기능을 제공한다.
 
 ### 12. 컬렉션 클래스 정리
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_4.png)
