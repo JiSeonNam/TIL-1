@@ -13,13 +13,13 @@
 <br>
 
 ### Model1
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/MVC_1.png)
 - MVC에서 View와 Controller가 같이 있는 형태이다.
 - 규모가 작고 유지보수보다는 속도에 중점을 둔 프로젝트에 많이 사용한다.
 <br>
 
 ###Model2
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/MVC_2.png)
 - MVC에서 Mdel, View, Controller가 모두 모듈화 되어 있는 형태이다.
 - 규모가 크고 유지보수를 계속 해야하는 프로젝트에  많이 사용한다.
 - 보통 Model2를 많이 사용한다.

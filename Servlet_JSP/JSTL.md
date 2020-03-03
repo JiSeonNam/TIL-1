@@ -9,7 +9,7 @@
 
 ### JSTL 라이브러리
 - JSTL은 5가지 라이브러리를 제공한다.
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/JSTL_1.png)
 
 #### Core
 - Core 라이브러리는 기본적인 라이브러리로 출력, 제어문, 반복문 같은 기능이 포함되어 있다.

@@ -1,13 +1,13 @@
 > [신입 프로그래머를 위한 실전 JSP 강좌 강의](https://www.inflearn.com/course/%EC%8B%A4%EC%A0%84-jsp-%EA%B0%95%EC%A2%8C/dashboard)를 듣고 공부한 내용을 정리하여 기록
 
-<br> 
+<br>
 ### JSP(Java Server Page)
 - 동적 웹 애플리케이션 컴포넌트
 - 확장자 : .jsp
 - 클라이언트의 요청에 동적으로 작동하고, 응답은 html을 이용한다.
 - jsp는 서블릿으로 변환되어 실행된다.
 - MVC 패턴에서 View로 이용된다.
-img < JSP 실행 흐름 >
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Servlet_JSP_1.png)
 
 - xxx.jsp 파일은 실행될 때 xxx_jsp.java로 변환되고, xxx_jsp.class로 컴파일되어 html로 응답한다.
 - .java파일과 .class파일은 tomcat설치폴더/work/catalina/localhost/프로젝트명 폴더에 저장된다.

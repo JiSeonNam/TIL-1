@@ -18,7 +18,7 @@
 <br>
 
 ### JSP 동작 원리
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/JSP_1_1.png)
 - 클라이언트가 웹브라우저로 helloWorld.jsp를 요청하게 되면 JSP컨테이너가 JSP파일을 Servlet파일(.java)로 변환한다.
 - Servlet파일은 컴파일 된후 클래스 파일(.class)로 변환되고, 요청한 클라이언트에게 html 파일 형태로 응답된다.
 <br>

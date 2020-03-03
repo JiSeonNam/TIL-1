@@ -1,7 +1,7 @@
 > [신입 프로그래머를 위한 실전 JSP 강좌 강의](https://www.inflearn.com/course/%EC%8B%A4%EC%A0%84-jsp-%EA%B0%95%EC%A2%8C/dashboard)를 듣고 공부한 내용을 정리하여 기록
 
 ### Servlet Parameter
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Servlet_3_1.png)
 - Form태그의 submit 버튼을 클릭하여 데이터를 서버로 전송하면, 해당 파일(Servlet)에서는 HttpServletRequest 객체를 이용하여 Parameter값을 얻을 수 있다.
 - getParameter(name) : Form태그에 있는 value 값을 반환
 - getParameterValues(name) : 2개 이상의 value 값을 반환

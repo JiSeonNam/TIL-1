@@ -2,7 +2,7 @@
 
 
 ### Servlet 작동 순서
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Servlet_2_1.png)
 < Servlet 작동 순서 >
 - 클라이언트에서 servlet요청이 들어오면 서버에서는 Servlet Container를 만들고 요청이 있을 때마다 쓰레드가 생성된다.
 - 클라이언트 요청 -> 웹서버 -> WAS -> Servlet Container(쓰레드 생성, 서블릿객체 생성)
@@ -10,7 +10,7 @@ img
 <br>
 
 ### Servlet 라이프 사이클(생명 주기)
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Servlet_2_2.png)
 < Servlet LifCycle >
 - Servlet의 사용도가 높은 이유는 빠른 응답 속도때문이다.
 - Servlet은 최초 요청 시 객체가 만들어져, 메모리에 로딩되고, 이후 요청 시에는 기존의 객체를 재활용하게 된다.

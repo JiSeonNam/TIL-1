@@ -8,10 +8,10 @@
 <br>
 
 ### RequestDispatcher 클래스
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Forwarding_1.png)
 - 요청받은 요청 객체(request)를 위임하는 컴포넌트에 동일하게 전달할 수 있다.
 <br>
 
 ### HttpServletResponse 클래스
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Forwarding_2.png)
 - RequestDispatcher 클래스와는 다르게 요청받은 요청 객체를 위임받은 컴포넌트에 전달하는 것이 아닌, 새로운 요청 객체를 생성한다.

@@ -2,7 +2,7 @@
 
 
 ### Servlet 클래스
-img
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Serlvet_1_1.png)
 - Servlet클래스는 HttpServlet클래스를 상속받는다.
 - 따라서 인터페이스 Servlet과 추상클래스 GenericServlet의 멤버들을 모두 사용 가능하다.
 <br>
