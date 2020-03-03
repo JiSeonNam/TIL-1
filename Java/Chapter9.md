@@ -1,8 +1,7 @@
 > 자바의 정석(남궁성 저) 학습내용 정리
 
 ### 1. Object 클래스
-img
-< Object 클래스의 메서드 >
+![< Object 클래스의 메서드 >](https://github.com/qlalzl9/TIL/blob/master/Java/img/9_1.png)
 
 ##### 1-1 equals(Object obj)
 
