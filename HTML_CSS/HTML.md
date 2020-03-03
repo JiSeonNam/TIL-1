@@ -67,7 +67,7 @@
 ##### WEB1 - HTML & Internet 강의를 듣고 만든 페이지
 [Jerry](https://qlalzl9.github.io/Jerry/index.html)
 
-img
+![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/HTML_1.png)
 
 ##### 코드
 https://github.com/qlalzl9/Jerry

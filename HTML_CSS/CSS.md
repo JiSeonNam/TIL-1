@@ -1,7 +1,7 @@
 >생활코딩의 [WEBn 강의](https://opentutorials.org/course/3083)를 듣고 중요 내용을 정리합니다.
 
 ### 1. 웹페이지에 CSS를 사용하는 방법
-img
+![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/CSS_1.png)
 - Selector(선택자) : 웹페이지에 있는 모든 a 태그를 '선택'의 의미.
 - Declaration(선언) : 선택자가 지정한 태그들에서 어떤 '효과'를 줄 것인가를 의미.
 - Property(속성), Value(값) : 효과의 내용.
@@ -25,7 +25,7 @@ div {
 - id 선택자가 한번만 등장하도록 권장된다.
 
 ### 4. CSS box model
-img
+![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/CSS_2.png)
 - Margin, Padding 을 top, right, bottom, left 등으로 조절할 수 있다.
 ```css
 div {
@@ -80,7 +80,7 @@ div {
   </body>
 </html>
 ```
-img
+![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/CSS_3.png)
 - grid layout을 사용하여 선택자들 간의 배치를 다양하게 할 수 있다.
 - 위의 코드에서 NAVIGATION은 150px을 가지고 나머지를 ARTICLE이 채운다.
 
@@ -111,6 +111,7 @@ img
 ##### WEB2 - CSS 강의를 듣고 만든 페이지
 [Jerry](https://qlalzl9.github.io/Jerry/)
 
-img
+![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/CSS_4.png)
+
 ##### 코드
 https://github.com/qlalzl9/Jerry
