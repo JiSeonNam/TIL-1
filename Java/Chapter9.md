@@ -2,7 +2,6 @@
 
 ### 1. Object 클래스
 ![](https://github.com/qlalzl9/TIL/blob/master/Java/img/9_1.png)
-<center>< Object 클래스의 메서드 ></center><br>
 
 ##### 1-1 equals(Object obj)
 
