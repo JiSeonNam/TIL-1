@@ -10,7 +10,7 @@
 - 에러(error) : 프로그램 코드에 의해서 수습될 수 없는 심각한 오류
 - 예외(exception) : 프로그램 코드에 의해서 수습될 수 있는 다소 미약한 오류
 
-![test](C:\Users\aa\Desktop\img\8. 예외처리img(1).png)
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/8_1.png)
 
 - Exception 클래스들(checked exception) : 사용자의 실수와 같은 외적인 요인에 의해 발생하는 예외 (예외처리 필수)
 - RuntimeException 클래스들(unchecked exception) : 프로그래머의 실수로 발생하는 예외 (예외처리 선택)
