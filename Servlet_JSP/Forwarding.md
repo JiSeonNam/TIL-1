@@ -2,7 +2,7 @@
 
 <br>
 
-### Forwrading
+### Forwarding
 - 서블릿 또는 JSP에서 요청을 받은 후 다른 컴포넌트로 요청을 위임할 수 있다.
 - 위임을 하는 2가지 방법에는 RequestDispatcher 클래스, HttpServletRespnse 클래스가 있다.
 <br>
