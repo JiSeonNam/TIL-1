@@ -14,6 +14,32 @@
 - 기존의 Vector를 개선한 것으로 Vector와 구현원리와 기능적인 측면에서 거의 동일하다.
 - Vector는 자체적으로 동기화처리가 되어 있으나 ArrayList는 그렇지 않다.
 - Object배열을 이용해서 데이터를 순차적으로 저장한다.
+<details>
+<summary>ArrayList에 저장된 객체의 삭제 과정</summary>
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_5.png)
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_6.png)
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_7.png)
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_8.png)
+
+※ 마지막 데이터를 삭제하는 경우, ①의 과정(배열의 복사)은 필요없다.
+
+(1) ArrayList에 저장된 첫 번째 객체부터 삭제하는 경우(배열 복사 발생)
+```java
+for(int i = 0; i < list.size(); i++) {
+	list.remove(i);
+}
+```
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_9.png)
+
+
+(2) ArrayList에 저장된 마지막 객체부터 삭제하는 경우(배열 복사 발생안함)
+```java
+for(int i = list.size()-1; i <= 0; i--) {
+	list.remove(i);
+}
+```
+![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_10.png)
+</details>
 
 ### 3. LinkedList
 ![](https://github.com/qlalzl9/TIL/blob/master/Java/img/11_3.png)
