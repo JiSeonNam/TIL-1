@@ -33,6 +33,44 @@
 	* 자손 타입 --> 조상 타입 (Up-casting) : 형 변환 생략 가능
 	* 자손 타입 <-- 조상 타입 (Down-casting) : 형 변환 생략 불가
 	* 서로 상속 관계에 있는 타입 간의 형 변환은 양방향으로 자유롭게 수행될 수 있으나, 참조변수가 가리키는 인스턴스의 자손타입으로 형변환은 허용되지 않는다.
+- 멤버변수가 중복 정의된 경우, 참조변수의 타입에 따라 연결되는 멤버변수가 달라진다.
+	(참조변수타입에 영향받음)
+- 메서드가 중복정의된 경우, 참조변수의 타입에 관계없이 항상 실제 인스턴스의 타입에 정의된 메서드가 호출된다.
+	(참조변수타입에 영향받지 않음)
+```java
+class parent {
+	int x = 100;
+
+	void method() {
+		System.out.println("Parent Method");
+	}
+}
+
+class Child extends Parent {
+	int x = 200;
+
+	void method() {
+		System.out.println("Child Method");
+	}
+}
+
+public static void main(String[] args) {
+	Parent p = new Child();
+	Child c = new Child();
+
+	System.out.println("Child Method");
+	p.method();
+
+	System.out.println("Child Method");
+	c.method();
+}
+/*
+	p.x = 100
+	Child Method
+	c.x = 200
+	Child Method
+*/
+```
 
 ### 6. 추상 클래스
 
