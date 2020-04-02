@@ -54,6 +54,9 @@ try {
     // finally블럭은 try-catch문의 맨 마지막에 위치해야한다.
 }
 ````
+
+- 예를 들어 예외가 없어 try문만 실행되어도, 예외가 있어 try문이 끝까지 수행하지 못하고 catch문으로 실행되어도 실행되어야 하는 문장들을 finally에 넣어 반드시 실행시킬 수 있게 하고 코드의 중복을 줄인다.
+- catch문에서 예외처리를 하고 return 하여 반환해도 finally문은 실행된다.
 <br>
 
 ### 3. 예외 발생시키기
@@ -83,9 +86,7 @@ void method() throws Exception1, Exception2, ... ExceptionN {
 }
 // 예외를 발생시킬때는 throw, 예외를 메서드에 선언할 때는 throws
 ```
-
-- 예를 들어 예외가 없어 try문만 실행되어도, 예외가 있어 try문이 끝까지 수행하지 못하고 catch문으로 실행되어도 실행되어야 하는 문장들을 finally에 넣어 반드시 실행시킬 수 있게 하고 코드의 중복을 줄인다.
-- catch문에서 예외처리를 하고 return 하여 반환해도 finally문은 실행된다.
+<br>
 
 예외 되던지기
 
