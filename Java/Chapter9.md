@@ -80,7 +80,10 @@ int i = 100;
 String str1 = i + "";					// 방법1 : 100을 "100"으로 변환
 String str2 = String.valueOf(i);			//방법2 : 100을 "100"으로 변환
 // 방법2가 더 빠르다
-문자열을 기본형 값으로 변환하는 방법
+```
+
+- 문자열을 기본형 값으로 변환하는 방법
+```java
 int i = Integer.parseInt("100");		// 방법1 : "100"을 100으로 변환
 int i2 = Integer.valueOf("100");		// 방법2 : "100"을 100으로 변환(JDK1.5 이후)
 char c = "A".charAt(0);				// 문자열 "A"를 문자 'A'로 변환하는 방법
