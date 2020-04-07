@@ -7,6 +7,7 @@
 - 쿠키와 달리 클라이언트 특정 위치에 저장되는 것이 아니라, 서버 상에 객체로 존재한다.
 - 세션은 서버에서만 접근 가능하여, 보안이 좋고, 저장할 수 있는 데이터에 한계가 없다.
 - 서버 상에 객체로 존재하며 브라우저 당 하나의 세션 객체가 생성되고 각각 고유의 유니크한 id값이 있다.
+<img src = "https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Session_1.png" width="400px">
 <br>
 
 ### 세션 문법
