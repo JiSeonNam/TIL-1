@@ -10,6 +10,8 @@
 - 서버에 요청할 때마다 쿠키의 속성값을 참조 또는 변경할 수 있다.
 - 쿠키는 4KB의 용량을 가지며, 300개까지 데이터 정보를 가질 수 있다. (총 1.2MB)
 <br>
+![](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/Cookie_1.png)
+<br>
 
 ### 쿠키 문법
 1. 쿠키 클래스를 이용하여 쿠키 생성
