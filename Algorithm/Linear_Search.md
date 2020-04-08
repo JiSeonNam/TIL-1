@@ -5,9 +5,9 @@
 - 요소가 직선 모양으로 늘어선 배열에서의 검색은 원하는 키 값을 갖는 요소를 만날 때까지 맨 앞부터 순서대로 요소를 검색한다.
 - 순차검색(Sequential Search)라고도 한다.
 - 선형 검색의 예시
-![](이미지1)
-![](이미지2)
-![](이미지3)
+![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Linear_Search_1.png)
+![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Linear_Search_2.png)
+![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Linear_Search_3.png)
 - 예시를 통해 알 수 있는 선형검색의 종료 조건은 2개이다.
   1. 검색할 값과 같은 요소를 발견한 경우
   2. 검색할 값을 발견하지 못하고 배열의 끝을 지나간 경우
@@ -68,7 +68,7 @@ x[6]：70
 
 ## 보초법(Sentinel Method)
 - 선형검색은 위의 내용과 같이 조건 1, 2를 모두 판단한다. 이 때 검색할 데이터가 많으면 많을 수록 조건을 검사하는 비용은 결코 무시할 수 없는데 이 비용을 50%로 줄이는 방법이 보초법이다.
-![](이미지4)
+![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Linear_Search_4.png)
 - 그림에서 배열의 요소를 검색하기 전에 검색하고자 하는 키 값을 맨 끝 요소에 저장하면 원하는 데이터가 존재하지 않아도 배열의 끝에서 키 값이 찾아지기 때문에 종료 판단 횟수를 2회에서 1회로 줄일 수 있다.
 
 예시코드
