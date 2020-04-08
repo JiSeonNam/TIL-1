@@ -17,6 +17,10 @@
 - [다차원 배열 비교하기](https://github.com/qlalzl9/TIL/tree/master/Java)
 <br>
 
+### Algorithm
+- [선형 검색(Linear_Search)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Linear_Search.md)
+<br>
+
 ### Servlet_JSP
 - [Servlet, JSP 맛보기](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/Servlet_JSP.md)
 - [Servlet클래스, doGet방식과 doPost방식, Context path](https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/Servlet_1.md)
