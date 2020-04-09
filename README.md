@@ -18,7 +18,8 @@
 <br>
 
 ### Algorithm
-- [선형 검색(Linear_Search)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Linear_Search.md)
+- [선형 검색(Linear Search)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Linear_Search.md)
+- [이진 검색(Binary Search)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Binary_Search.md)
 <br>
 
 ### Servlet_JSP
