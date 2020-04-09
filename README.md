@@ -45,5 +45,5 @@
 <br>
 
 ### HTML_CSS
-- [생활코딩 - HTML](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/HTML.md)
-- [생활코딩 - CSS](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/CSS.md)
+- [HTML](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/HTML.md)
+- [CSS](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/CSS.md)
