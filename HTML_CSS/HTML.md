@@ -57,15 +57,5 @@
 	* 이 문서는 html 문서다.라는 뜻으로 관용적으로 html 태그 위에 쓰인다.
 	<br>
 
-- < a href="http://www.w3.org/TR/2011/WD-html5-20110405/" target="_blank" title=“html5 specification“)Hypertext Markup Language (HTML)</ a >
+- < a href="http://www.w3.org/TR/2011/WD-html5-20110405/" target="_blank" title=“html5 specification“> Hypertext Markup Language(HTML) < /a >
 	* 이때 < a >< /a >는 링크 태그이고 <a href=“주소”하면 주소로 하이퍼텍스트를 해주고 target을 “_blank”로 하면 새 탭에서 열린다. 그리고 title=“툴팁 내용”하면 주소를 올렸을 때 툴팁이 표시된다.
-
-***
-
-##### WEB1 - HTML & Internet 강의를 듣고 만든 페이지
-[Jerry](https://qlalzl9.github.io/Jerry/index.html)
-
-![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/HTML_1.png)
-
-##### 코드
-https://github.com/qlalzl9/Jerry

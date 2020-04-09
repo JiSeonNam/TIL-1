@@ -168,13 +168,3 @@ div {
 <link rel="stylesheet" href="style.css">
 ```
 - 지금까지의 내용을 하나의 .css파일로 만든 뒤 파일이 .css파일을 참고하게 해서 사용하면 코드의 재사용성을 높일 수 있다.
-
-<br><br>
-
-##### WEB2 - CSS 강의를 듣고 만든 페이지
-[Jerry](https://qlalzl9.github.io/Jerry/)
-
-![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/CSS_4.png)
-
-##### 코드
-https://github.com/qlalzl9/Jerry
