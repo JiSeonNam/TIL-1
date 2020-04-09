@@ -1,5 +1,3 @@
->생활코딩의 [WEBn 강의](https://opentutorials.org/course/3083)를 듣고 중요 내용을 정리합니다.
-
 ### 웹페이지에 CSS를 사용하는 방법
 ![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/CSS_1.png)
 #### 1. inline

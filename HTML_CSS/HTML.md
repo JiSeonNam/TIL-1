@@ -1,5 +1,3 @@
->생활코딩의 [WEBn 강의](https://opentutorials.org/course/3083)를 듣고 중요 내용을 정리합니다.
-
 ###주요 태그 정리
 - < strong ></ strong >
 	* 글씨를 진하게 한다.
