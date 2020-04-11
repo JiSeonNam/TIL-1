@@ -20,7 +20,7 @@
 ```
 <br>
 
-### web.xml 파일을 이용한 예외 처리
+### 응답 상태 코드별 예외 처리
 ```html
 <errorPage>
   <errorCode> 404 </errorCode>
@@ -29,5 +29,14 @@
 <errorPage>
   <errorCode> 500 </errorCode>
   <location> /error500.jsp </location>		<!-- 505에러 발생 시 error505.jsp 페이지로 이동-->
+</errorPage>
+```
+<br>
+
+### exception 타입별 예외 처리
+```html
+<errorPage>
+  <exception-type> 404 </exception-type>
+  <location> /error/errorNullPointer.jsp </location>	<!-- NullPointer 에러 발생 시시 errorNullPointer.jsp 페이지로 이동-->
 </errorPage>
 ```
