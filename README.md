@@ -14,7 +14,7 @@
 - [Collections Framework](https://github.com/qlalzl9/TIL/blob/master/Java/Chapter11.md)
 - [지네릭스, 열거형](https://github.com/qlalzl9/TIL/blob/master/Java/Chapter12.md)
 - [Thread](https://github.com/qlalzl9/TIL/blob/master/Java/Chapter13.md)
-- [다차원 배열 비교하기](https://github.com/qlalzl9/TIL/tree/master/Java)
+- [다차원 배열 비교하기](https://github.com/qlalzl9/TIL/blob/master/Java/MultidimensionalArrayComparison.md)
 <br>
 
 ### Algorithm
