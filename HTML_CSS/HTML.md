@@ -114,6 +114,81 @@
 	* < table > 보다 앞에 사용하면 표 위에, </ table > 태그 뒤에 사용하면 표 아래에 제목이 표시된다.
 	<br>
 
+### 이미지와 하이퍼링크
+<br>
+
+#### 이미지
+- `<img>`
+	* 웹 문서에 이미지를 삽입 할 때 사용
+	* src 속성을 사용해 파일이 있는 경로를 알려 주어야 화면에 이미지를 표시할 수 있다.
+<br>
+
+- src 속성
+	* 이미지 파일 경로를 지정
+	* ex) `<img src="images/ex.jpg">`
+<br>
+
+- alt 속성
+	* 이미지를 설명하는 대체 텍스트를 삽입할 때 사용
+	* ex) `<img src="images/ex.jpg" alt="예시입니다">`
+<br>
+
+- width, height 속성
+	* 이미지의 너비와 높이를 설정할 때 사용
+	* 설정하지 않으면 원본 크기로 삽입된다.
+	* ex) `<img src="images/ex.jpg" alt="예시입니다" width="250" height="250">`
+<br>
+
+- `<figure>`, `<figcaption>` 속성
+	* 이미지에 설명 글을 삽입할 때 사용
+	* `<figure>`로 요소를 묶고 `<figcaptio>`으로 설명 글을 붙인다.
+	* 이미지만 삽입한다면 `<figure>`태그를 사용하지 않아도 된다.
+	```html
+	<!-- 예시코드 -->
+	<figure>
+		<img src="images/ex.jpg" alt="예시입니다" width="250px" height="250px">
+		<figcaption>이미지 설명 글입니다.</figcaption>
+	</figure>
+	```
+<br>
+
+#### 하이퍼링크
+
+- `<a>`태그, href 속성
+	* 링크를 만들 때 사용
+	* ex) `<a href="링크 주소">텍스트</a>`
+	* 이미지 링크 만들기 : `<a href="링크 주소"><img src="이미지 파일 경로"></a>`
+<br>
+
+- target 속성
+	* 현재 화면 뿐만 아니라 새로운 화면에서도 링크를 열 수 있게 할 때 사용
+	* ex) `<a href="링크 주소" target="_blank">텍스트</a>`
+
+- 앵커 만들기
+	* 앵커(anchor)는 페이지가 긴 웹 문서에서 특정 요소를 클릭하면 페이지 내에서 그 위치로 한 번에 이동시켜 준다. 
+	* `<태그 id="앵커 이름">텍스트 또는 이미지</태그>`<br>
+	`<a href="#앵커 이름"> 텍스트 또는 이미지</a>`
+	```html
+	<ul id="Contents">
+		<li><a href="#content1">목차1</a></li>
+		<li><a href="#content2">목차2</a></li>
+		<li><a href="#content3">목차3</a></li>
+	</ul>
+
+	<h2 id="content1">내용1</h2>
+	<p>내용1</p>
+	<p><a href="#Contents">[목차로]</a></p>
+
+	<h2 id="content2">내용2</h2>
+	<p>내용2</p>
+	<p><a href="#contents">[목차로]</a></p>
+
+	<h2 id="content3">내용3</h2>
+	<p>내용3</p>
+	<p><a href="#Contents">[목차로]</a></p>
+	```
+<br>
+
 ### 기타 태그
 - `<u></u>`
 	* 밑줄을 만든다.
