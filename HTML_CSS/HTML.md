@@ -189,6 +189,97 @@
 	```
 <br>
 
+### 폼 관련 태그
+
+- `<form></form>`
+	* 특정 항목에 사용자가 뭔가 입력하는 형태로 사용하고자 할때 사용
+	* 속성들을 이용해 사용자가 입력한 자료들을 서버로 어떤 방식으로 넘길 것인지, 어떤 프로그램을 이용해 처리할 것인지 정한다.
+<br>
+
+- form 태그의 속성
+	* method : 사용자가 입력한 내용들을 서버 쪽 프로그램으로 어떻게 넘겨줄지 지정한다.	
+		- 속성 값 : get, post
+	* name : 폼의 이름을 지정한다. 한 문서 안에 여러 개의 form 태그가 있을 경우, 그들을 구분하기 위해 사용
+	* action : form 태그 안의 내용들을 처리해 줄 서버 상의 프로그램을 지정한다.
+	* target : action 태그에서 지정한 스크립트 파일을 현재 창이 아닌 다른 위치에 열도록 조정한다.
+	* autocomplete : 이미 입력했던 내용이 아래에 표시되도록 자동완성 기능을 제공한다. <br>
+	기본값이 "on"이므로 개인정보를 입력할 경우 autocomplete 속성을 "off"로 하여 끌 수 있다.
+```html
+<!-- 예시코드 -->
+<form action="login.jsp" method="post">
+	<input type="text" title="아이디">
+	<input type="text" title="비밀번호">
+	<input type="submit" title="로그인">
+</form>
+```
+
+- `<label></label>`
+	* 폼 요소에 레이블을 붙이는 태그이다.
+	* 레이블이란 입력 창 옆에 '아이디', '비밀번호' 와 같이 입력 창 옆에 붙여놓은 텍스트를 말한다.
+	* ex) `<label>아이디(6자 이상)<input type="text" title="아이디"></label>` 또는<br>
+	`<label for="user-id">아이디(6자 이상)</label>`<br>
+	`<input type="text" id="user-id">`
+	* 라디오 버튼과 체크박스에 사용되면 사용자가 버튼이나 박스 부분을 정확하게 클릭할 필요없이 연결된 텍스트만 클릭해도 체크된다.
+<br>
+
+- `fieldset>`, `<legent>`
+	* 폼 요소를 그룹으로 묶을 때 사용하며 하나의 폼 안에서 여러 구역을 나누어 표시함으로써 정보를 입력하기도 편하고 화면도 깔끔하게 정리할 수 있다.
+	* `<fieldset>`태그는 `<fieldset></fieldset>` 태그 사이의 폼들을 하나의 영역으로 묶어 외곽선을 그려 주고
+	* `<legend>` 태그는 `<fieldset>` 태그로 묶은 그룹에 제목을 붙여준다.
+<br>
+
+- `<input>` 태그
+	* 사용자가 입력할 부분을 넣는 태그 
+	* type으로 구분하여 text, checkbox, radio 버튼, submit 버튼 등이 사용될 수 있다. 
+<br>
+
+- `<input>` 태그의 type들
+	* input 태그의 type들은 종류가 굉장히 많고 중요하기 때문에 자유롭게 다룰 줄 알아야한다.
+	* [input 태그의 type들(W3schools)](https://www.w3schools.com/tags/att_input_type.asp)
+<br>
+
+- autofocus 속성
+	* 페이지를 불러오자마자 폼의 요소 중에서 원하는 요소에 마우스 커서를 표시할 수 있다.
+	* ex) `<input type="text" id="uname" autofocus required>` 
+<br>
+
+- placeholder 속성
+	* 입력란에 힌트 내용을 표시하고 있다가 클릭하면 사라지도록 만든다.
+	* ex) `<input type="text" id="uid" placeholder="하이픈없이 입력">`
+<br>
+
+- readonly 속성
+	* 입력란에 사용자가 입력하지 못하고 읽기만 가능하게 만든다.
+	* true 또는 false 값만 가지며 `readonly`만 쓰거나 `readonly="readonly"`라고 써도 `readonly="true"`로 인식한다.
+<br>
+
+- required 속성
+	* submit 버튼을 눌렀을 때 필요한 내용이 모두 채워졌는지 검사하는 속성
+	* `required="required"` 또는 `required`
+<br>
+
+- size, minlength, maxlength 속성
+	* size : 텍스트 필드에 보일 글자 수
+	* minlength : 최소 입력 글자 수
+	* maxlength : 최대 입력 글자 수
+<br>
+
+- `<select>`, `<option>`, `<optgroup>` 태그
+	* 사용자가 내용을 입력하는 것이 아니라 여러 옵션 중에서 선택하도록 드롭다운 목록을 제공한다.
+	* `<select>` 태그로 드롭다운 목록의 시작과 끝을 표시하고 그 안에 `<option>` 태그를 사용해 원하는 항목을 추가한다.
+	* `<option>`태그에 value 속성을 이용해 서버로 넘겨주기 위한 값을 지정한다.
+	* `<optgroup>`태그를 사용하면 드롭다운 목록에서 여러 항목들을 그룹을 묶을 수 있다.
+<br>
+
+- `<datalist>`, `<option>` 태그
+	* `<select>`태그와 비슷하지만 목록에서 제시한 값을 선택하면 그 값을 자동으로 입력해준다.
+<br>
+
+- `<textarea>` 태그
+	* 텍스트 영역을 만들어 한 줄 이상의 문장을 입력할 때 사용한다.
+	* cols 속성으로 너비 크기, rows 속성으로 화면에 표시할 줄 수를 지정할 수 있다.
+<br>
+
 ### 기타 태그
 - `<u></u>`
 	* 밑줄을 만든다.
