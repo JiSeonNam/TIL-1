@@ -55,31 +55,83 @@ p  {
 - Property(속성), Value(값) : 효과의 내용.
 
 
-### CSS 속성
-**font 사이즈 변경**
-- font-size : 16px;
-- font-size : 1em;
-
-**font 색상 변경**
-- color : red;
-- color : rgba(255, 0, 0, 0.5);
-- color : #ff0000;
-
-**정렬**
-- text-align : center; (left, right, justify)
-```html
-div {
-    font-size:70px;
-    text-align:center;
-    color:orange;
-}
-```
-<br>
-
 ### CSS Selector
-- 우선순위 : id(#) → class(.) → tag
+- 우선순위 : inline → id(#) → class(.) → tag
 - 같은 선택자들 일 경우 가장 마지막에 오는 선택자가 적용된다.
 - id 선택자가 한번만 등장하도록 권장된다.
+<br>
+
+### 스타일 상속
+  * 웹 문서에서 사용하는 여러 태그들은 서로 포함 관계가 있다.
+  * 스타일 시트에서 자식 요소에서 별도로 스타일을 지정하지 않으면 부모 요소에 있는 스타일 속성들이 자식 요소로 전달된다.<br>
+  (ex body 태그 스타일을 바꾸면 h1, h2 태그에도 적용된다.)
+  * 스타일의 모든 속성이 부모 요소에서 자식 요소로 상속되는 것은 아니다.<br>
+  (글자 색은 상속되지만 배경 이미지나 배경색은 상속되지 않는다.)
+<br>
+
+### 텍스트 관련 스타일
+
+#### 글꼴 관련 스타일
+
+- font-family
+  * `selector {font-family:굴림;}`
+  * 글꼴을 지정 
+<br>
+
+- font-size
+  * `selector {font-size:3em | 15px | 100%;}`
+  * 글자 크기를 조절
+<br>
+
+- font-weight
+  * `selector {font-weight: bold | 100 | 700;}` 
+  * 글자 굵기 지정
+<br>
+
+- font-style
+  * `selector {font-style: normal | inalic | oblique;}`
+  * 글자 스타일 지정
+<br>
+
+#### 텍스트 스타일
+
+- color
+  * `selector {color:rgb(0, 200, 0) | blue | #ff0000;}`
+  * 글자 색 지정
+<br>
+
+- text-decoration
+  * `selector {text-decoration:none | underline| overline| line-through;}`
+  * 텍스트에 줄 표시, 없애기
+<br>
+
+- text-transform
+  * `selector {text-transform: none | uppercase | lowercase;}`
+  * 텍스트 대-소문자 변환
+<br>
+
+- text-shadow
+  * `selector {text-shadow: none | <가로거리> <세로 거리> <번짐 정도> <색상>;}`
+  * 텍스트에 그림자 효과 추가
+<br>
+
+#### 문단 스타일
+
+- text-align
+  * `selector {text-align: start | end | left | right | center | justify;}`
+  * 텍스트 정렬
+<br>
+
+- line-height
+  * `selector {line-height: normal | 30px | 2.0 | 200%;}`
+  * 줄간격 조절
+<br>
+
+#### 목록 스타일
+
+- list-style-type
+  * `selector {list-height: none | disc | circle | square;}`
+  * 목록의 불릿과 번호 스타일 지정
 <br>
 
 ### CSS box model
