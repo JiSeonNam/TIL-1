@@ -7,3 +7,6 @@
 ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/sort_1.jpg)
 
 - 안정된 정렬은 그림과 같이 같은 값의 키를 가진 요소의 순서가 정렬 전후에도 유지되는 것을 말한다.
+
+- 일반적인 정렬 알고리즘에서의 시간복잡도
+![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Sort_2.jpg)
