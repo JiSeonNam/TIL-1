@@ -134,6 +134,67 @@ p  {
   * 목록의 불릿과 번호 스타일 지정
 <br>
 
+### 색상과 배경 스타일
+
+#### 색상 표현
+- 16진수 표기법
+  * #RRGGBB 형식으로 표현한다. 각각 빨간색, 초록색, 파란색의 양을 표시
+  * #000000(검은색) ~ #ffffff(흰색)
+  * 두 자리씩 중복 될 경우 줄여서 쓰기 가능 (#000, #fff)
+
+- rgb, rgba 표기법
+  * rgb(255, 0, 0) 또는 rgba(255, 0, 0, 0.5)와 같이 표기하는 방법
+  * 10진수로 표현하며 0 ~ 255까지 가능
+  * rgba 중 a는 투명도로 0 ~ 1까지 표현 가능 (1 : 불투명, 0 : 투명)
+
+- hsl, hsla 표기법
+  * hsl은 차례로 hue(색상), saturation(채도), lightness(밝기)를 나타낸다.
+  
+- 색상 이름 표기법
+  * red, yellow, black 과 같이 알려진 색상 이름으로 표시
+
+\* 색상 추출 사이트 활용<br>
+  * [Color Picker](www.colorpicker.com) 과 같은 사이트를 이용하면 사용할 때 마다 원하는 색상의 정확한 값을 얻을 수 있다.
+<br>
+
+#### 배경색과 배경 이미지
+- backgroud-color 속성
+  * 배경 색 지정을 할 수 있다.
+  * background-color 값은 상속되지 않는다.
+<br>
+
+- background-clip 속성
+  * ` selector {background-clip: border-box | padding-box | content-box;}`
+  * 배경 적용 범위 조절
+  * 박스 모델 관점에서 배경 적용 범위를 조절할 수 있다.
+<br>
+
+- background-image 속성
+  * `selector {backgroud-image: url('bg1.png');}`
+  * 웹 요소에 배경 이미지 넣기
+  * 현재 웹 문서를 기준으로 상대 경로와 'http://'로 시작하는 절대 경로 둘 다 사용 가능
+  * 만약 이미지가 채우려는 요소 크기보다 작을 경우 가득 채울 정도로 가로와 세로가 반복된다.
+<br>
+
+- background-size 속성
+  * `selector {background-size: auto | contain | cover | <크기 값> | <백분율>;}`
+  * 배경 이미지 크기 조절
+<br>
+
+- background-position 속성
+  * `selector {background-position: <수평 위치> <수직 위치>;}`
+  * 배경 이미지의 위치를 조절해서 한쪽에 이미지를 표시할 수 있다.
+<br>
+
+- background-attachment 속성
+  * `selector {background-attachment : scroll | fixed;}`
+  * 속성 값을 fixed로 하면 스크롤을 해도 배경 이미지는 그대로 유지된다.
+<br>
+
+\* background 속성을 하나로 쓸 수 있다. <br> 
+속성 값이 다르므로 순서 상관없이 나열하고 나열되지 않은 속성은 기본값으로 읽는다.
+<br>
+
 ### CSS box model
 ![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/CSS_2.png)
 - Margin, Padding 을 top, right, bottom, left 등으로 조절할 수 있다.
