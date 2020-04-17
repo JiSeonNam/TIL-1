@@ -20,6 +20,7 @@
 ### Algorithm
 - [선형 검색(Linear Search)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Linear_Search.md)
 - [이진 검색(Binary Search)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Binary_Search.md)
+- [정렬](https://github.com/qlalzl9/TIL/blob/master/Algorithm/sort.md)
 <br>
 
 ### Servlet_JSP
