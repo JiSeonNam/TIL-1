@@ -265,6 +265,95 @@ ex) `<img>`, `<object>`, `<br>`, `<sub>`, `<span>`, `<input>`, `<textare>`, `<la
   * margin과 마찬가지로 top, left, right, bottom으로 4방향 각각 적용 가능하다.
 <br>
 
+### CSS 레이아웃
+
+- box-sizing 속성
+  * `selector { box-sizing: content-box | border-box; }`
+  * 박스 너비 기준을 정하는 속성(기본 값은 content-box)
+  * content-box : 콘텐츠 영역 너비 값으로 width 속성을 사용<br>
+  border-box : 콘텐츠 영역에 테두리까지 포함한 박스 모델 전체 너비 값으로 width 속성을 사용
+<br>
+
+- float 속성
+  * `float: left | right | none`
+  * 웹 요소를 문서 위에 떠 있게 만든다. 왼쪽이나 오른쪽으로 배치할 때 주로 사용한다.
+<br>
+
+- clear 속성
+  * `clear: none | left | right | both`
+  * float 속성 해제하기
+  * float 속성을 사용하면 그 다음 요소들에도 똑같은 속성이 전달하기 때문에 다음 요소의 적절한 배치를 위해 clear 속성을 사용한다.
+<br>
+
+- position 속성
+  * `position: static | relative | absolute | fixed`
+  * 웹 문서 안의 요소들을 자유자재로 배치해주는 배치 방법을 지정하는 속성
+  * static을 제외한 나머지 속성 값에서는 좌표를 이용해 top, bottom, left, right로 지정할 수 있다.
+  * static : 문서의 흐름대로 배치<br>
+  relative : 문서 흐름 따라 위치 지정<br>
+  absolute : 원하는 위치에 배치(기준이 되는 위치는 가장 가까운 부모 요소 중 position이 relative인 요소)<br>
+  fixed : 브라우저 창 기준으로 고정시켜 배치
+<br>
+
+- visibility 속성
+  * `visivility: visible | hidden | collapse`
+  * 요소를 보이게 하거나 보이게 않게 하기
+  * 요소를 사용자에게만 보이지 않게 하여 배치를 적절하게 가능
+<br>
+
+- z-index 속성
+  * `z-index: <숫자>`
+  * 요소 위에 다른 요소를 쌓는 속성
+  * z-index 값이 작을수록 아래에 쌓인다.
+<br>
+
+#### 표 스타일
+
+- caption-side 속성
+  * `caption-side: top | bottom`
+  * 표 제목 위치 정하기
+<br>
+
+- border 속성
+  * ex) `border: 1px solid black`
+  * 표 테두리 스타일 설정
+<br>
+
+- border-collapse 속성
+  * `border-collapse: collapse | separate`
+  * 테두리 통합, 분리하기
+<br>
+
+- border-spacing 속성
+  * `border-spacing: <크기>
+  * 인접한 셀 테두리 사이 거리 지정
+<br>
+
+- empty-cells 속성
+  * `empty-cells: show | hide`
+  * 빈 셀의 표시 여부 지정
+<br>
+
+- width, height 속성
+  * ex) `table {width: 300px; height: 200px;}`
+  * 표 너비와 높이 지정
+<br>
+
+- table-layout 속성
+  * `table-layout: fixed | auto`
+  * 콘텐츠에 맞게 셀 너비 지정
+<br>
+
+- text-align 속성
+  * `text-align: left | right | center`
+  * 셀 안에서 수평 정렬하기
+<br>
+
+- vertical-align 속성
+  * `vertical-align: baseline | top | bottom | middle | ... | <길이 값> | <백분율 값>`
+  * 셀 안에서 수직 정렬하기
+<br>
+
 ### grid
 ```html5
 <!DOCTYPE html>
