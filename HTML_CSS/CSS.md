@@ -74,63 +74,63 @@ p  {
 #### 글꼴 관련 스타일
 
 - font-family
-  * `selector { font-family:굴림;}`
-  * 글꼴을 지정 
+  * `font-family: 굴림``
+  * 글꼴을 지정
 <br>
 
 - font-size
-  * `selector { font-size:3em | 15px | 100%;}`
+  * `font-size:3em | 15px | 100%`
   * 글자 크기를 조절
 <br>
 
 - font-weight
-  * `selector { font-weight: bold | 100 | 700;}` 
+  * `font-weight: bold | 100 | 700`
   * 글자 굵기 지정
 <br>
 
 - font-style
-  * `selector { font-style: normal | inalic | oblique;}`
+  * `font-style: normal | inalic | oblique`
   * 글자 스타일 지정
 <br>
 
 #### 텍스트 스타일
 
 - color
-  * `selector { color:rgb(0, 200, 0) | blue | #ff0000;}`
+  * `color:rgb(0, 200, 0) | blue | #ff0000`
   * 글자 색 지정
 <br>
 
 - text-decoration
-  * `selector { text-decoration:none | underline| overline| line-through;}`
+  * `text-decoration:none | underline| overline| line-through`
   * 텍스트에 줄 표시, 없애기
 <br>
 
 - text-transform
-  * `selector { text-transform: none | uppercase | lowercase;}`
+  * `text-transform: none | uppercase | lowercase`
   * 텍스트 대-소문자 변환
 <br>
 
 - text-shadow
-  * `selector { text-shadow: none | <가로거리> <세로 거리> <번짐 정도> <색상>;}`
+  * `text-shadow: none | <가로거리> <세로 거리> <번짐 정도> <색상>`
   * 텍스트에 그림자 효과 추가
 <br>
 
 #### 문단 스타일
 
 - text-align
-  * `selector { text-align: start | end | left | right | center | justify;}`
+  * `text-align: start | end | left | right | center | justify`
   * 텍스트 정렬
 <br>
 
 - line-height
-  * `selector { line-height: normal | 30px | 2.0 | 200%;}`
+  * `line-height: normal | 30px | 2.0 | 200%`
   * 줄간격 조절
 <br>
 
 #### 목록 스타일
 
 - list-style-type
-  * `selector { list-height: none | disc | circle | square;}`
+  * `list-height: none | disc | circle | square`
   * 목록의 불릿과 번호 스타일 지정
 <br>
 
@@ -149,7 +149,7 @@ p  {
 
 - hsl, hsla 표기법
   * hsl은 차례로 hue(색상), saturation(채도), lightness(밝기)를 나타낸다.
-  
+
 - 색상 이름 표기법
   * red, yellow, black 과 같이 알려진 색상 이름으로 표시
 
@@ -164,34 +164,34 @@ p  {
 <br>
 
 - background-clip 속성
-  * ` selector { background-clip: border-box | padding-box | content-box;}`
+  * ` background-clip: border-box | padding-box | content-box`
   * 배경 적용 범위 조절
   * 박스 모델 관점에서 배경 적용 범위를 조절할 수 있다.
 <br>
 
 - background-image 속성
-  * `selector { backgroud-image: url('bg1.png');}`
+  * `backgroud-image: url('bg1.png')`
   * 웹 요소에 배경 이미지 넣기
   * 현재 웹 문서를 기준으로 상대 경로와 'http://'로 시작하는 절대 경로 둘 다 사용 가능
   * 만약 이미지가 채우려는 요소 크기보다 작을 경우 가득 채울 정도로 가로와 세로가 반복된다.
 <br>
 
 - background-size 속성
-  * `selector { background-size: auto | contain | cover | <크기 값> | <백분율>;}`
+  * `background-size: auto | contain | cover | <크기 값> | <백분율>`
   * 배경 이미지 크기 조절
 <br>
 
 - background-position 속성
-  * `selector { background-position: <수평 위치> <수직 위치>;}`
+  * `background-position: <수평 위치> <수직 위치>`
   * 배경 이미지의 위치를 조절해서 한쪽에 이미지를 표시할 수 있다.
 <br>
 
 - background-attachment 속성
-  * `selector { background-attachment : scroll | fixed;}`
+  * `background-attachment : scroll | fixed`
   * 속성 값을 fixed로 하면 스크롤을 해도 배경 이미지는 그대로 유지된다.
 <br>
 
-\* background 속성을 하나로 쓸 수 있다. <br> 
+\* background 속성을 하나로 쓸 수 있다. <br>
 속성 값이 다르므로 순서 상관없이 나열하고 나열되지 않은 속성은 기본값으로 읽는다.
 <br>
 
@@ -199,68 +199,68 @@ p  {
 ![](https://github.com/qlalzl9/TIL/blob/master/HTML_CSS/img/CSS_2.png)
 - Margin, Padding 을 top, right, bottom, left 등으로 조절할 수 있다.
 - block level element : 화면 전체를 크기로 가지는 태그<br>
-ex) `<p>`, `<hn>`, `<ul>`, `<ol>`, `<div>`, `<blockquote>`, `<form>`, `<hr>`, `<table>`, `<fieldset>`, `<address>` 등 
+ex) `<p>`, `<hn>`, `<ul>`, `<ol>`, `<div>`, `<blockquote>`, `<form>`, `<hr>`, `<table>`, `<fieldset>`, `<address>` 등
 - inline element : 자신의 크기만을 크기로 가지는 태그<br>
 ex) `<img>`, `<object>`, `<br>`, `<sub>`, `<span>`, `<input>`, `<textare>`, `<label>`, `<button>` 등
 <br>
 
 - width, height 속성
-  * `selector { width or height : <크기> | <백분율>; }` 
+  * `width or height : <크기> | <백분율>`
   * 박스 모델에서 콘텐츠 영역의 크기를 지정
 <br>
 
 - display 속성
-  * `selector { display : none | block | inline | inline-block; }`
+  * `display : none | block | inline | inline-block`
   * 화면 배치 방법 결정
 <br>
 
 #### 테두리 관련 속성
 - border-style 속성
-  * `selector { border-style : none | solid | dashed | dotted; }`
+  * `border-style : none | solid | dashed | dotted`
   * 테두리 스타일 지정(기본값 : none)
 <br>
 
 - border-width 속성
-  * `selector { border-width: <크기> | thin | medium | thick; }`
+  * `border-width: <크기> | thin | medium | thick`
   * 테두리 두께 지정
 <br>
 
 - border-color 속성
-  * `selector { border-color: <색상>; }`
+  * `border-color: <색상>`
   * 테두리 색상 지정
 <br>
 
 \* 색상 추출 사이트 활용<br>
-  * ex) `selector { border: 3px solid #ccc; }`
+  * ex) `border: 3px solid #ccc`
   * 테두리의 스타일, 두께, 색상 묶어서 표현할 수 있다.
 <br>
 
 - border-radius 속성
-  * `selector { border-radius: <크기> | <백분율>; }`
+  * `border-radius: <크기> | <백분율>`
   *  박스 모서리 둥글게 만들기
   * top, left, right, bottom으로 4방향 각각 적용 가능하다.
 <br>
 
 - border-shadow 속성
-    * `selector { border-shadow: none | <수평 거리> <수직 거리> <흐림 정도> <번짐 정도> <색상>; }`
+  * `border-shadow: none | <수평 거리> <수직 거리> <흐림 정도> <번짐 정도> <색상>`
   * 박스에 그림자 효과 내기
   * 수평 거리와 수직 거리는 반드시 지정해야하며 나머지는 옵션이다.
 <br>
 
 #### 여백 조절 속성
 - margin 속성
-  * `selector { margin: <크기> | <백분율> | auto; }`
+  * `margin: <크기> | <백분율> | auto`
   * 요소 주변 여백 설정
   * top, left, right, bottom으로 4방향 각각 적용 가능하다.
 <br>
 
 - margin 중첩 현상
-  * 여러개의 박스가 세로로 배치되어 있을 경우 요소 사이의 마진이 너무 커지는 것을 방지하기 위해 큰 margin 값으로 합쳐진다. 
+  * 여러개의 박스가 세로로 배치되어 있을 경우 요소 사이의 마진이 너무 커지는 것을 방지하기 위해 큰 margin 값으로 합쳐진다.
   * 가로로 배치할 경우 중첩 현상은 생기지 않는다.
 <br>
 
 - padding 속성
-  * `selector { padding : <크기> | <백분율> | auto; }`
+  * `padding : <크기> | <백분율> | auto`
   * 콘텐츠 영역과 테두리 사이 여백 설정
   * margin과 마찬가지로 top, left, right, bottom으로 4방향 각각 적용 가능하다.
 <br>
@@ -268,7 +268,7 @@ ex) `<img>`, `<object>`, `<br>`, `<sub>`, `<span>`, `<input>`, `<textare>`, `<la
 ### CSS 레이아웃
 
 - box-sizing 속성
-  * `selector { box-sizing: content-box | border-box; }`
+  * `box-sizing: content-box | border-box`
   * 박스 너비 기준을 정하는 속성(기본 값은 content-box)
   * content-box : 콘텐츠 영역 너비 값으로 width 속성을 사용<br>
   border-box : 콘텐츠 영역에 테두리까지 포함한 박스 모델 전체 너비 값으로 width 속성을 사용
