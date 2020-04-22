@@ -23,6 +23,7 @@
 - [시간복잡도(Time Complexity)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Time_Complexity.md)
 - [정렬](https://github.com/qlalzl9/TIL/blob/master/Algorithm/sort.md)
 - [버블 정렬(Bubble Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Bubble_Sort.md)
+- [선택 정렬(Selection Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Selection_Sort.md)
 <br>
 
 ### Servlet_JSP
