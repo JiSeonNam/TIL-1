@@ -24,6 +24,7 @@
 - [정렬](https://github.com/qlalzl9/TIL/blob/master/Algorithm/sort.md)
 - [버블 정렬(Bubble Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Bubble_Sort.md)
 - [선택 정렬(Selection Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Selection_Sort.md)
+- [삽입 정렬(Insertion Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Insertion_Sort.md)
 <br>
 
 ### Servlet_JSP
