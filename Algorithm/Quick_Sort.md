@@ -3,12 +3,15 @@
 - 불안정 정렬에 속하며, 비교만으로 정렬을 수행하는 비교 정렬이다.
 - 시간복잡도
     * 시간복잡도는 pivot을 어느 것으로 선택하는지에 따라 영향을 많이 받는다.
+    <br>
+    
 ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Quick_Sort_1.jpg)
 - 정렬 과정
     * 요소들의 그룹을 나누는 기준인 pivot을 결정한다.
     * pivot을 기준으로 pivot보다 작은 데이터들은 pivot 왼쪽으로, 큰 데이터들은 pivot 오른쪽으로 교환한다.
     * pivot을 제외한 왼쪽 그룹과 오른쪽 그룹을 각각 다시 Quick Sort 한다.
-    * 그룹의 크기가 0 또는 1이 될 때까지 반복한다.
+    * 그룹의 크기가 0 또는 1이 될 때까지 반복한다.<br>
+
 ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Quick_Sort_2.jpg)
 
 ## 구현
