@@ -2,6 +2,7 @@
 - 분할 정복 알고리즘의 하나로, 매우 빠른 정렬 알고리즘이다. 
 - 불안정 정렬에 속하며, 비교만으로 정렬을 수행하는 비교 정렬이다.
 - 시간복잡도
+    * 시간복잡도는 pivot을 어느 것으로 선택하는지에 따라 영향을 많이 받는다.
 ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Quick_Sort_1.jpg)
 - 정렬 과정
     * 요소들의 그룹을 나누는 기준인 pivot을 결정한다.
