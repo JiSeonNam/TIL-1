@@ -26,6 +26,7 @@
 - [선택 정렬(Selection Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Selection_Sort.md)
 - [삽입 정렬(Insertion Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Insertion_Sort.md)
 - [셸 정렬(Shell Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Shell_Sort.md)
+- [퀵 정렬(Quick Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Quick_Sort.md)
 <br>
 
 ### Servlet_JSP
