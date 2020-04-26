@@ -50,13 +50,13 @@ p  {
 </html>
 ```
 #### 용어
-- Selector(선택자) : 웹페이지에 있는 모든 a 태그를 '선택'의 의미.
+- Selector(선택자) : 웹페이지에 있는 모든 해당 태그를 '선택'의 의미.
 - Declaration(선언) : 선택자가 지정한 태그들에서 어떤 '효과'를 줄 것인가를 의미.
 - Property(속성), Value(값) : 효과의 내용.
 
 
 ### CSS Selector
-- 우선순위 : inline → id(#) → class(.) → tag
+- 우선순위 : `inline → id(#) → class(.) → tag`
 - 같은 선택자들 일 경우 가장 마지막에 오는 선택자가 적용된다.
 - id 선택자가 한번만 등장하도록 권장된다.
 <br>
@@ -64,7 +64,7 @@ p  {
 ### 스타일 상속
   * 웹 문서에서 사용하는 여러 태그들은 서로 포함 관계가 있다.
   * 스타일 시트에서 자식 요소에서 별도로 스타일을 지정하지 않으면 부모 요소에 있는 스타일 속성들이 자식 요소로 전달된다.<br>
-  (ex body 태그 스타일을 바꾸면 h1, h2 태그에도 적용된다.)
+  (ex `body` 태그 스타일을 바꾸면 `h1`, `h2` 태그에도 적용된다.)
   * 스타일의 모든 속성이 부모 요소에서 자식 요소로 상속되는 것은 아니다.<br>
   (글자 색은 상속되지만 배경 이미지나 배경색은 상속되지 않는다.)
 <br>
@@ -74,7 +74,7 @@ p  {
 #### 글꼴 관련 스타일
 
 - font-family
-  * `font-family: 굴림``
+  * `font-family: 굴림`
   * 글꼴을 지정
 <br>
 
@@ -96,12 +96,12 @@ p  {
 #### 텍스트 스타일
 
 - color
-  * `color:rgb(0, 200, 0) | blue | #ff0000`
+  * `color: rgb(0, 200, 0) | blue | #ff0000`
   * 글자 색 지정
 <br>
 
 - text-decoration
-  * `text-decoration:none | underline| overline| line-through`
+  * `text-decoration: none | underline| overline| line-through`
   * 텍스트에 줄 표시, 없애기
 <br>
 
@@ -325,7 +325,7 @@ ex) `<img>`, `<object>`, `<br>`, `<sub>`, `<span>`, `<input>`, `<textare>`, `<la
 <br>
 
 - border-spacing 속성
-  * `border-spacing: <크기>
+  * `border-spacing: <크기>`
   * 인접한 셀 테두리 사이 거리 지정
 <br>
 
@@ -403,9 +403,3 @@ ex) `<img>`, `<object>`, `<br>`, `<sub>`, `<span>`, `<input>`, `<textare>`, `<la
 - mediaquery를 사용하면 창의 크기에 따라 반응하는 웹 페이지를 만들 수 있다.
 - 예제 코드에서는 스크린의 크기가 800px보다 작아지면 div의 내용이 사라지게 만들었다.
 <br>
-
-### CSS 코드의 재사용
-```html
-<link rel="stylesheet" href="style.css">
-```
-- 지금까지의 내용을 하나의 .css파일로 만든 뒤 파일이 .css파일을 참고하게 해서 사용하면 코드의 재사용성을 높일 수 있다.
