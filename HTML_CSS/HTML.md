@@ -331,32 +331,68 @@
 - 시맨틱 태그가 나온 뒤 `<div>` 태그의 사용
   * 주로 콘텐츠를 묶어 시각적 효과를 적용할 때 즉 CSS를 적용할 때 `<div>` 태그를 사용한다.
 <br>
-``
+
+### HTML과 멀티미디어
+
+- `<object>` 태그와 `<embed>` 태그
+	* `<object data="경로" type="유형" [name="이름" width="너비" height="높이"]></object>`
+	* `<embed src="경로" type="유형" width="너비" height="높이">`
+	* 웹 브라우저에서 처리할 수 없는 작업을 위해 플러그인을 사용하는 태그
+	* `<object>`태그를 사용할 경우 특정 외부 파일을 가져와 표시할 것인지 여부를 알려 주기 위해 최소한 data나 type속성 둘 중 하나를 반드시 사용해야 한다.
+	* `<object>`태그와는 달리 `<embed>`태그는 닫는 태그가 없으며 `<embed>`태그는 주로 `<object>`태그를 지원하지 않는 이전 브라우저에서 사용된다.
+<br>
+
+- `<audio>` 태그
+	* `<audio src="오디오 파일 경로" [속성] [속성="속성 값"]></audio>`
+	* HTML5에서 배경 음악이나 효과음 등 오디오 파일 삽입 태그
+<br>
+
+- `<video>` 태그
+	* `<video src="비디오 파일 경로" [속성] [속성="속성 값"]></video>`
+	* 비디오 파일 삽입 태그
+<br>
+
+- `<source>` 태그
+	* ex) `<source src="video.ogv" type="video/ogg; codecs="'theora,vorbis'">`
+	* 여러 미디어 파일 한꺼번에 지정하는 태그
+<br>
+
+- `<track>` 태그
+	* `<track kind="자막종류" src="경로" srclang="언어" label="제목" default>`
+	* 비디오 화면에 자막 추가하기
+	* `<track>` 태그의 속성
+		- kind : 자막의 종류를 지정
+		- src : 자막 텍스트의 파일 경로 지정
+		- srclang : 사용한 언어 지정(kind 속성 값이 subtitle이라면 반드시 지정해야 한다)
+		- label : 자막이 여러 개일 경우, 자막을 식별할 수 있도록 제목을 달아준다.
+		- default : 자막 파일이 여러 개일 경우, 기본으로 사용할 자막을 default로 지정
+<br>
+
 ### 기타 태그
 - `<u></u>`
 	* 밑줄을 만든다.
-	<br>
+<br>
 
 - `<title></title>`
 	* 웹페이지의 제목 설정. 검색엔진은 title을 기준으로 하기 때문에 title을 꼭 정해주어야 한다. title을 안정하면 굉장히 손해다.
-	<br>
+<br>
 
 - `<meta charset="utf-8">`
 	* 브라우저에게 utf-8이란 방법으로 문서를 읽어라.라는 뜻으로 한글이 깨지지 않게 해 준다.
-	<br>
+<br>
 
 - `<head></head>`
 	* 본문을 설명하는 것을 묶어서 head라고 한다.
-	<br>
+<br>
 
 - `<body></body>`
 	* 본문을 body라고 한다. 따라서 html의 모든 태그는 head 또는 body 아래에 놓이게 된다.
-	<br>
+<br>
 
 - `<html></html>`
 	* head와 body를 감싸는 최고위층 태그이다.
-	<br>
+<br>
 
 - `<!doctype html>`
 	* 이 문서는 html 문서다.라는 뜻으로 관용적으로 html 태그 위에 쓰인다.
-	<br>``
+<br>
