@@ -28,6 +28,7 @@
 - [셸 정렬(Shell Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Shell_Sort.md)
 - [퀵 정렬(Quick Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Quick_Sort.md)
 - [병합 정렬(Merge Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Merge_Sort.md)
+- [힙 정렬(Heap Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Heap_Sort.md)
 <br>
 
 ### Servlet_JSP
