@@ -3,13 +3,14 @@
 - 도수를 이용하여 데이터의 대소 관계를 판단하지 않고 빠르게 정렬하는 알고리즘
 - 시간복잡도 : O(n)
 - 정렬과정
-    * 도수분포표 만들기
-    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_1.jpg)<br>
-    * 누적도수분포표 만들기
-    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_2.jpg)<br>
-    * 목적 배열 만들기
-    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_3.jpg)<br>
+    * 도수분포표 만들기<br>
+    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_1.jpg =600x)<br>
+    * 누적도수분포표 만들기<br>
+    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_2.jpg =600x)<br>
+    * 목적 배열 만들기<br>
+    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_3.jpg =600x)<br>
     * 배열 복사하기
+<br>
 
 ## 구현
 ```java
