@@ -29,6 +29,7 @@
 - [퀵 정렬(Quick Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Quick_Sort.md)
 - [병합 정렬(Merge Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Merge_Sort.md)
 - [힙 정렬(Heap Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Heap_Sort.md)
+- [도수 정렬(Frequency Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Frequency_Sort.md)
 <br>
 
 ### Servlet_JSP
