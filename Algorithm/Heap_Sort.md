@@ -13,7 +13,7 @@
     4. 바뀐 root의 값을 비교하며 알맞은 위치로 옮긴다.
     5. 1~4 반복
 
-![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Heap_Sort_2.jpg)
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Heap_Sort_2.jpg" width="600px"></p>
 
 ## 구현
 ```java

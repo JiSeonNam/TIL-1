@@ -22,7 +22,7 @@
 
 > 두 함수 f(n), g(n)이 있을 때,  $n_{1}$ ≤ n, f(n) ≤ C*g(n)이 성립하는 상수 C, $n_{1}$이 존재하면 f(n)=O(g(n))이다.
 
-![Big-O Complexity](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Time_Complexity_1.png)
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Time_Complexity_1.png"></p>
 
 그림과 같이 Big-O의 연산 횟수는 O(1) → O(logn) → O(n) → O(nlogn) → O($n^{2}$) → O($2^{n}$) → O(n!)으로 갈수록 증가한다. 
 - 일반적으로 입력의 개수와 시간 복잡도 함수의 관계는 상당히 복잡하다. 그러나 자료의 개수가 많을 경우 차수가 가장 큰 항이 가장 영행을 미치고 다른 항들은 상대적으로 무시될 수 있다.

@@ -4,11 +4,11 @@
 - 시간복잡도 : O(n)
 - 정렬과정
     * 도수분포표 만들기<br>
-    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_1.jpg =600x)<br>
+    <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_1.jpg" width="600px"></p>
     * 누적도수분포표 만들기<br>
-    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_2.jpg =600x)<br>
+    <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_2.jpg" width="600px"></p>
     * 목적 배열 만들기<br>
-    ![](https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_3.jpg =600x)<br>
+    <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Frequency_Sort_3.jpg" width="600px"></p>
     * 배열 복사하기
 <br>
 
