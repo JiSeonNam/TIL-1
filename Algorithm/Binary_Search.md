@@ -79,9 +79,9 @@ x[6]：121
 <br>
 
 ### Arrays.binarySearch
-- Java에서는 배열에서 이진 검색을 하는 메서드를 표준 라이브러리고 제공한다.
+- Java에서는 배열에서 이진 검색을 하는 메서드를 표준 라이브러리로 제공한다.
 - 이진 검색 표준 라이브러리의 메서드로는 java.util.Arrays 클래스의 binarySearch 메서드가 있다.
 - binarySearch 메서드는 오름차순으로 정렬된 배열 a를 가정하고, 키 값이 key인 요소를 이진 검색한다.
 - 검색에 성공한 경우 요소의 인덱스를 반환하고, 일치하는 요소가 여러 개인 경우 무작위의 인덱스를 반환한다.
 - 검색에 실패한 경우 삽입 포인트를 x라고 할 때 -x-1을 반환한다.
-- 사용 예시 : ```java int idx = Arrays.binarySearch(x, ky); ```
+- 사용 예시 : `int idx = Arrays.binarySearch(x, ky);`
