@@ -30,6 +30,7 @@
 - [병합 정렬(Merge Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Merge_Sort.md)
 - [힙 정렬(Heap Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Heap_Sort.md)
 - [도수 정렬(Frequency Sort)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Frequency_Sort.md)
+- [부루트-포스법(Brute-Force)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Brute_Force.md)
 <br>
 
 ### Servlet_JSP
