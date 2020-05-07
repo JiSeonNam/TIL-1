@@ -3,7 +3,7 @@
 - 선형 검색을 확장한 알고리즘으로, 전체 데이터를 탐색하는 방법이다.
 - 따라서 효율이 매우 좋지 않다.
 - 정렬 과정
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Brute_Force_1.jpg" width="600px"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/Brute_Force_1.jpg"></p>
 
 ## 구현
 ```java
