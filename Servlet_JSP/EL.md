@@ -5,7 +5,7 @@
 <br>
 
 ## EL의 표현방법과 기본 객체
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Algorithm/img/EL_1.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/EL_1.jpg"></p>
 <br>
 
 ## 표현 언어의 기본 객체 사용 예
