@@ -1,10 +1,9 @@
-> [신입 프로그래머를 위한 실전 JSP 강좌 강의](https://www.inflearn.com/course/%EC%8B%A4%EC%A0%84-jsp-%EA%B0%95%EC%A2%8C/dashboard)를 듣고 공부한 내용을 정리하여 기록
-
-<br>
-
-### JSTL (JSP standard Tag Library)
+# JSTL (JSP standard Tag Library)
 - JSP의 경우 HTML 태그와 같이 사용되어 전체적인 코드의 가독성이 떨어진다.
-- 이러한 단점을 보완하고자 만들어진 태그 라이브러리가 JSTL이다.
+- 이러한 단점을 보완하고자 만들어진 태그 라이브러리가 JSTL이다
+- JSP 페이지에서 조건문 처리, 반복문 처리 등을 html tag형태로 작성할 수 있게 도와준다.
+<br>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Servlet_JSP/img/JSTL_2.jpg"></p>
 <br>
 
 ### JSTL 라이브러리
