@@ -9,9 +9,9 @@
 ```java
 // 검색할 문자열 : pat, 문자열 원본 : txt
 static int kmpMatch(String txt, String pat) {
-	int pt = 1;											// txt 커서
-	int pp = 0;											// pat 커서
-	int[] skip = new int[pat.length() + 1];				// 건너뛰기 표
+	int pt = 1;		// txt 커서
+	int pp = 0;		// pat 커서
+	int[] skip = new int[pat.length() + 1];		// 건너뛰기 표
 
 	// 건너뛰기 표를 만들기
 	skip[pt] = 0;
@@ -37,8 +37,6 @@ static int kmpMatch(String txt, String pat) {
 	}
 		if (pp == pat.length())		// pt - pp를 반환
 		return pt - pp;
-	return -1;					// 검색 실패
+	return -1;		// 검색 실패
 }
 ```
-
-
