@@ -54,7 +54,6 @@ mysql> show databases;
 mysql> use mydb;
 ```
 <br>
-https://github.com/qlalzl9/TIL/blob/master/Database/img/SQL_1.png
 
 ### 데이터를 저장하는 공간 테이블(Table)
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Database/img/SQL_1.png" width="600px"></p>
