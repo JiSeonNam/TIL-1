@@ -20,6 +20,7 @@
 ### Database
 - [SQL 기초](https://github.com/qlalzl9/TIL/blob/master/Database/SQL.md)
 - [DML](https://github.com/qlalzl9/TIL/blob/master/Database/DML.md)
+- [DDL](https://github.com/qlalzl9/TIL/blob/master/Database/DDL.md)
 <br>
 
 ### Algorithm
