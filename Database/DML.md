@@ -33,6 +33,7 @@
 
 ### WHERE
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Database/img/DML_3.png" width="600px"></p>
+
 - 산술비교 연산자
     * `select name, hiredate from employee where hiredate < '1981-01-01';`
 - 논리 연산자
