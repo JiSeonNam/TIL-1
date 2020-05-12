@@ -17,6 +17,10 @@
 - [다차원 배열 비교하기](https://github.com/qlalzl9/TIL/blob/master/Java/MultidimensionalArrayComparison.md)
 <br>
 
+### Database
+- [SQL 기초](https://github.com/qlalzl9/TIL/blob/master/Database/SQL.md)
+<br>
+
 ### Algorithm
 - [선형 검색(Linear Search)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Linear_Search.md)
 - [이진 검색(Binary Search)](https://github.com/qlalzl9/TIL/blob/master/Algorithm/Binary_Search.md)
