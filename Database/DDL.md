@@ -1,5 +1,6 @@
 ## 데이터 정의어(Data definition language, DDL)
 - 데이터베이스의 스키마 객체를 생성, 변경, 제거 하는 일을 수행한다.
+<br>
 
 ### 테이블 생성
 - 데이터 형 외에도 속성값의 빈 값 허용 여부는 NULL 또는 NOT NULL로 설정
@@ -32,7 +33,7 @@ alter table  테이블명
     change  필드명  새필드명 타입 [NULL | NOT NULL][DEFAULT ][AUTO_INCREMENT];
 ```
 - ex) EMPLOYEE2 테이블의 부서번호(deptno)를 dept_no로 수정
-    * alter table EMPLOYEE2 change deptno dept_no int(11);
+    * `alter table EMPLOYEE2 change deptno dept_no int(11);`
 
 ### 테이블 이름 변경
 - `alter table 테이블명 rename 변경이름`
