@@ -25,6 +25,7 @@ alter table 테이블명
 alter table 테이블명
     drop  필드명;
 ```
+<br>
 
 ### 컬럼 수정
 - change 키워드를 사용하고  칼럼을 새롭게 재정의 (이름부터 속성까지 전부)
@@ -34,9 +35,11 @@ alter table  테이블명
 ```
 - ex) EMPLOYEE2 테이블의 부서번호(deptno)를 dept_no로 수정
     * `alter table EMPLOYEE2 change deptno dept_no int(11);`
+<br>
 
 ### 테이블 이름 변경
 - `alter table 테이블명 rename 변경이름`
+<br>
 
 ### 테이블 삭제
 - `drop table 테이블명`
