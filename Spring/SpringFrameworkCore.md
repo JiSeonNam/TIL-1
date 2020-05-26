@@ -24,10 +24,11 @@
         - 싱글톤 : 하나의 객체를 사용, 기본적으로 빈으로 등록할 때 싱글톤으로 등록된다.
         - 프로토타입 : 매번 다른 객체를 사용
     * 라이프사이클 인터페이스 지원
+<br>
 
 ## ApplicationContext와 다양한 빈 설정 방법
 
-1. Spring bean 설정 파일을 만들고 bean을 주입하는 방법
+### 1. Spring bean 설정 파일을 만들고 bean을 주입하는 방법
 - 고전적인 방법으로 요즘에는 거의 쓰이지 않는다.
 - application.xml 파일을 만들고 bean을 등록한다. 
 ```java
@@ -65,7 +66,7 @@ public class DemoApplication {
 - 이러한 방법은 모든 빈을 일일히 등록(`<bean id = " ">`)을 해줘야 하기 때문에 번거롭다.
 <br>
 
-2. context-component-scan
+### 2. context-component-scan
 - bean을 스캐닝해서 등록하는 것이다. (Spring 2.5부터 등장)
 - @Component와 Component 애노테이션을 확장한 @Service, @Repository 등을 사용해 bean으로 등록 할 수 있다.
 - 빈으로 등록만 되기 때문에 의존성 주입은 @Autowired 나 @Inject를 통해 받아야 한다.
@@ -100,7 +101,7 @@ public class BookService {
 ```
 <br>
 
-3. java 설정 파일
+### 3. java 설정 파일
 - @Comfiguration이라 애노테이션을 설정하고 @Bean을 등록한다
 - 굉장히 유연한 bean 설정이 가능하다.
 - Application.config
@@ -147,10 +148,14 @@ public class ApplicationConfig {
 public class DemoApplication {
 
   public static void main(String[] args) {
-    ApplicationContext context = new AnnotationConfigApplicationContext(ApplicationConfig.class);   // ApplicationConfig 클래스를 bean 설정으로 사용
+    ApplicationContext context = new AnnotationConfigApplicationContext(ApplicationConfig.class);   
+    // ApplicationConfig 클래스를 bean 설정으로 사용
     // ApplicationConfig에서 @Bean이 달린 bean 정의들을 읽어서 bean들로 등록하고, 의존성 주입은 코드를 작성한 대로 발생한다.
 ```
-- 그러나 이 방법도 일일히 bean을 등록해야 한다. 따라서 xml에서 했던 것과 비슷하게 component-scanning을 할 수 있다.
+<br>
+
+### java 설정 파일의 componet-scanning
+- java 설정 파일을 통한 방법도 일일히 bean을 등록해야 한다. 따라서 xml에서 했던 것과 비슷하게 component-scanning을 할 수 있다.
 ```java
 @Configuration
 @ComponentScan(basePackagesClasses = DemoApplication.class) // class가 위치한 곳부터 Component-scanning을 하라는 의미
