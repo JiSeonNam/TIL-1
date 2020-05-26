@@ -7,6 +7,8 @@
 
 ### Spring
 - [예제로 배우는 스프링 프레임워크 입문 - 강의 내용 정리](https://github.com/qlalzl9/TIL/blob/master/Spring/SpringFrameworkIntroduction.md)
+- [스프링 프레임워크 핵심 기술 - 강의 내용 정리](https://github.com/qlalzl9/TIL/blob/master/Spring/SpringFrameworkCore.md)
+<br>
 
 ### Java
 - [객체지향 프로그래밍 1](https://github.com/qlalzl9/TIL/blob/master/Java/Chapter6.md)
