@@ -176,4 +176,107 @@ public class DemoApplication {
 }
 ```
 
+## Autowired
 
+### 생성자를 사용한 의존성 주입
+```java
+@Service    // bean으로 등록
+public class BookService {
+       
+    BookRepository bookRepository;
+
+    @Autowired
+    public BookService(BookRepository bookRespository) {
+           this.bookRepository = bookRepository;
+    }
+}
+```
+```java
+@Repository // bean으로 등록
+// 애노테이션을 붙이지 않으면 BookRepository의 bean을 찾지 못해서 오류가 난다.
+public class BookRepository {
+}
+```
+
+### Setter를 사용한 의존성 주입
+```java
+@Service
+public class BookService {
+       
+    BookRepository bookRepository;
+
+    @Autowired
+    public void setBookRepository(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+    }
+}
+```
+- BookService 자체의 인스턴스는 만들 수 있지만 `@Autowired`라는 애노테이션이 있기 때문에 의존성 주입을 하려고 시도한다가 실패한다.
+- 이런 경우 `@Autowired(required = false)`라고 설정(기본값은 true)하면 BookService의 인스턴스는 만들어져 bean으로 등록되고, BookRepository는 의존성 주입이 안된 상태로 빈으로 등록된다.
+
+### Field에 의존서 주입
+```java
+@Service
+public class BookService {
+
+     @Autowired(required = false)
+     BookRepository bookRepository;
+}
+```
+- 이렇게 Setter나 field를 통한 의존성 주입은 `@Autowired(required = false)`를 사용하여 BookService가 BookRepository의 의존성 없이도 bean으로 등록되도록 할 수 있다.
+- 그러나 생성자를 사용한 의존성 주입은 bean을 만들 떄도 개입이 되기 때문에 전달받아야하는 타입의 bean이 없으면 인스턴스를 만들지 못하고 bean으로도 등록되지 못한다.
+
+### 해당 타입의 빈이 여러 개인 경우
+```java
+public interface BookRepository {
+}
+```
+```java
+@Repository
+public class MyBookRepository implements BookRepository {
+}
+```
+```java
+@Repository
+public class KeesunBookRepository implements BookRepository {
+}
+```
+```java
+@Service
+public class BookService { 
+     
+     @Autowired
+     BookRepository bookRepository;
+}
+```
+- 위와 같은 경우에는 둘 중 어떤 것을 원하는지 알 수 없기 때문에  BookService에 의존성 주입을 못해준다. 
+- 이 경우 다음과 같은 방법으로 해결할 수 있다. 
+    * `@Primary` : 여러가지 동일한 bean 중 이 bean을 사용할 것이다라는 의미
+    ```java
+    @Repository @Primary
+    public class MyBookRepository implements BookRepository {
+    }
+    ```
+    * `@Qualifier` : 사용하고 싶은 bean의 id를 선언해준다.
+    ```java
+    @Service
+    public class BookService { 
+     
+        @Autowired @Qualifier("keesunBookRepository")   //첫글자는 소문자!
+        BookRepository bookRepository;
+    }
+    ```
+    * 여러 개의 bean 모두 받을 수도 있다.
+    ```java
+    @Service
+    public class BookService { 
+     
+        @Autowired
+        List<BookRepository> bookRepositories; 
+    }
+    ```
+
+### Autowired 동작원리
+- AutowiredAnnotationBeanPostProcessor 가 기본적으로 Bean으로 등록되어있고
+- BeanFactory 가 자신에게 등록된 BeanPostProcessor 들을 찾아서 일반적인 Bean들에게 로직을 적용함.
+- 따라서 bean으로 등록되어 있는 모든 bean들은 `@Autowired`로 주입 가능하다.
