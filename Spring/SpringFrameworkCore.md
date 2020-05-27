@@ -719,6 +719,7 @@ public class AnotherHandler {
   * ApplicationContext를 close()하여 싱글톤 빈 소멸되는 시점에 발생.
 - RequestHandledEvent
   * HTTP 요청을 처리했을 때 발생.
+- 예시 코드
 ```java
 @Component
 public class MyEventHandler {
@@ -731,4 +732,31 @@ public class MyEventHandler {
         System.out.println("ContextClosedEvent");
     }
 }
+```
+<br>
+
+## ResourceLoader
+- ApplicationContext가 상속받고 있는 인터페이스
+- 리소스를 읽어오는 기능을 제공한다.
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+
+    @Autowired
+    ResourceLoader resourceLoader;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        Resource resource = resourceLoader.getResource("classpath:test.txt"); // 파일 읽어오기
+        System.out.println(resource.exists()); // 파일 유무 
+        System.out.println(resource.getDescription()); // 설명
+        // URI를 받아와서 Path를 만들고 Path에 해당하는 파일을 읽어서 컨텐츠를 출력 
+        System.out.println(Files.readString(Path.of(resource.getURI()))); // URL로 읽어오기
+    }
+}
+/* 실행결과
+true
+class path resource [test.txt]
+hello spring
+*/
 ```
