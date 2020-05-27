@@ -565,27 +565,28 @@ public class AppRunner implements ApplicationRunner {
   <br>
 
 ## MessageSource
- - 국제화(i18n) 기능을 제공하는 인터페이스
- - 스프링 부트에서는 message로 시작하는 properties들을 다 읽어주기 때문에 별다른 설정 필요없이 사용 가능하다.
- ```java
- // messages.properties 파일
- greeting=Hello {0}
- ```
- ```java
- // messages_ko_KR.properties 파일
- greeting=안녕, {0}
- ```java
- @Component
- public class AppRunner implements ApplicationRunner {
-   @Autowired
-   MessageSource messageSource;
-   @Override
-   public void run(ApplicationArguments args) throws Exception {
-       System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.KOREA));
-       System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.getDefault()));
-     }
- }
- ```
+- ApplicationContext가 상속받고 있는 인터페이스
+- 국제화(i18n) 기능을 제공하는 인터페이스
+- 스프링 부트에서는 message로 시작하는 properties들을 다 읽어주기 때문에 별다른 설정 필요없이 사용 가능하다.
+```java
+// messages.properties 파일
+greeting=Hello {0}
+```
+```java
+// messages_ko_KR.properties 파일
+greeting=안녕, {0}
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+  @Autowired
+  MessageSource messageSource;
+  @Override
+  public void run(ApplicationArguments args) throws Exception {
+      System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.KOREA));
+      System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.getDefault()));
+    }
+}
+```
 <br>
 
 ### Reloading 기능이 있는 메세지 소스 사용하기
@@ -628,3 +629,106 @@ public class Demospring51application {
 ```
 <br>
 
+## ApplicationEventPublisher
+- ApplicationContext가 상속받고 있는 인터페이스
+- 옵저버 패턴의 구현체로, 이벤트 기반의 프로그래밍을 할 때 유용하다.
+
+### 이벤트 만들기
+```java
+// 이벤트는 bean이 아니다.
+// spring 4.2 이후부터는 이벤트가 ApplicationEvent를 상속받지 않아도 된다.
+public class MyEvent {
+
+  private int data;
+  private Object source;
+
+  public MyEvent(Object source, int data) {
+      this.source = source;
+      this.data = data;
+  }
+
+  public Object getSource() {
+      return source;
+  }
+
+  public int getData() {
+      return data;
+  }
+}
+```
+<br>
+
+### 이벤트 발생 시키기
+```java
+// 이벤트를 발생시키는 로직
+@Component
+public class AppRunner implements ApplicationRunner {
+
+    @Autowired
+    ApplicationEventPublisher publisherEvent;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        publisherEvent.publishEvent(new MyEvent(this, 100));
+    }
+}
+```
+<br>
+
+### 이벤트 처리
+```java
+// 이벤트를 받아서 처리하는 eventHandler(bean으로 등록되어야 한다)
+@Component
+public class MyEventHandler {
+
+    @EventListener
+    public void handle(MyEvent event) {
+        System.out.println("이벤트 받았다. 데이터는 " + event.getData());
+    }
+}
+```
+- Handler가 추가된 경우
+  * 순차적으로 실행된다. (동시에 다른 thread에서 실행되는게 아니라 같은 thread에서 순차적으로)
+```java
+@Component
+public class AnotherHandler {
+
+    @EventListener
+    public void handler(MyEvent event) {
+        System.out.println("Another " + event.getData());
+    }
+}
+```
+- 순서를 정해줄 수도 있다. 
+  * `@Order`
+  * ex) `@Order(Ordered.HIGHEST_PRECEDENCE + 2)`
+- 비동기적으로 실행
+  * `@Async` 
+  * 비동기적으로 실행할 때는 각각의 쓰레드 풀에서 따로 놀고, 어느 것이 먼저 실행 될지는 쓰레드 스케쥴링에 따라 달라지기 때문에 Order가 더이상 의미 없다.
+  * Application 파일에도 `@EnableAsync`를 추가하면 Async하게 동작한다.
+<br>
+
+### spring이 제공해주는 ApplicationContext 관련된 기본 이벤트
+- ContextRefreshedEvent
+  * ApplicationContext를 초기화 했더나 리프래시 했을 때 발생.
+- ContextStartedEvent
+  * ApplicationContext를 start()하여 라이프사이클 빈들이 시작 신호를 받은 시점에 발생.
+- ContextStoppedEvent
+  * ApplicationContext를 stop()하여 라이프사이클 빈들이 정지 신호를 받은 시점에 발생.
+- ContextClosedEvent
+  * ApplicationContext를 close()하여 싱글톤 빈 소멸되는 시점에 발생.
+- RequestHandledEvent
+  * HTTP 요청을 처리했을 때 발생.
+```java
+@Component
+public class MyEventHandler {
+    @EventListener
+    public void handle(ContextRefreshedEvent event) {
+        System.out.println("ContextRefreshedEvent");
+    }
+    @EventListener
+    public void handle(ContextClosedEvent event) {
+        System.out.println("ContextClosedEvent");
+    }
+}
+```
