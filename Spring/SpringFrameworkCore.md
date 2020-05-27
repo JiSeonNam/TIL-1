@@ -175,6 +175,7 @@ public class DemoApplication {
   }
 }
 ```
+<br>
 
 ## Autowired
 
@@ -280,3 +281,6 @@ public class BookService {
 - AutowiredAnnotationBeanPostProcessor 가 기본적으로 Bean으로 등록되어있고
 - BeanFactory 가 자신에게 등록된 BeanPostProcessor 들을 찾아서 일반적인 Bean들에게 로직을 적용함.
 - 따라서 bean으로 등록되어 있는 모든 bean들은 `@Autowired`로 주입 가능하다.
+<br>
+
+## @Component와 컴포넌트 스캔
