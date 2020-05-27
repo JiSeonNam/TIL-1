@@ -447,7 +447,7 @@ public class Single {
 }
 ```
 \* 일반적으로 sigleton 이외의 scope를 쓸 일이 거의 없다. 생긴다면 참고
-<br>
+<br><br>
 
 ## ApplicationContext - Environment
 
@@ -498,7 +498,7 @@ public class TestConfiguration {
 1. Active profiles
 - IDE에서 제공하는 Active profiles에 profile 추가
 2. VM options
-- 실습 기준 IntelliJ에서 Community 버젼의 경우 Active profiles가 없을 경우, VM option에  `-Dspring.profiles.active="profile이름"` 으로 profile 추가
+- 실습 기준 IntelliJ에서 Community 버젼의 경우 Active profiles가 없을 경우, VM option에 `-Dspring.profiles.active="profile이름"`으로 profile 추가
 <br>
 
 #### profile 표현 예시
@@ -534,7 +534,7 @@ public class Demospring51Application {
        }
 }
 ```
-- `environment.getProperty();` 를 사용해 사용할 수 있다. 
+- `environment.getProperty();` 를 사용해 propery를 얻을 수 있다. 
 ```java
 @Component
 public class AppRunner implements ApplicationRunner {
@@ -548,8 +548,8 @@ public class AppRunner implements ApplicationRunner {
   @Override
   public void run(ApplicationArguments args) throws Exception {
        Environment environment = ctx.getEnvironment();
-       System.out.println(environment.getProperty("app.name")); // VM options에 -Dapp.name=spring5 명령
-       System.out.println(environment.getProperty("app.about")); //app.properties에 정의된 app.about
+       System.out.println(environment.getProperty("app.name"));
+       System.out.println(environment.getProperty("app.about"));
   }
 }
 ```
@@ -562,3 +562,69 @@ public class AppRunner implements ApplicationRunner {
   * JNDI (java:comp/env/)
   * JVM 시스템 프로퍼티 (-Dkey="value")
   * JVM 시스템 환경 변수 (운영 체제 환경 변수)
+  <br>
+
+## MessageSource
+ - 국제화(i18n) 기능을 제공하는 인터페이스
+ - 스프링 부트에서는 message로 시작하는 properties들을 다 읽어주기 때문에 별다른 설정 필요없이 사용 가능하다.
+ ```java
+ // messages.properties 파일
+ greeting=Hello {0}
+ ```
+ ```java
+ // messages_ko_KR.properties 파일
+ greeting=안녕, {0}
+ ```java
+ @Component
+ public class AppRunner implements ApplicationRunner {
+   @Autowired
+   MessageSource messageSource;
+   @Override
+   public void run(ApplicationArguments args) throws Exception {
+       System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.KOREA));
+       System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.getDefault()));
+     }
+ }
+ ```
+<br>
+
+### Reloading 기능이 있는 메세지 소스 사용하기
+- 변경 사항이 있으면 build 해주면 된다.
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+
+    @Autowired
+    MessageSource messageSource;
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        while (true) {
+            System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.KOREA));
+            System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.getDefault()));
+            Thread.sleep(1000l);  // 1초에 한번씩 출력
+        }
+    }
+}
+
+```
+```java
+@SpringBootApplication
+public class Demospring51application {
+
+    public static void main(String[] args) {
+        SpringApplication.run(Demospring51application.class, args);
+
+    }
+
+    @Bean
+    public MessageSource messageSource() {
+        var messageSource = new ReloadableResourceBundleMessageSource();
+        messageSource.setBasename("classpath:/messages");
+        messageSource.setDefaultEncoding("UTF-8");
+        messageSource.setCacheSeconds(3); //캐싱하는 시간을 최대 3초까지만 캐싱하고 다시 읽음
+        return messageSource;
+    }
+}
+```
+<br>
+
