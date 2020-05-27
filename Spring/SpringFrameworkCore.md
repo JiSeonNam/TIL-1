@@ -4,6 +4,7 @@
 
  ## IoC 컨테이너와 빈
 - Inversion of Control : 의존 관계 주입(Dependency Injection)이라고도 하며, 어떤 객체가 사용하는 의존 객체를 직접 만들어 사용하는게 아니라, 주입 받아 사용하는 방법을 말한다.
+<br>
 
 ### 스프링 IoC 컨테이너
 - [BeanFactory](https://docs.spring.io/spring-framework/docs/5.0.8.RELEASE/javadoc-api/org/springframework/beans/factory/BeanFactory.html) : 스프링 IoC 컨테이너의 최상위 인터페이스 
@@ -14,6 +15,7 @@
     * 리소스 로딩 기능 등
 - 애플리케이션 컴포넌트의 중앙 저장소.
 - 빈 설정 소스로 부터 빈 정의를 읽어들이고, 빈을 구성하고 제공한다.
+<br>
 
 ### 빈
 - Bean : 스프링 IoC 컨테이너가 가지고 있고 관리하는 객체.
@@ -214,8 +216,9 @@ public class BookService {
 ```
 - BookService 자체의 인스턴스는 만들 수 있지만 `@Autowired`라는 애노테이션이 있기 때문에 의존성 주입을 하려고 시도한다가 실패한다.
 - 이런 경우 `@Autowired(required = false)`라고 설정(기본값은 true)하면 BookService의 인스턴스는 만들어져 bean으로 등록되고, BookRepository는 의존성 주입이 안된 상태로 빈으로 등록된다.
+<br>
 
-### Field에 의존서 주입
+### Field에 의존성 주입
 ```java
 @Service
 public class BookService {
@@ -226,6 +229,7 @@ public class BookService {
 ```
 - 이렇게 Setter나 field를 통한 의존성 주입은 `@Autowired(required = false)`를 사용하여 BookService가 BookRepository의 의존성 없이도 bean으로 등록되도록 할 수 있다.
 - 그러나 생성자를 사용한 의존성 주입은 bean을 만들 떄도 개입이 되기 때문에 전달받아야하는 타입의 bean이 없으면 인스턴스를 만들지 못하고 bean으로도 등록되지 못한다.
+<br>
 
 ### 해당 타입의 빈이 여러 개인 경우
 ```java
@@ -276,6 +280,7 @@ public class BookService {
         List<BookRepository> bookRepositories; 
     }
     ```
+<br>
 
 ### Autowired 동작원리
 - AutowiredAnnotationBeanPostProcessor 가 기본적으로 Bean으로 등록되어있고
@@ -291,6 +296,7 @@ public class BookService {
     * @Service
     * Controller
     * Configuration
+<br>
 
 ### 컴포넌트 스캔의 주요 기능
 - 스캔 위치 설정
@@ -299,3 +305,145 @@ public class BookService {
 - 필터
     * component-scan을 한다고 해서 모든 애노테이션들을 처리해서 bean으로 등록해주진 않는다.
     * 그것을 걸러주는 것이 필터이다.
+<br>
+
+## 빈의 스코프
+
+### Singleton scope
+- 애플리케이션 전반에 걸쳐서 해당 빈의 인스턴스를 오직 한개 사용.
+- 빈의 기본 스코프는 싱클톤 스코프이다.
+- 따라서 아래 코드의 애플리케이션 실행 결과 proto의 인스턴스가 동일하다.
+- 프로퍼티가 공유가 되기 때문에 Thread safe한 방법으로 코딩해야 한다.
+- 모든 sigleton scope의 bean들은 기본값으로 ApplicationContext를 만들 때 만들게 되어 있다. (application 구동 시간이 좀 더 걸릴 수 있다.) 
+```java
+@Component
+public class Single {
+       
+       @Autowired
+       private Proto proto;
+       
+       public Proto getProto() {
+              return proto;
+       }
+}
+```
+```java
+@Component
+public class Proto {
+}
+```
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+
+       @Autowired
+       Single single;
+
+       @Autowired
+       Proto proto;
+
+       @Override
+       public void run(ApplicationArguments args) throws Exception {
+              System.out.println(proto);
+              System.out.println(single.getProto());
+              // 둘다 동일한 래퍼런스가 출력된다.
+       }
+}
+```
+<br>
+
+### Prototype scope
+- 매번 새로운 인스턴스를 만들어서 사용
+- Request, Session, WebSocket, Application, Thread scope 등은 프로토타입 scope와 유사하다.
+- 따라서 아래 코드의 애플리케이션 실행 결과 prototype은 항상 다른 래퍼런스가 sigleton은 항상 같은 래퍼런스가 출력된다. 
+```java
+@Component @Scope("prototype")
+public class Proto {
+}
+```
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+       
+       @Autowired
+       ApplicationContext ctx;
+       
+       @Override
+       public void run(ApplicationArguments args) throws Exception {
+              System.out.println(ctx.getBean(Proto.class));
+              System.out.println(ctx.getBean(Proto.class));
+              System.out.println(ctx.getBean(Proto.class));
+              
+              System.out.println(ctx.getBean(Single.class));
+              System.out.println(ctx.getBean(Single.class));
+              System.out.println(ctx.getBean(Single.class));
+       }
+}
+```
+<br>
+
+### sigleton scope와 prototype socpe의 혼용
+1. prototype 빈이 sigleton 빈을 참조하는 경우
+```java
+@Component @Scope("prototype")
+public class Proto {
+
+       @Autowired
+       Single Single;
+```
+- sigle 인스턴스는 매번 같은 인스턴스가 들어오고 prototype 인스턴스는 매번 꺼낼 때마다 새로운 인스턴스가 생성된다. 
+- prototype의 bean은 새롭지만 참조하는 sigleton scope의 bean은 항상 동일하다.
+- 아무 문제가 없다. 
+
+2. sigleton bean이 prototype bean을 참조하는 경우
+- sigleton scope의 bean은 인스턴스가 한번만 만들어지고 prototype socpe의 bean도 이미 세팅이 되버린다. 
+- 따라서 sigleton scope의 bean을 계속 쓸 때 prototype scope의 bean이 변경되지 않는다. (문제 발생)
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+       
+       @Autowired
+       ApplicationContext ctx;
+       
+       @Override
+       public void run(ApplicationArguments args) throws Exception {
+              System.out.println(ctx.getBean(Single.class).getProto());
+              System.out.println(ctx.getBean(Single.class).getProto());
+              System.out.println(ctx.getBean(Single.class).getProto());
+              // 변경되지 않고 같은 인스턴스 값이 출력된다.
+
+       }
+}
+```
+
+3. 2번 문제를 해결하는 방법
+- proxyMode를 설정
+```java
+@Component @Scope(value = "prototype", proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class Proto {
+}
+```
+  * proxyMode를 설정할 경우, 프로토타입 빈은 업데이트 된다. (proxyMode의 기본값은 default로 proxy를 사용하지 않는다는 옵션)
+  * proxyMode를 쓴다는 것은 클래스 기반의 프록시로 감싸는 것이다.
+  * 프록시로 감싸는 이유 : sigleton 인스턴스가 prototype 빈 인스턴스를 직접 참조하면 안되고 프록시를 거쳐서 참조해야 하기 때문
+  * 프록시를 거쳐서 참조해야 하는 이유 : 직접 참조하면 이 prototype의 인스턴스를 매번 새로운 인스턴스로 바꿔줄 수 없기 때문에. 매 번 새로운 인스턴스로 바꿔줄 수 있는 프록시로 감싸도록 한다.
+  * prototype 빈을 상속받은 클래스를 만들어서 프록시를 만들어주는 CG라이브러리 라는 third-party 라이브러리가 있다.(클래스도 프록시를 만들어줄 수 있게 해준다.)
+  * 원래 Java JDK 안에 있는 다이나믹 프록시는 인터페이스의 프록시 밖에 못만든다.  
+  * 위의 코드에서 처럼 `proxyMode = ScopedProxyMode.TARGET_CLASS`는 CG라이브러리를 이용해서 클래스를 상속받은 프록시를 만들라고 지시하는 것이다.
+  * 만약 인터페이스가 있었다면 `proxyMode = ScopedProxyMode.INTERFACE`를 지시하여 JDK의 인터페이스 기반의 프록시를 만들어 사용
+
+- ObjectProvider
+  * 코드 수정을 통해 해결 가능하지만 코드에 스프링 코드가 들어가기 때문에 추천되지 않는다.
+```java
+@Component
+public class Single {
+
+       @Autowired
+       private ObjectProvider<Proto> proto;
+       
+       public Proto getProto() {
+              return proto.getIfAvailable();
+       }
+}
+```
+\* 일반적으로 sigleton 이외의 scope를 쓸 일이 거의 없다. 생긴다면 참고
