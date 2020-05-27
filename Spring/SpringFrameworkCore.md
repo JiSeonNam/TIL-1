@@ -447,3 +447,118 @@ public class Single {
 }
 ```
 \* 일반적으로 sigleton 이외의 scope를 쓸 일이 거의 없다. 생긴다면 참고
+<br>
+
+## ApplicationContext - Environment
+
+### Frofile
+- ApplicationContext가 가지고 있는 기능 environmentCapable 인터페이스를 통해 사용가능
+- bean들의 묶음이며, 환경이다.(test환경에서는 어떤 bean들을 쓰겠다, 실제 production에서는 이러이러한 bean들을 쓰겠다라는 환경)
+- 각각의 환경에 따라 bean을 다르게 사용해야 할 경우, 또는 특정 환경에서만 어떠한 bean을 등록해야하는 경우에 사용한다.
+- environmentCapable 인터페이스의 getEnvironment()를 사용하여 Environment를 가져올 수 있다.
+- environment.getActiveProfile()을 통해 현재 active되어있는 프로파일을 가져올 수 있다.
+<br>
+
+#### profile 정의하는 방법
+- 클래스에 정의
+  * @Configuration @profile("test")
+  * @Component @Profile("test")
+- 메소드에 정의
+  * @Bean @ Profile("test")
+```java
+@Component
+public class AppRunner implements ApllicationRunner {
+
+    @Autowired
+    ApplicationContext ctx;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+       Environment environment = ctx.getEnvironment();
+       System.out.println(Arrays.toString(environment.getActiveProfiles());  // 설정한게 없으면 []
+       System.out.println(Arrays.toString(environment.getDefaultProfiles()); // Default
+    }
+}
+```
+- 아래 코드에서 test 라는 profile로 어플리케이션 실행하기 전까지는 아래의 설정이 적용이 안된다.
+```java
+@Configuration
+@Profile("test")
+public class TestConfiguration {
+
+    @Bean
+    public BookRepository bookRepository() {
+        return new TestBookRepository();
+    }
+}
+```
+<br>
+
+#### profile 설정 방법
+1. Active profiles
+- IDE에서 제공하는 Active profiles에 profile 추가
+2. VM options
+- 실습 기준 IntelliJ에서 Community 버젼의 경우 Active profiles가 없을 경우, VM option에  `-Dspring.profiles.active="profile이름"` 으로 profile 추가
+<br>
+
+#### profile 표현 예시
+- !(not), &(and), |(or) 모두 쓸 수 있다.
+```java
+@Repository
+@Profile("test")
+public class TestBookRepository implements BookRepository {
+}
+@Repository
+@Profile("!Prod") //Prod가 아닌 profile
+public class TestBookRepository implements BookRepository {
+}
+@Repository
+@Profile("!Prod & test") //Prod이 아니면서 test인 profile
+public class TestBookRepository implements BookRepository {
+}
+```
+<br>
+
+### Property
+- 다양한 방법으로 정의할 수 있는 설정값이다.
+- 애플리케이션에 등록된 여러가지 key-value 쌍으로 제공되는 property에 접근할 수 있는 기능
+- 계층형으로 접근한다. (우선 순위가 있다)
+- `@PropertySource`로 property를 추가할 수 있다. 
+```java
+@SpringBootApplication
+@PropertySource("classpath:/app.properties") //Environment를 통해 property를 추가
+public class Demospring51Application {
+       
+       public static void main(String[] args) {
+            SpringApplication.run(Demospring51Application.class, args);
+       }
+}
+```
+- `environment.getProperty();` 를 사용해 사용할 수 있다. 
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+
+  @Autowired
+  ApplicationContext ctx;
+  
+  @Autowired
+  BookRepository bookRepository;
+  
+  @Override
+  public void run(ApplicationArguments args) throws Exception {
+       Environment environment = ctx.getEnvironment();
+       System.out.println(environment.getProperty("app.name")); // VM options에 -Dapp.name=spring5 명령
+       System.out.println(environment.getProperty("app.about")); //app.properties에 정의된 app.about
+  }
+}
+```
+<br>
+
+### Property 우선 순위
+- StandardServletEnvironment의 우선순위
+  * ServletConfig 매개변수
+  * ServletContext 매개변수
+  * JNDI (java:comp/env/)
+  * JVM 시스템 프로퍼티 (-Dkey="value")
+  * JVM 시스템 환경 변수 (운영 체제 환경 변수)
