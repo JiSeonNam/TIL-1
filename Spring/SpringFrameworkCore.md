@@ -284,3 +284,18 @@ public class BookService {
 <br>
 
 ## @Component와 컴포넌트 스캔
+
+### component-scan이 되는 대상
+- @Component 
+    * @Repository
+    * @Service
+    * Controller
+    * Configuration
+
+### 컴포넌트 스캔의 주요 기능
+- 스캔 위치 설정
+    * ComponentScan을 붙이고 있는 Configuration부터 component-scan을 시작한다.
+    * 시작 지점을 담고 있는 패키지까지 스캔 범위이다. (시작 지점을 담고있는 패키지 외의 패키지는 scan하지 않는다.)
+- 필터
+    * component-scan을 한다고 해서 모든 애노테이션들을 처리해서 bean으로 등록해주진 않는다.
+    * 그것을 걸러주는 것이 필터이다.
