@@ -880,7 +880,7 @@ Empty title is now allowed.
 - 처음 구현에서 Event와 Runner만 수정
 ```java
 public class Event {
-     Integer id;
+    Integer id;
 
     @NotEmpty
     String title;
@@ -978,4 +978,114 @@ must be a well-formed email address
 ```
 <br>
 
+## 데이터 바인딩 추상화 - PropertyEditor
 
+### 데이터 바인딩
+[org.springframework.validation.DataBinder](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/validation/DataBinder.html)
+- 기술적인 관점 : 어떤 프로퍼티 값을 타겟 객체에 설정하는 기능
+- 사용자 관점 : 사용자의 입력값을 애플리케이션 도메인 객체에 동적으로 할당하는 기능
+  * 바인딩을 하는 이유 : 사용자의 입력값은 주로 문자열인데 그 값을 객체가 가지고 있는 int, Date, boolean, 도메인 객체 타입 그 자체 등으로 변환해야 하는 경우가 많다.  
+<br>
+
+### PropertyEditor
+- 스프링 3.0 이전까지 DataBinder가 변환 작업 사용하던 인터페이스
+- 쓰레드-세이프 하지 않으므로 빈으로 등록해서 사용하면 안된다.
+  * 상태 정보를 저장하고 있어 sigleton bean으로 등록하면 절대 안된다.
+- Object와 String 간의 변환만 할 수 있어, 사용 범위가 제한적이다.
+<br>
+
+## 데이터 바인딩 추상화 - Converter와 Formatter
+
+### Converter
+- PropertyEditor가 가진 단점을 없애고 대신 사용할 수 있는 인터페이스
+- 상태 정보가 없으므로 얼마 든지 빈으로 등록해서 사용해도 상관 없다.
+- ConverterRegistry에 등록해서 사용한다.
+```java
+ public class StringToEventConverter implements Converter<String, Event> {
+    @Override
+    public Event convert(String source) {
+        Event event = new Event();
+        event.setId(Integer.parseInt(source));
+        return event;
+    }
+ }
+```
+- ConverterRegistry를 직접 쓸 일은 거의 없다.
+- WebMvcConfigurer 인터페이스를 구현해 addFormatters를 overriding하여 등록하면 된다.
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void add(FormatterRegistry registry) {
+        registry.addConverter(new EventConverter.StringToEventConverter());
+    }
+}
+```
+- 등록된 Converter들을 확인하는 방법
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+
+    @Autowired
+    ConversionService conversionService;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        System.out.println(conversionService);
+        System.out.println(conversionService.getClass().toString());
+    }
+}
+```
+<br>
+
+### Formatter
+- 웹 쪽에 특화된 PropertyEditor 대체 인터페이스
+- Object와 String 간의 변환을 담당한다.
+- 문자열을 Locale에 따라 다국화하는 기능도 제공한다. (optional)
+- FormatterRegistry에 등록해서 사용
+```java
+@Component
+public class EventFormatter implements Formatter<Event> {
+    @Override
+    public Event parse(String text, Locale locale) throws ParseException {
+        return new Event(Integer.parseInt(text));
+    }
+
+    @Override
+    public String print(Event object, Locale locale) {
+        return object.getId().toString();
+    }
+}
+```
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void add Formatters(FormatterRegistry registry) {
+        registry.addFormatter(new EventFormatter());
+    }
+}
+```
+<br>
+
+### ConversionService
+- Converter와 Formatter를 활용할 수 있게 해준다.
+- Converter와 Formatter는 ConversionService에 등록이 되고 실제 변환 작업이 이루어 진다.
+- 쓰레드-세이프하게 사용 가능하다.
+- 스프링 MVC, 빈(value) 설정, SpEL에 사용
+- DefaultFormattingConversionService
+  * 스프링이 제공해주는 ConversionService 구현체로 ConversionService 타입의 bean으로 자주 사용된다.
+  * ConversionService 역할과 FormatterRegistry 역할 둘 다 가능하다.
+  * FormatterRegistry 기능 구현
+  * ConversionService 기능 구현
+  * 여러 기본 Converter와 Formatter를 등록 해 준다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring/img/SpringFrameworkCore_1.png" width="600px"></p>
+
+<br>
+
+\* 스프링 부트
+- 웹 애플리케이션인 경우에 DefaultFormattingConversionSerivce를 상속하여 만든 WebConversionService를 빈으로 등록해 준다. (더 많은 기능 가능)
+- Formatter와 Converter 빈을 찾아 자동으로 등록해 준다.
+<br>
