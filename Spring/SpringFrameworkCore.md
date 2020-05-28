@@ -792,3 +792,190 @@ hello spring
   * 이렇게 접두어가 있으면 명시적이다. 
 - 접두어를 사용하지 않으면 ServletContextResource로 Resolve 된다.
 - 루트는 ///를 사용하고 와일드 카드나 classpath*도 사용할 수도 있다.
+<br>
+
+## Validation 추상화
+- 애플리케이션에서 사용하는 객체들을 검증할 때 사용하는 인터페이스
+- 주로 spring MVC에서 사용하지만 전용은 아니다.
+- 스프링이 제공하는 Validator는 두가지 메소드를 구현해야한다.
+  * supports : 검증해야할 인스턴스의 클래스가 Validator가 지원하는(검증할 수 있는) 클래스인지 확인하는 메소드
+  * validate : 실질적으로 검증 작업이 이뤄지는 메소드
+<br>
+
+### 구현
+- 검증 대상이 될 객체
+```java
+public class Event {
+    Integer id;
+
+    String title;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+}
+```
+- 검증을 수행할 Validator
+```java
+public class EventValidator implements Validator {
+
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return Event.class.equals(clazz);
+    }
+
+    @Override
+    public void validate(Object target, Errors errors) {
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "title", "notempty", "Empty title is now allowed.");
+    }
+}
+```
+- Runner
+```java
+public class AppRunner implements ApplicationRunner {
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        Event event = new Event();
+        EventValidator eventValidator = new EventValidator();
+        Errors errors = new BeanPropertyBindingResult(event, "event");
+
+        eventValidator.validate(event, errors);
+
+        System.out.println(errors.hasErrors());
+
+        errors.getAllErrors().forEach(e -> {
+            System.out.println("===== error code ====");
+            Arrays.stream(e.getCodes()).forEach(System.out::println);
+            System.out.println(e.getDefaultMessage());
+        });
+
+    }
+}
+/* 실행결과(만든 에러코드 이외의 3가지를 Validator가 추가해줬다)
+true
+===== error code ====
+notempty.event.title  
+notempty.title
+notempty.java.lang.String
+notempty
+Empty title is now allowed.
+/*
+```
+<br>
+
+### 스프링 부트 2.0.5 이상 버젼을 사용할 때의 구현
+- 처음 구현에서 Event와 Runner만 수정
+```java
+public class Event {
+     Integer id;
+
+    @NotEmpty
+    String title;
+
+    @NotNull @Min(0)
+    Integer limit;
+
+    @Email
+    String email;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Integer getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+}
+```
+
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+
+    @Autowired
+    Validator validator;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        System.out.println(validator.getClass());
+
+        Event event = new Event();
+        // 에러가 나도록 고의로 에러 발생시킴
+        event.setLimit(-1);
+        event.setEmail("aaa2");
+        Errors errors = new BeanPropertyBindingResult(event, "event");
+
+        validator.validate(event, errors);
+        System.out.println(errors.hasErrors());
+
+        errors.getAllErrors().forEach(e -> {
+            System.out.println("===== error code ====");
+            Arrays.stream(e.getCodes()).forEach(System.out::println);
+            System.out.println(e.getDefaultMessage());
+        });
+
+    }
+}
+/* 실행 결과
+class org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
+true
+==== error code ====
+Min.event.limit
+Min.limit
+Min.java.lang.Integer
+Min
+must be greater than or equal to 0
+==== error code ====
+NotEmpty.event.title
+NotEmpty.title
+NotEmpty.java.lang.String
+NotEmpty
+must not be empty
+==== error code ====
+Email.event.email
+Email.email
+Email.java.lang.String
+Email
+must be a well-formed email address
+*/
+```
+<br>
+
+
