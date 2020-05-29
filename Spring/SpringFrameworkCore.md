@@ -1089,3 +1089,91 @@ public class WebConfig implements WebMvcConfigurer {
 - 웹 애플리케이션인 경우에 DefaultFormattingConversionSerivce를 상속하여 만든 WebConversionService를 빈으로 등록해 준다. (더 많은 기능 가능)
 - Formatter와 Converter 빈을 찾아 자동으로 등록해 준다.
 <br>
+
+## SpEL(Srping Expression Language)
+- [Spring EL 래퍼런스](https://docs.spring.io/spring/docs/current/spring-framework-reference/core.html#expressions)
+- 객체 그래프를 조회하고 조작하는 기능을 제공한다.
+- Unified EL과 비슷하지만, 메소드 호출을 지원하며, 문자열 템플릿 기능도 제공한다.
+- OGNL, MVEL, JBOss EL 등 자바에서 사용할 수 있는 여러 EL이 있지만, SpEL은
+모든 스프링 프로젝트 전반에 걸쳐 사용할 EL로 만들었다.
+- 스프링 3.0 부터 지원한다.
+<br>
+
+### 문법
+- #{“표현식"} : #{ }에 들어있는 값을 표현식으로 인식해서 실행한 다음 결과값을 프로퍼티에 넣어준다. 
+- ${“프로퍼티"} : application.properties에 등록한 프로퍼티를 참고해 값을 주입 받을 수 있다.
+- 두 가지 방법을 같이 사용할 수 있는데 표현식 안에는 프로퍼티를 사용할 수 있지만 프로퍼티 안에는 표현식을 사용할 수 없다. 
+    * @Value("#{${my.value} eq 100}")
+- 이외에도 많지만 필요할 때마다 [래퍼런스](https://docs.spring.io/spring/docs/current/spring-framework-reference/core.html#expressions-language-ref) 참고
+<br>
+
+### 사용 예시
+```java
+@Component
+public class AppRunner implements ApplicationRunner {
+
+    @Value("#{1 + 1}")
+    int value;
+
+    @Value("#{'hello ' + 'world'}")
+    String greeting;
+
+    @Value("#{1 eq 1}")
+    boolean trueOrFalse;
+
+    @Value("hello")
+    String hello;
+
+    @Value("${my.value}")
+    int myValue;
+
+    @Value("#{${my.value} eq 100}")
+    boolean isMyValue100;
+
+    @Value("#{'spring'}")
+    String spring;
+
+    @Value("#{sample.data}")    // bean에 있는 값을 가져올 수도 있다.
+    int sampleData;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        System.out.println(value);
+        System.out.println(greeting);
+        System.out.println(trueOrFalse);
+        System.out.println(hello);
+        System.out.println(myValue);
+        System.out.println(isMyValue100);
+        System.out.println(spring);
+        System.out.println(sampleData);
+        /*
+        2
+        hello world
+        true
+        hello
+        100
+        true
+        spring
+        200
+        */
+
+        ExpressionParser parser = new SpelExpressionParser();   //ExpressionParser를 사용하면
+        Expression expression = parser.parseExpression("2 + 100");  // Expression으로 인식하기 때문에 {} 없이 작성
+
+        // 해당하는 타입으로 변환할 때 Conversion 서비스를 사용한다
+        Integer value = expression.getValue(Integer.class);
+        System.out.println(value); // 102
+    }
+}
+```
+<br>
+
+### 실제 사용되는 곳
+- @Value 애노테이션
+- @ConditionalOnExpression 애노테이션 (@ConditionalOn 선택적으로 bean을 등록하거나 bean설정 파일을 읽어들일 수 있는 애노테이션이다)
+    * 따라서 SpringExpression 기반으로 선별적으로 bean을 등록할 수 있다.
+- [스프링 시큐리티](https://docs.spring.io/spring-security/site/docs/3.0.x/reference/el-access.html)
+    * 메소드 시큐리티, @PreAuthorize, @PostAuthorize, @PreFilter, @PostFilter
+- [스프링 데이터](https://spring.io/blog/2014/07/15/spel-support-in-spring-data-jpa-query-definitions)
+    * @Query 애노테이션
+- [Thymeleaf](https://blog.outsider.ne.kr/997)
