@@ -283,8 +283,8 @@ public class BookService {
 <br>
 
 ### Autowired 동작원리
-- AutowiredAnnotationBeanPostProcessor 가 기본적으로 Bean으로 등록되어있고
-- BeanFactory 가 자신에게 등록된 BeanPostProcessor 들을 찾아서 일반적인 Bean들에게 로직을 적용함.
+- [AutowiredAnnotationBeanPostProcessor](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/beans/factory/config/BeanPostProcessor.html) 가 기본적으로 Bean으로 등록되어있고
+- BeanFactory 가 자신에게 등록된 [BeanPostProcessor](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/beans/factory/annotation/AutowiredAnnotationBeanPostProcessor.html) 들을 찾아서 일반적인 Bean들에게 로직을 적용함.
 - 따라서 bean으로 등록되어 있는 모든 bean들은 `@Autowired`로 주입 가능하다.
 <br>
 
@@ -449,10 +449,10 @@ public class Single {
 \* 일반적으로 sigleton 이외의 scope를 쓸 일이 거의 없다. 생긴다면 참고
 <br><br>
 
-## ApplicationContext - Environment
+## ApplicationContext - [Environment](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/env/Environment.html)
 
 ### Frofile
-- ApplicationContext가 가지고 있는 기능 environmentCapable 인터페이스를 통해 사용가능
+- ApplicationContext가 가지고 있는 기능 [environmentCapable](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/env/EnvironmentCapable.html) 인터페이스를 통해 사용가능
 - bean들의 묶음이며, 환경이다.(test환경에서는 어떤 bean들을 쓰겠다, 실제 production에서는 이러이러한 bean들을 쓰겠다라는 환경)
 - 각각의 환경에 따라 bean을 다르게 사용해야 할 경우, 또는 특정 환경에서만 어떠한 bean을 등록해야하는 경우에 사용한다.
 - environmentCapable 인터페이스의 getEnvironment()를 사용하여 Environment를 가져올 수 있다.
@@ -482,7 +482,7 @@ public class AppRunner implements ApllicationRunner {
 ```
 - 아래 코드에서 test 라는 profile로 어플리케이션 실행하기 전까지는 아래의 설정이 적용이 안된다.
 ```java
-@Configuration
+@Configuration  
 @Profile("test")
 public class TestConfiguration {
 
@@ -629,9 +629,9 @@ public class Demospring51application {
 ```
 <br>
 
-## ApplicationEventPublisher
+## [ApplicationEventPublisher](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/context/ApplicationEventPublisher.html)
 - ApplicationContext가 상속받고 있는 인터페이스
-- 옵저버 패턴의 구현체로, 이벤트 기반의 프로그래밍을 할 때 유용하다.
+- [옵저버 패턴](https://en.wikipedia.org/wiki/Observer_pattern)의 구현체로, 이벤트 기반의 프로그래밍을 할 때 유용하다.
 
 ### 이벤트 만들기
 ```java
@@ -735,7 +735,7 @@ public class MyEventHandler {
 ```
 <br>
 
-## ResourceLoader
+## [ResourceLoader](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/ResourceLoader.html)
 - ApplicationContext가 상속받고 있는 인터페이스
 - 리소스를 읽어오는 기능을 제공한다.
 ```java
@@ -762,7 +762,7 @@ hello spring
 ```
 <br>
 
-## Resource 추상화
+## [Resource](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/Resource.html) 추상화
 - java.net.URL을 추상화 한 것.
 - 스프링 내부에서 많이 사용하는 인터페이스
 <br>
@@ -794,7 +794,7 @@ hello spring
 - 루트는 ///를 사용하고 와일드 카드나 classpath*도 사용할 수도 있다.
 <br>
 
-## Validation 추상화
+## [Validation](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/validation/Validator.html) 추상화
 - 애플리케이션에서 사용하는 객체들을 검증할 때 사용하는 인터페이스
 - 주로 spring MVC에서 사용하지만 전용은 아니다.
 - 스프링이 제공하는 Validator는 두가지 메소드를 구현해야한다.
@@ -980,14 +980,13 @@ must be a well-formed email address
 
 ## 데이터 바인딩 추상화 - PropertyEditor
 
-### 데이터 바인딩
-[org.springframework.validation.DataBinder](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/validation/DataBinder.html)
+### [데이터 바인딩](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/validation/DataBinder.html)
 - 기술적인 관점 : 어떤 프로퍼티 값을 타겟 객체에 설정하는 기능
 - 사용자 관점 : 사용자의 입력값을 애플리케이션 도메인 객체에 동적으로 할당하는 기능
   * 바인딩을 하는 이유 : 사용자의 입력값은 주로 문자열인데 그 값을 객체가 가지고 있는 int, Date, boolean, 도메인 객체 타입 그 자체 등으로 변환해야 하는 경우가 많다.  
 <br>
 
-### PropertyEditor
+### [PropertyEditor](https://docs.oracle.com/javase/7/docs/api/java/beans/PropertyEditor.html)
 - 스프링 3.0 이전까지 DataBinder가 변환 작업 사용하던 인터페이스
 - 쓰레드-세이프 하지 않으므로 빈으로 등록해서 사용하면 안된다.
   * 상태 정보를 저장하고 있어 sigleton bean으로 등록하면 절대 안된다.
@@ -996,10 +995,10 @@ must be a well-formed email address
 
 ## 데이터 바인딩 추상화 - Converter와 Formatter
 
-### Converter
+### [Converter](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/convert/converter/Converter.html)
 - PropertyEditor가 가진 단점을 없애고 대신 사용할 수 있는 인터페이스
 - 상태 정보가 없으므로 얼마 든지 빈으로 등록해서 사용해도 상관 없다.
-- ConverterRegistry에 등록해서 사용한다.
+- [ConverterRegistry](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/convert/converter/ConverterRegistry.html)에 등록해서 사용한다.
 ```java
  public class StringToEventConverter implements Converter<String, Event> {
     @Override
@@ -1039,11 +1038,11 @@ public class AppRunner implements ApplicationRunner {
 ```
 <br>
 
-### Formatter
+### [Formatter](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/format/Formatter.html)
 - 웹 쪽에 특화된 PropertyEditor 대체 인터페이스
 - Object와 String 간의 변환을 담당한다.
 - 문자열을 Locale에 따라 다국화하는 기능도 제공한다. (optional)
-- FormatterRegistry에 등록해서 사용
+- [FormatterRegistry](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/format/FormatterRegistry.html)에 등록해서 사용
 ```java
 @Component
 public class EventFormatter implements Formatter<Event> {
@@ -1070,7 +1069,7 @@ public class WebConfig implements WebMvcConfigurer {
 ```
 <br>
 
-### ConversionService
+### [ConversionService](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/convert/ConversionService.html)
 - Converter와 Formatter를 활용할 수 있게 해준다.
 - Converter와 Formatter는 ConversionService에 등록이 되고 실제 변환 작업이 이루어 진다.
 - 쓰레드-세이프하게 사용 가능하다.
@@ -1177,3 +1176,5 @@ public class AppRunner implements ApplicationRunner {
 - [스프링 데이터](https://spring.io/blog/2014/07/15/spel-support-in-spring-data-jpa-query-definitions)
     * @Query 애노테이션
 - [Thymeleaf](https://blog.outsider.ne.kr/997)
+<br>
+
