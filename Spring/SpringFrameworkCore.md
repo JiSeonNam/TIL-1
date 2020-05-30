@@ -1178,3 +1178,43 @@ public class AppRunner implements ApplicationRunner {
 - [Thymeleaf](https://blog.outsider.ne.kr/997)
 <br>
 
+## AOP(Aspect-oriendted Programming)
+- AOP는 OOP를 보완하는 수단으로, 흩어진 Aspect를 모듈화 할 수 있는 프로그래밍 기법
+- Spring AOP는 AOP의 구현체 제공
+- Java의 AOP구현체인 AspectJ와 연동해서 사용할 수 있는 기능 제공
+- 해야할 일과 그 일을 어디에 적용해야하는 지를 묶어서 모듈화 하는 것
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring/img/SpringFrameworkCore_2.jpg" width="600px"></p>
+<br>
+
+### AOP 주요 용어
+- Aspect : 모듈
+- Advice : 해야할 일들
+- Pointcut : 어디에 적용해야 하는지에 대한 정보
+- Target : 적용되는 대상
+- Join point : 합류점(모듈이 끼어드는 지점)
+    ex) 메소드 실행 직전, 생성자 호출 직전, 생서자를 호출 했을 때, 필드에 접근하기 전, 필드에서 값을 가져갔을 때 등
+- AOP 구현체
+- Java에서는 AspectJ와 Spring AOP
+<br>
+
+### AOP 적용 방법
+- 컴파일 시점 (AspectJ)
+    * java파일을 class파일로 만들 때 AOP 적용
+    * 장점: 컴파일 시점에 적용하면 이미 Byte 코드를 만들 때 만들었으므로 로드타임이나 런타임 시에는 아무런 성능적인 부하가 없다.
+    * 단점: 적용하려면 별도의 컴파일 과정을 한번 거쳐야 한다.
+- 로드 타임 시점 (AspectJ)
+    * class 파일을 로딩하는 시점에 AOP 적용
+    * class의 Byte코드는 그대로 있지만 로딩한 JVM메모리 상에서는 필요한 메소드가 적용되어 로딩이 된다.
+    * 장점 : AspectJ를 사용할 수 있으므로 다양한 문법을 사용할 수 있다.
+    * 단점 : 클래스 로딩할 때 약간의 부하가 생길 수 있고, 로드타임 위버 Java Agent를 설정 해줘야 함
+- 런타임 시점 (Spring AOP)
+    * bean을 만들 때 그 bean을 감싸는 proxy bean을 만들어 AOP 적용
+    * 장점 : 별도의 컴파일러나 별도의 Java Agent로 로드타임 위버 설정을 할 필요가 없고 문법이 쉽다.
+<br>
+
+
+### Spring AOP 특징
+- 프록시 기반의 AOP 구현체
+- 스프링 bean에만 AOP를 적용할 수 있다.
+- 모든 AOP 기능을 제공하는 것이 목적이 아니라, 스프링 IoC와 연동하여 엔터프라이즈 애플리케이션에서 가장 흔한 문제에 대한 해결책을 제공하는 것이 목적이다.
+<br>
