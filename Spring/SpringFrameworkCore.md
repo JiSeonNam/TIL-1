@@ -1270,3 +1270,49 @@ public @interface PerfLogging {
 }
 ```
 <br>
+
+## Null-safety
+- 목적 : (툴의 지원을 받아) 컴파일 시점에 최대한 NullPointerException을 방지하는 것
+- `@NonNull` - Null을 허용하지 않는다.
+- `@Nullable`- Null을 허용한다. 
+- `@NonNullApi`(패키지 레벨 설정) - 패키지 이하에 있는 모든 return 타입과 파라미터에 @NonNull 적용
+    * - 패키지에 전부 `@NonNull`을 적용하고 Null을 허용하는 곳에만 `@Nullable`을 붙이는 방식의 코딩이 가능하다.
+- `@NonNullFields`(패키지 레벨 설정)  
+<br>
+
+### 툴에서 적용 방법
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring/img/SpringFrameworkCore_2.jpg" width="800px"></p>
+- Build, Excution, Deployment -> Compiler 설정에서 Configure annotations
+- Nullable annotations에 org.springframework.lang.Nullable 추가
+- NotNull annotations에 org.springframework.lang.NonNull 추가
+- IntelliJ 재시작
+- 보내는 쪽이 null일 경우 : `Passing 'null' argument to parameter annotated as @NotNull`
+-  받는 쪽이 null일 경우 : `'null' is returned by the method declared as @NonNull`
+<br>
+
+### 예시 코드
+```java
+// 보내는 쪽
+@Component
+public class AppRunner implements ApplicationRunner {
+
+  @Autowired
+  EventService eventService;
+
+  @Override
+  public void run(ApplicationArguments args) throws Exception {
+      eventService.createEvent("test");
+  }
+}
+```
+```java
+//받는 쪽
+@Service
+public class EventService {
+
+  @NonNull
+  public String createEvent(@NonNull String name) {
+      return null;
+  }
+}
+```
