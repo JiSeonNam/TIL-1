@@ -1281,7 +1281,8 @@ public @interface PerfLogging {
 <br>
 
 ### 툴에서 적용 방법
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring/img/SpringFrameworkCore_2.jpg" width="800px"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring/img/SpringFrameworkCore_3.jpg" width="800px"></p>
+
 - Build, Excution, Deployment -> Compiler 설정에서 Configure annotations
 - Nullable annotations에 org.springframework.lang.Nullable 추가
 - NotNull annotations에 org.springframework.lang.NonNull 추가
