@@ -1178,7 +1178,7 @@ public class AppRunner implements ApplicationRunner {
 - [Thymeleaf](https://blog.outsider.ne.kr/997)
 <br>
 
-## AOP(Aspect-oriendted Programming)
+## [AOP(Aspect-oriendted Programming)](https://docs.spring.io/spring/docs/current/spring-framework-reference/core.html#aop-pointcuts)
 - AOP는 OOP를 보완하는 수단으로, 흩어진 Aspect를 모듈화 할 수 있는 프로그래밍 기법
 - Spring AOP는 AOP의 구현체 제공
 - Java의 AOP구현체인 AspectJ와 연동해서 사용할 수 있는 기능 제공
@@ -1217,4 +1217,56 @@ public class AppRunner implements ApplicationRunner {
 - 프록시 기반의 AOP 구현체
 - 스프링 bean에만 AOP를 적용할 수 있다.
 - 모든 AOP 기능을 제공하는 것이 목적이 아니라, 스프링 IoC와 연동하여 엔터프라이즈 애플리케이션에서 가장 흔한 문제에 대한 해결책을 제공하는 것이 목적이다.
+<br>
+
+### 프록시 패턴
+- 프록시 패턴을 사용하는 이유 : 기존 코드 변경없이 접근 제어 또는 부가 기능 추가
+- 문제점 
+    * 매 번 프록시 클래스를 작성해야 한다. 
+    * 여러 클래스, 여러 메소드에 적용하려면 비용이 많이 든다. 
+    * 중복 코드가 생긴다. 
+<br>
+
+### 문제점 때문에 등장한 Spring AOP
+- 스프링 IoC 컨테이너가 제공하는 기반 시설과 Dynamic 프록시를 혼합해 사용하여 여러 복잡한 문제 해결
+- 동적 프록시: 동적으로 프록시 객체를 생성하는 방법
+    * 자바가 제공하는 방법은 인터페이스 기반 프록시 생성
+    * CGlib은 클래스 기반 프록시도 지원
+- 스프링 IoC: 기존 빈을 대체하는 동적 프록시 빈을 만들어 등록 시켜준다.
+    * 클라이언트 코드 변경 없음
+    * [AbstractAutoProxyCreator](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/aop/framework/autoproxy/AbstractAutoProxyCreator.html) implements [BeanPostProcessor](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/beans/factory/config/BeanPostProcessor.html)
+<br>
+
+### Spring AOP 예시
+- `@Around` : 메소드를 감싸는 형태로 적용된다.
+    * 메소드 호출 이전, 이후에 기능을 수행할 수 있다. 
+    * 메소드에서 발생한 에러를 잡아 에러가 발생했을 때 특정한 일을 할 수 있다.
+    * 굉장히 다용도로 쓰일 수 있다.
+- `@Before` bean의 모든 메서드에 앞에 적용
+```java
+@Component
+@Aspect
+public class PerfAspect {
+	@Around("@annotation(PerfLogging)") //@PerfLogging 애노테이션이 붙은 곳에 적용
+	public Object logPerf(ProceedingJoinPoint pjp) throws Throwable {
+		log begin = System.currentTimeMillis();
+		Object retVal = pjp.proceed();
+		System.out.println(System.currentTimeMillis() - begin);
+		return retVal;
+	}
+	
+	@Before("bean(simpleEventService)") //bean의 모든 메서드에 hello 출력
+	public void hello() {
+		System.out.println("hello");
+	}
+}
+```
+```java
+@Documented //javaDoc 만들때 사용 
+@Target(ElementType.METHOD)
+//이 어노테이션 정보를 .class 파일까지 유지하겠다는 의미, 기본값이 CLASS이다.(Source나 Runtime은 거의 안쓴다.)
+@Retention(RetentionPolicy.CLASS) 
+public @interface PerfLogging {
+}
+```
 <br>
