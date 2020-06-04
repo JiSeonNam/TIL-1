@@ -260,3 +260,50 @@ public class Application {
     * DispatcherServletAutoConfiguration
         - 서블릿 만들고 등록
 <br>
+
+## 내장 웹 서버 응용 - 컨테이너와 포트
+- 서블릿 기반의 웹MVC 어플리케이션을 개발할 때 기본적으로 tomcat을 쓰게 된다. 
+<br>
+
+### tomcat이 아닌 다른 서블릿 컨테이너를 쓰는 방법
+    * 의존성에서 tomcat을 빼고 원하는 컨테이너의 starter를 넣어준다.
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jetty</artifactId>
+</dependency>
+``` 
+<br>
+
+### 웹 서버 사용하지 않기
+- applicaiton.properties 파일에 `spring.main.web-application-type=none`으로 설정하면 WebServlet 의존성들이 클래스패스에 있더라도 무시하고 그냥 None WebApplication으로 실행하고 끝낸다. 
+<br>
+
+### 포트 바꾸기
+- applicaiton.properties 파일에 `server.port=7070(원하는포트번호)`으로 설정하면 원하는 포트 번호로 사용가능하다. 
+- `server.port=0`으로 설정하면 랜덤 포트 번호로 사용된다.
+- 포트 번호를 Application 코드에서 사용하는 방법(Spring Boot Reference에서 추천하는 best way)
+```java
+@Component
+public class PortListener implements ApplicationListener<ServletWebServerInitializedEvent> {
+
+    @Override
+    public void onApplicationEvent(
+        ServletWebServerInitializedEvent servletWebServerInitializedEvent) {
+        ServletWebServerApplicationContext applicationContext = servletWebServerInitializedEvent.getApplicationContext();
+        System.out.println(applicationContext.getWebServer().getPort());
+    }
+}
+```
+<br>
