@@ -1,4 +1,4 @@
-# [Srping Boot](https://spring.io/projects/spring-boot)
+# [Srping Boot](https://docs.spring.io/spring-boot/docs/2.0.3.RELEASE/reference/htmlsingle/#boot-documentation)
 - Spring Boot는 제품 수준의 Spring 기반인 독립적인 애플리케이션을 빠르고 쉽게 만들 수 있도록 도와준다.
 - Opinionated view
     * 스프링 부트가 가진 컨벤션으로 가장 널리 쓰인다고 하는 설정들을 스프링 부트가 기본 설정으로 제공한다. 
