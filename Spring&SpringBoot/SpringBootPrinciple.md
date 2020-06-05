@@ -357,4 +357,20 @@ private Connector createStandardConnector() {
 <br>
 
 ## 독립적으로 실행 가능한 JAR
-- 
+- 애플리케이션을 개발 할 때는 IDE에서 실행하는게 편하지만 배포하거나 도커 이미지로 만들 때는 jar 패키지로 패키징한 다음 jar파일을 실행하는 것이 유용하다. 
+    * 이 부분도 스프링 부트도 중요한 특징 중 하나이다. 
+- 터미널에 `mvn clean package -DskipTests` 라고 입력하면 패키지 파일(jar)이 생성된다.
+- `java -jar` 명령어를 사용하면 jar 파일 **하나**만으로 앱이 구동된다.
+- 만든 애플리케이션 클래스들과 라이브러리들이 jar 파일 하나에 다 들어가 있다. 
+<br>
+
+### 스프링 부트에서의 jar
+- 자바에는 jar안에 들어있는 jar파일을 읽을 수 있는 표준적인 방법이 없다. 그래서 옛날에는 'uber jar'를 사용했다.
+    * 모든 클래스(의존성 및 애플리케이션)를 하나로 합축하는 방법
+    * 무슨 라이브러리를 쓰는지 알 수 없다.
+    * 파일 이름은 같지만 내용이 다른 경우 문제 발생
+- 스프링 부트에서의 jar
+    * 애플리케이션 클래스와 라이브러리 위치를 구분
+    * 내장 jar로 jar안에 jar파일들을 묶어놓고 읽을 수 있는 파일을 만들어 놓았다.
+    * org.springframework.boot.loader.jar.JarFile : 내장 JAR를 읽기.
+    * org.springframework.boot.loader.Launcher : jar파일 실행.

@@ -5,9 +5,10 @@
 > - 블로그에는 오늘 학습한 내용을 간단히 기록한다. [후회와 게으름없이](https://qlalzl9.tistory.com/category/TIL%20%28Today%20I%20Learned%29)
 ***
 
-### Spring
-- [예제로 배우는 스프링 프레임워크 입문 - 강의 내용 정리](https://github.com/qlalzl9/TIL/blob/master/Spring/SpringFrameworkIntroduction.md)
-- [스프링 프레임워크 핵심 기술 - 강의 내용 정리](https://github.com/qlalzl9/TIL/blob/master/Spring/SpringFrameworkCore.md)
+### Spring & Spring Boot
+- [예제로 배우는 스프링 프레임워크 입문 - 강의 내용 정리](https://github.com/qlalzl9/TIL/blob/master/Spring&SpringBoot/SpringFrameworkIntroduction.md)
+- [스프링 프레임워크 핵심 기술 - 강의 내용 정리](https://github.com/qlalzl9/TIL/blob/master/Spring&SpringBoot/SpringFrameworkCore.md)
+- [스프링 부트 개념과 활용 - 스프링 부트 시작하기](https://github.com/qlalzl9/TIL/blob/master/Spring&SpringBoot/.md)
 <br>
 
 ### Java
