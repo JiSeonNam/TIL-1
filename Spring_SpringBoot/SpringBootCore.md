@@ -374,7 +374,7 @@ spring.profiles.include=proddb  // prod 설정이 읽혀졌을 때(활성화 되
     * 로깅 퍼사드 밑에 있는 로거를 바꿀 수 있다.
 <br>
 
-### 스프링 5에서의 로거
+### [스프링 5에서의 로거 변경사항](https://docs.spring.io/spring/docs/5.0.0.RC3/spring-framework-reference/overview.html#overview-logging)
 - 자체 내에서 Spring-JCL 모듈을 만들어서 Commons Logging을 컴파일 시점에 SLF4j나 Log4j2로 변경할 수 있다.
 - pom.xml에 exclusion 안해도 된다.
 - 결론적으로 Spring-JCL이 개입하면서 Commons Logging -> SLF4j or Log4j2 -> Logback으로 보낸다.
@@ -395,3 +395,46 @@ spring.profiles.include=proddb  // prod 설정이 읽혀졌을 때(활성화 되
     * 로그 레벨 조정
     * ex) `logging.level.me.hayoung.springintit=DEBUG`
 <br>
+
+## [로깅 - 커스터마이징](https://docs.spring.io/spring-boot/docs/current/reference/html/howto.html#howto-logging)
+
+### 커스텀 로그 설정 파일 사용하기
+- Logback : logback-spring.xml (logback.xml도 가능하지만 logback.xml은 너무 일찍 로딩이 되기 때문에 Logback extension을 사용할 수 없다.)
+- Log4J2 : log4j2-spring.xml
+- JUL : loggging.properties
+- logback-spring.xml 예제
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <logger name="me.hayoung" level="DEBUG"/>
+</configuration>
+```
+- Logback extension
+    * `<springProfile name="프로파일">`
+        - 특정 profile일 때만 설정이 되도록 할 수 있다.
+    * `<springProperty>`
+        - Environment에 들어있는 property들도 사용할 수 있다.
+<br>
+
+### [로거를 Log4j2로 변경하기](https://docs.spring.io/spring-boot/docs/current/reference/html/howto.html#howto-configure-log4j-for-logging)
+- Log4j2로 변경하면 최종적으로 로그 메세지를 찍는 것은 Log4j2가 된다.
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-log4j2</artifactId>
+</dependency>
+```
+<br>
+
