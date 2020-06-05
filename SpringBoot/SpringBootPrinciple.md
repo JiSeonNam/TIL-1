@@ -307,3 +307,48 @@ public class PortListener implements ApplicationListener<ServletWebServerInitial
 }
 ```
 <br>
+
+## 내장 웹 서버 응용 - HTTPS와 HTTP2
+- 내장 웹 서버에 HTTPS와 HTTP2를 적용하는 방법
+<br>
+
+### 내장 웹 서버에 HTTPS 적용 방법
+- HTTPS를 사용하려면 key-store를 만들어야 한다. 
+    * 터미널 `keytool -genkey -alias tomcat -storetype PKCS12 -keyalg RSA -keysize 2048 -keystore keystore.p12 -validity 4000`
+- 비밀번호와 인증서 내용을 입력하면 key-store가 생기고 이것으로 설정을 하면 된다. 
+- application.properties에 key-store 설정
+```
+server.ssl.key-store=keystore.p12
+server.ssl.key-store-type= PKCS12
+server.ssl.key-store-password=123456
+server.ssl.key-alias=spring
+```
+- 애플리케이션을 실행하면 오류가 난다. 
+    * 스프링 부트는 기본적으로 톰캣이 사용하는 커넥터가 하나만 등록된다.
+    * 그 커넥터에 ssl을 적용해주기 때문에 모든 요청은 HTTPS를 붙여서 해야한다. 
+
+### HTTP 커넥터 설정하기 
+- 더이상 HTTP를 받을 커넥터가 없다. 가능하게 설정하려면 커넥터를 추가하는 코드를 작성해야 한다.
+    * 포트번호만 다르게 한다면 HTTP와 HTTPS를 둘 다 받을 수 있는 톰캣 서버가 된다.
+```java
+@Bean
+public ServletWebServerFactory serverFactory() {
+    TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
+    tomcat.addAdditionalTomcatConnectors(createStandardConnector());    // 커넥터 추가
+    return tomcat;
+}
+
+private Connector createStandardConnector() {
+    Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+    connector.setPort(8080);
+    return connector;
+}
+```
+<br>
+
+### 내장 웹 서버에 HTTP2 적용 방법
+- HTTP2를 쓰려면 ssl은 기본적으로 적용되어 있어야 한다.
+- application.properties에 `server.http2.enabled=true`로 설정
+- 제약사항은 서버마다 다르다.
+    * Undertow : HTTPS만 적용돼있으면 아무런 추가 설정을 하지 않아도 된다. 
+    * Tomcat : 톰캣 8.5.x 기준 라이브러리와 디렉토리를 설정해야하지만 톰캣 9.0.x, JDK9 이상부터는 추가 설정을 하지 않아도 된다.
