@@ -156,6 +156,7 @@ public class SampleCommandLineRunner implements CommandLineRunner {
     * 스프링 부트가 애플리케이션을 구동할 때 자동으로 로딩하는 파일 이름 컨벤션이다.
     * 파일 안에 key-value형태로 값을 정의하면 애플리케이션에서 참조해서 사용할 수 있다.
     * 참조하는 가장 기본적인 방법(우선순위 15)
+        * @Value는 SpEL을 사용할 수 있다.
     ```java
     @Value("${hayoung.name}")
     private String name;
@@ -217,3 +218,93 @@ fullName=${name} Kim
 2. file:./ : jar파일을 실행하는 위치에 놓기
 3. classpath:./config/
 4. classpath:/
+<br>
+
+###  type-safe한 프로퍼티 @ConfigurationProperties
+- 외부 설정이 많은 경우 같은 key로 시작하는 외부 설정을 묶어서 하나의 bean으로 등록하는 방법
+- properties에 있는 값들을 class에 바인딩을 해준다.
+```java
+@Component // bean으로 등록
+@ConfigurationProperties("hayoung") // 마크를 해준다. 만약 Classpath에 Annotation Processor가 없다는 경고와 링크가 뜨면 meta정보를 생성 해주는 의존성을 추가해주면 된다. 
+
+public class HayoungProperties {
+
+    private String name;
+
+    private int age;
+
+    private String fullName;
+
+    ...getter and setter...
+}
+```
+```java
+@SpringBootApplication
+// @EnableConfigurationProperties(HayoungProperties.class) 해줘야 하지만 자동으로 등록해준다.
+public class SpringinitApplication {
+
+	public static void main(String[] args) {
+		SpringApplication app = new SpringApplication(SpringinitApplication.class);
+		app.run(args);
+	}
+}
+```
+- 이렇게 하면 Runner에서 @Autowired로 주입받아 사용할 수 있다.
+```java
+@Component
+public class SampleRunner implements ApplicationRunner {
+
+    @Autowired
+    HayoungProperties hayoungProperties;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        System.out.println(hayoungProperties.getName());
+        System.out.println(hayoungProperties.getAge());
+        System.out.println(hayoungProperties.getFullName());
+    }
+}
+```
+- type-safe하다는 의미는 `@Value("${hayoung.name}")` 처럼 프로퍼티 값을 직접 입력하면서 발생할 수 있는 에러를 내지 않을 수 있다는 의미이다.
+    * @ConfigurationProperties으로 정의하고 빈으로 만든 뒤 getter를 통해서 값을 가져오기 때문에 @Value로 직접 쓰는 것 보다 안전하게 사용할 수있다.
+<br>
+
+### Relaxed Binding(융통성 있는 바인딩)
+- 앞에서 설정한 프로퍼티를 camelcase로 적지 않아도 mapping을 해준다
+    * `hayoung.fullName= ${hayoung.name} Kim`
+    * `hayoung.full-name= ${hayoung.name} Kim`
+    * `hayoung.full_name= ${hayoung.name} Kim`
+<br>
+
+### 프로퍼티 type conversion 지원
+- properties 문서안에서는 type이라는 것이 없다.
+    * `hayoung.age= ${random.int(0,100)}`나 `hayoung.age= 100`도 모두 문자열인데 사용할 때는 int로 변환이 되서 type conversion이 일어난다.
+- @DurationUnit
+    * 스프링 부트가 제공하는 독특한 conversion type으로 시간 정보를 받고 싶을 때 사용 가능하다.
+    ```java
+    @DutationUnit(ChronoUnit.SECONDS)   // 초로 받겠다
+    private Duration sessionTimeout = Duration.ofSeconds(30);   // 값이 안들어오면 기본값은 30초
+    /* application.properties에
+    hayoung.sestionTimeout = 25로 주고 실행하면 초로 conversion이 일어난다.
+    */
+    ```
+    * @DurationUnit 애노테이션을 쓰지않고 `hayoung.sestionTimeout = 25s`로 s를 붙이면 알아서 conversion을 해준다.
+<br>
+
+### 프로퍼티 값 검증
+- @Validated 애노테이션을 붙이면 값에 @NotEmpty, @NotNull, @Size등을 사용할 수 있다. 
+```java
+@Component
+@ConfigurationProperties("hayoung")
+@Validated
+public class HayoungProperties {
+
+    @NotEmpty
+    private String name;
+    
+    ...
+}
+```
+- @NotEmpty로 설정했는데 프로퍼티 값이 비워져 있으면 에러가 난다.
+<br>
+
