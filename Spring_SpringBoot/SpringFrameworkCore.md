@@ -1080,7 +1080,7 @@ public class WebConfig implements WebMvcConfigurer {
   * FormatterRegistry 기능 구현
   * ConversionService 기능 구현
   * 여러 기본 Converter와 Formatter를 등록 해 준다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring/img/SpringFrameworkCore_1.png" width="600px"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringFrameworkCore_1.png" width="600px"></p>
 
 <br>
 
@@ -1183,7 +1183,7 @@ public class AppRunner implements ApplicationRunner {
 - Spring AOP는 AOP의 구현체 제공
 - Java의 AOP구현체인 AspectJ와 연동해서 사용할 수 있는 기능 제공
 - 해야할 일과 그 일을 어디에 적용해야하는 지를 묶어서 모듈화 하는 것
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring/img/SpringFrameworkCore_2.jpg" width="600px"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringFrameworkCore_2.jpg" width="600px"></p>
 <br>
 
 ### AOP 주요 용어
@@ -1281,7 +1281,7 @@ public @interface PerfLogging {
 <br>
 
 ### 툴에서 적용 방법
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring/img/SpringFrameworkCore_3.jpg" width="800px"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringFrameworkCore_3.jpg" width="800px"></p>
 
 - Build, Excution, Deployment -> Compiler 설정에서 Configure annotations
 - Nullable annotations에 org.springframework.lang.Nullable 추가
