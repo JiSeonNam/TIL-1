@@ -308,3 +308,55 @@ public class HayoungProperties {
 - @NotEmpty로 설정했는데 프로퍼티 값이 비워져 있으면 에러가 난다.
 <br>
 
+## Profile(프로파일)
+- 스프링 프레임워크에서 제공해주는 기능으로 각각의 환경에 따라 bean을 다르게 사용해야 할 경우, 또는 특정 환경에서만 어떠한 bean을 등록해야하는 경우에 사용한다.
+```java
+@Profile("prod")
+@Configuration
+public class BaseConfiguration {
+
+    @Bean
+    public String hello() {
+        return "hello";
+    }
+}
+```
+```java
+@Profile("test")
+@Configuration
+public class TestConfiguration {
+
+    @Bean
+    public String hello() {
+        return "hello test";
+    }
+}
+```
+- `@Profile("prod")`라고 붙이면 bean 설정 파일 자체가 "prod"라는 Profile일때 사용이 된다. "prod"가 아니면 사용이 안된다.
+<br>
+
+### profile 활성화
+- application.properties에 `spring.profiles.active` 설정을 추가하면 profile을 활성화 할 수 있다. 
+- `spring.profiles.active=prod`라고 설정하면 prod가 활성화된다.(test라고 하면 test profile이 활성화)
+    * 이것도 프로퍼티이므로 우선순위가 적용된다.
+<br>
+
+### profile용 프로퍼티
+- `application-profile이름.properties`
+- profile과 관련된 properties들의 우선순위가 application.properties보다 높다.
+- 따라서 profile용 properties를 만들고 같은 key값을 설정하면 profile properties가 오버라이딩되어 덮어씌워 진다.
+```java
+//application-prod.properties
+hayoung.name=hayoung prod   // application.properties의 hayoung.name을 덮어쓴다.
+```
+<br>
+
+### profile 추가
+- `spring.profiles.include`
+- 추가할 profile을 설정
+```java
+//application-prod.properties
+hayoung.name=hayoung prod
+spring.profiles.include=proddb  // prod 설정이 읽혀졌을 때(활성화 되었을 때) proddb라는 profile도 활성화된다.
+```
+<br>
