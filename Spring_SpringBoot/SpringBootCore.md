@@ -149,3 +149,71 @@ public class SampleCommandLineRunner implements CommandLineRunner {
     * ex) `@Order(1)`
     * 숫자가 낮을수록 먼저 실행된다.
 <br>
+
+## [외부 설정](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-external-config)
+- 외부 설정 파일은 애플리케이션에서 사용하는 여러가지 설정 값들을 애플리케이션 안 또는 밖에 설정할 수 있는 기능이다. 
+- 가장 많이 쓰고 중요한 애플리케이션 설정 파일은 application.properties 파일이다.
+    * 스프링 부트가 애플리케이션을 구동할 때 자동으로 로딩하는 파일 이름 컨벤션이다.
+    * 파일 안에 key-value형태로 값을 정의하면 애플리케이션에서 참조해서 사용할 수 있다.
+    * 참조하는 가장 기본적인 방법(우선순위 15)
+    ```java
+    @Value("${hayoung.name}")
+    private String name;
+    ```
+<br>
+
+### 사용할 수 있는 외부 설정
+- properties
+- YAML
+- 환경 변수
+- 커맨드 라인 argument
+<br>
+
+### 프로퍼티 우선 순위
+1. 유저 홈 디렉토리에 있는 spring-boot-dev-tools.properties
+2. 테스트에 있는 @TestPropertySource (
+    * ex) `@TestPropertySource(properties = "hayoung.name=hayoung2")`
+3. @SpringBootTest 애노테이션의 properties 애트리뷰트 
+    * ex) `@SpringBootTest(properties = "hayoung.name=hayoung2")`
+4. 커맨드라인 아규먼트
+    * ex) `java -jar target/springinit-0.0.1-SNAPSHOT.jar --hayoung.name=hayoung`
+5. SPRING_APPLICATION_JSON (환경 변수 또는 시스템 프로퍼티)에 들어있는 프로퍼티
+6. ServletConfig 파라미터
+7. ServletContext 파라미터
+8. Java:comp/env JNDI 애트리뷰트
+9. System.getProperties() 자바 시스템 프로퍼티
+10. OS 환경 변수
+11. RandomValuePropertySource
+12. JAR 밖에 있는 특정 프로파일용 application.properties
+13. JAR 안에 있는 특정 프로파일용 application.properties
+14. JAR 밖에 있는 application.properties
+15. JAR 안에 있는 application.properties
+16. @PropertySource
+17. 기본 프로퍼티(SpringApplication.setDefaultProperties)
+<br>
+
+### 랜덤값 설정하기 
+- `${random.*}`
+<br>
+
+### 플레이스 홀더
+- 이미 정의한 값을 사용할 수 있다.
+```
+name=hayoung
+fullName=${name} Kim
+```
+<br>
+
+### application.properties 중복
+- src/main/resources와 src/test/resources에 중복으로 application.properties 파일이 있을 경우 문제가 자주 발생한다. 
+    * main쪽 application.properties에 값이 더 있는데 test에서 참조하려고 할 경우 오류 발생
+    * 동일한 key값이 있을 경우 우선순위가 test쪽이 더 높기 때문에 덮어씌워 진다.
+- 이를 해결하기 위해 test쪽의 application.properties를 삭제하고 test.properties를 만든 뒤 `@TestPropertySource(locations = "classpath:/test.properties")`라고 하면
+- 빌드할 때 application.properties도 들어가고 test.properties도 들어가서 우선순위가 적용된다.
+<br>
+
+### application.propertie 우선순위
+1. file:./config : 프로젝트 root 밑에 config라는 디렉토리를 만들고 놓기
+2. file:./ : jar파일을 실행하는 위치에 놓기
+3. classpath:./config/
+4. classpath:/
