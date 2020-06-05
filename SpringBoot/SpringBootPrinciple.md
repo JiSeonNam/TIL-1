@@ -27,7 +27,7 @@
 <br>
 
 ### 스프링 부트가 관리하는 의존성 버전 변경하기
-- spring-Boot-dependencies의 <properties>에 각각의 의존성들에 대한 버전을 일괄적으로 정의해져 있다.
+- spring-Boot-dependencies의 `<properties>`에 각각의 의존성들에 대한 버전을 일괄적으로 정의해져 있다.
 - 이곳에서 변경하고 싶은 properties를 프로젝트로 가져와 버젼을 변경하여 사용할 수 있다.
 <br>
 
@@ -102,7 +102,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 
 5. mvn install(Maven Projects -> Lifecycle -> install 더블클릭도 가능)
 - 콘솔에서 mvn install
-- 본인이 만든 의존성에 의해 만들어지는 빈이 @ComponentScan에 의해서 먼저 만들어지고,
+- 본인이 만든 의존성에 의해 만들어지는 빈이 @ComponentScan에 의해서 먼저 만들어진다.
 
 6. 다른 프로젝트에서 생성된 프로젝트 의존성 추가
 ```html
@@ -266,7 +266,7 @@ public class Application {
 <br>
 
 ### tomcat이 아닌 다른 서블릿 컨테이너를 쓰는 방법
-    * 의존성에서 tomcat을 빼고 원하는 컨테이너의 starter를 넣어준다.
+- 의존성에서 tomcat을 빼고 원하는 컨테이너의 starter를 넣어준다.
 ```html
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -352,3 +352,9 @@ private Connector createStandardConnector() {
 - 제약사항은 서버마다 다르다.
     * Undertow : HTTPS만 적용돼있으면 아무런 추가 설정을 하지 않아도 된다. 
     * Tomcat : 톰캣 8.5.x 기준 라이브러리와 디렉토리를 설정해야하지만 톰캣 9.0.x, JDK9 이상부터는 추가 설정을 하지 않아도 된다.
+- 톰캣 HTTP2 
+    * File - Project Structure - Project와 File - Project Structure - Modules - Dependencies에서 JDK 버전 변경(9이상)
+<br>
+
+## 독립적으로 실행 가능한 JAR
+- 
