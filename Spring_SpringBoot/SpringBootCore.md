@@ -667,15 +667,18 @@ public class SampleControllerRestTemplate {
     * `spring.devtools.restart.exclude`
 - 리스타트 기능 끄기 
     * `spring.devtools.restart.enabled = false`
+<br>
 
 ### Live Reload
 - Restart 했을 때 브라우저까지 자동 리프레시 되는 것
 - 브라우저 플러그인을 설치해야 한다.
+<br>
 
 ### 글로벌 설정
 - 프로퍼티 우선순위의 1순위
 - `~/.spring-boot-devtools.properties`
 * spring-boot-devtools 의존성이 있어야 1순위다.
+<br>
 
 #### Remote Applications
 - 원격에다 애플리케이션을 띄우고 로컬에서 실행하는 것.
