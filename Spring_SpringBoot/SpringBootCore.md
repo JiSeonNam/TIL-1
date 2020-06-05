@@ -146,5 +146,6 @@ public class SampleCommandLineRunner implements CommandLineRunner {
 }
 ```
 - ApplicationRunner들이 여러 개일 경우 `@Order`를 사용해 순서를 정할 수 있다.
-    * ex) `@Order(1)` : 낮을수록 먼저 실행된다.
+    * ex) `@Order(1)`
+    * 숫자가 낮을수록 먼저 실행된다.
 <br>
