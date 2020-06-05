@@ -360,3 +360,38 @@ hayoung.name=hayoung prod
 spring.profiles.include=proddb  // prod 설정이 읽혀졌을 때(활성화 되었을 때) proddb라는 profile도 활성화된다.
 ```
 <br>
+
+## 로깅 - 스프링 부트 기본 로거 설정
+- 스프링 부트는 기본적으로 Commons Logging을 사용한다.  결국 SLF4j를 사용하게 된다. 소스코드에서도 SLF4j를 사용하면 된다.
+- Logging Facade : Commons Logging, SLF4j
+- 로거 : JUL(Java Utility Logging), Log4J2, Logback
+<br>
+
+### Logging Facade(로깅 퍼사드)와 로거
+- Commons Logging과 SLF4j는 실제 로깅을 하는 것이 아니라 로거 API들을 추상화 해놓은 인터페이스들이다. 
+- 주로 프레임워크들은 로깅 퍼사드를 사용해서 코딩한다. (애플리케이션을 만드는 개발자도 로깅 퍼사드를 통해서 로거를 써도 문제없다.)
+- 로깅 퍼사드의 장점
+    * 로깅 퍼사드 밑에 있는 로거를 바꿀 수 있다.
+<br>
+
+### 스프링 5에서의 로거
+- 자체 내에서 Spring-JCL 모듈을 만들어서 Commons Logging을 컴파일 시점에 SLF4j나 Log4j2로 변경할 수 있다.
+- pom.xml에 exclusion 안해도 된다.
+- 결론적으로 Spring-JCL이 개입하면서 Commons Logging -> SLF4j or Log4j2 -> Logback으로 보낸다.
+<br>
+
+### 스프링 부트 로깅
+- --debug
+    * 일부 핵심 라이브러리들(core loggers)만 디버깅 모드로 찍어준다.
+- --trace
+    * 전부 디버깅 모드로 찍힌다.
+- spring.output.ansi.enabled
+    * 컬러 출력
+    * ex) `spring.output.ansi.enabled=always`
+- logging.file 또는 logging.path
+    * 파일 출력
+    * 로그파일은 기본적으로 10M까지 저장되고, 넘치면 아카이빙하는 등 여러가지 설정도 할 수 있다.
+- logging.level.패키지 = 로그 레벨
+    * 로그 레벨 조정
+    * ex) `logging.level.me.hayoung.springintit=DEBUG`
+<br>
