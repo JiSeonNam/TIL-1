@@ -438,3 +438,204 @@ spring.profiles.include=proddb  // prod 설정이 읽혀졌을 때(활성화 되
 ```
 <br>
 
+## 테스트
+- 일단 pom.xml에 spring-boot-starter-test 의존성이 있어야한다.
+
+### @SpringBootTest
+- @RunWith(SrpingRunner.class)와 같이 써야한다.
+- bean 설정 파일을 알아서 찾아준다.
+- webEnvironment
+    * MOCK 
+        - 내장 톰캣 구동 하지 않는다.
+        - SpringBootTest의 webEnvironment의 기본값은 MOCK이다. 
+        - Servlet을 Mocking 한 것이 구동되고 Mockup이 된 Servlet에 어떤 Interaction 할려면 MockMVC라는 클라이언트를 구성해야 된다. 
+        - MockMVC를 만드는 방법이 여러가지가 있지만 아래 코드와 같이 구성하는 것이 가장 쉽게 만드는 방법이다.
+        ```java
+        @RunWith(SpringRunner.class)
+        @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+        @AutoConfigureMockMvc
+        public class SampleControllerTest {
+
+            @Autowired
+            MockMvc mockMvc;
+
+            @Test
+            public void hello() throws Exception {
+                mockMvc.perform(get("/hello"))  //hello로 get 요청
+                        .andExpect(status().isOk())   // status 코드가 200
+                        .andExpect(content().string("hello hayoung"))     // content의 내용이 hello hayoung인지
+                        .andDo(print());    // 프린트
+            }
+        }
+        ```
+    * RANDOM_PORT, DEFINED_PORT
+        * 내장 톰캣 구동되고 Servelet이 올라간다.
+        * 테스트용 REST 템플릿(TestRestTemplate)이나 TEST용 웹 클라이언트를 써야한다.
+        ```java
+        @RunWith(SpringRunner.class)
+        @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        public class SampleControllerRestTemplate {
+
+            @Autowired
+            TestRestTemplate testRestTemplate;
+
+            @Test
+            public void hello() throws Exception {
+             String result = testRestTemplate.getForObject("/hello", String.class);
+                assertThat(result).isEqualTo("hello hayoung");
+            }
+        }
+        ```
+<br>
+
+### @MockBean
+- ApplicationContext에 들어있는 bean을 Mock으로 만든 객체로 교체 한다.
+- 모든 @Test마다 자동으로 리셋
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class SampleControllerRestTemplate {
+
+    @Autowired
+    TestRestTemplate testRestTemplate;
+
+    @MockBean
+    SampleService mockSampleService;    //ApplicationContext에 있는 SampleService가 교체됨
+
+    @Test
+    public void hello() throws Exception {
+        when(mockSampleService.getName()).thenReturn("Kimhayoung");
+   
+        String result = testRestTemplate.getForObject("/hello", String.class);
+        assertThat(result).isEqualTo("hello Kimhayoung");
+    }
+}
+```
+<br>
+
+### WebTestClient
+- Spring5의 WebFlux에 추가된 RestClient 중 하나로 Asynchronous(비동기식) 방식
+- 기존의 RestClient는 Synchronous(동기식)
+- 사용하려면 webflux 쪽 dependency를 추가 해야한다.
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+```
+- 테스트 코드
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class SampleControllerRestTemplate {
+    @Autowired
+    WebTestClient webTestClient;
+
+    @MockBean
+    SampleService mockSampleService;
+
+    @Test
+    public void hello() throws Exception {
+        when(mockSampleService.getName()).thenReturn("Kimhayoung");
+        webTestClient.get().uri("/hello").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("hello Kimhayoung");
+    }
+}
+```
+<br>
+
+### Slice Test
+- 지금까지 위의 테스트는 큰 규모의 테스트이다. 테스트 하고 싶은 것만 등록하고싶을 때 사용
+- 레이어 별로 잘라서 적용이 된다. 
+- [@JsonTest](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-testing-spring-boot-applications-testing-autoconfigured-json-tests)
+    * 예상되는 JSON 형식을 테스트 해볼 수 있다.
+- [@WebMvcTest](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-testing-spring-boot-applications-testing-autoconfigured-mvc-tests)
+    * 슬라이싱해서 하나만 테스트 할 수 있다.
+    * 빈 하나만 테스트하므로 굉장히 가볍다.
+    * 테스트 할 Controller와 필수 웹과 관련된 모듈들만 bean으로 등록되고 일반적인 컴포넌트들은 bean으로 등록되지 않음
+    * 따라서 의존성들이 다 끊기기 때문에 사용하는 의존성이 있다면 MockBean으로 만들어서 채워줘야 한다.
+    * @WebMvcTest는 항상 MockMvc로 테스트 해야한다.
+    ```java
+    @RunWith(SpringRunner.class)
+    @WebMvcTest(SampleController.class)
+    public class SampleControllerWebMvcTest {
+
+        @MockBean
+        SampleService mockSampleService;
+
+        @Autowired
+        MockMvc mockMvc;
+
+        @Test
+        public void hello() throws Exception {
+            when(mockSampleService.getName()).thenReturn("Kimhayoung"); // MockBean으로 주입한 Mock Service
+
+            mockMvc.perform(get("/hello"))
+                    .andExpect(status().isOk()) // status 는 200 이고
+                    .andExpect(content().string("hello Kimhayoung"))
+                    .andDo(print());
+        }
+    }
+    ```
+- @WebFluxTest
+- @DataJpaTest
+- ...
+<br>
+
+### 테스트 유틸리티
+- **OutputCapture**
+    * 제일 유용하고 나머지는 잘 쓰이지 않는다.
+    * JUnit에 있는 @Rule을 확장해서 만든 것이다. 
+    ```java
+    @RestController
+    public class SampleController {
+
+        Logger logger = LoggerFactory.getLogger(SampleController.class);
+
+        @Autowired
+        private SampleService sampleService;
+
+        @GetMapping("/hello")
+        public String hello() {
+            logger.info("holoman");
+            System.out.println("skip");
+            return "hello" + sampleService.getName();
+        }
+    }
+    ```
+    ```java
+    @RunWith(SpringRunner.class)
+    @WebMvcTest(SampleController.class)
+    public class SampleControllerWebMvcTest {
+
+        @Rule
+        // OutputCapture는 로그를 비롯해 console에 찍히는 모든 것을 capture한다.
+        public OutputCapture outputCapture = new OutputCapture();
+
+        @MockBean
+        SampleService mockSampleService;
+
+        @Autowired
+        MockMvc mockMvc;
+
+        @Test
+        public void hello() throws Exception {
+            when(mockSampleService.getName()).thenReturn("Kimhayoung");
+
+            mockMvc.perform(get("/hello")) 
+                    .andExpect(status().isOk())
+                    .andExpect(content().string("hello Kimhayoung"))
+                    .andDo(print());
+
+            assertThat(outputCapture.toString())
+                    .contains("Holoman")
+                    .contains("skip");
+        }   
+    }
+    ```
+- TestPropertyValues
+- TestRestTemplate
+- ConfigFileApplicationContextInitializer
+<br>
+
