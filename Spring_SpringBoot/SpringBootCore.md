@@ -586,7 +586,7 @@ public class SampleControllerRestTemplate {
 ### 테스트 유틸리티
 - **OutputCapture**
     * 제일 유용하고 나머지는 잘 쓰이지 않는다.
-    * JUnit에 있는 @Rule을 확장해서 만든 것이다. 
+    * JUnit에 있는 Rule을 확장해서 만든 것이다. 
     ```java
     @RestController
     public class SampleController {
@@ -639,3 +639,45 @@ public class SampleControllerRestTemplate {
 - ConfigFileApplicationContextInitializer
 <br>
 
+## Spring-Boot-Devtools
+
+### 캐시 설정을 개발 환경에 맞게 변경
+- 스프링 부트가 제공하는 optional한 tool로 반드시 써야하는 것도, 기본적으로 적용되어 있는 것도 아니다.
+- 사용하려면 의존성 추가
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+</dependency>
+```
+- 의존성들을 추가하는 순간 기본적으로 적용되는 properties들이 바뀐다.
+    * [Reference](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using-boot-devtools-property-defaults)
+    * [Reference에 있는 링크를 누르면 나오는 바뀌는 것들](https://github.com/spring-projects/spring-boot/blob/master/spring-boot-project/spring-boot-devtools/src/main/java/org/springframework/boot/devtools/env/DevToolsPropertyDefaultsPostProcessor.java)
+    * 주로 cache를 끄는 것과 관련되어 있다.
+<br>
+
+### Auto Restart
+- classpath에 있는 파일이 변경 될 때마다 자동으로 restart해준다
+- 톰캣을 직접 껐다 키는 (run을 하는) 속도보다 빠르다.
+- 이유 : SpringBoot는 Class Loader를 두 개를 사용한다.
+    * Base Class Loader : 기본적으로 바뀌지 않는 기본 Class Loader
+    * Restart Class Loader: Application 에서 사용하는 일반적인 Class Loader  
+-  릴로딩 보다는 느리다. (JRebel 같은건 아니다.)
+- 리스타트 하고 싶지 않은 리소스 
+    * `spring.devtools.restart.exclude`
+- 리스타트 기능 끄기 
+    * `spring.devtools.restart.enabled = false`
+
+### Live Reload
+- Restart 했을 때 브라우저까지 자동 리프레시 되는 것
+- 브라우저 플러그인을 설치해야 한다.
+
+### 글로벌 설정
+- 프로퍼티 우선순위의 1순위
+- `~/.spring-boot-devtools.properties`
+* spring-boot-devtools 의존성이 있어야 1순위다.
+
+#### Remote Applications
+- 원격에다 애플리케이션을 띄우고 로컬에서 실행하는 것.
+- production 용이 아니다. 
+- 쓸 일이 거의 없다.
