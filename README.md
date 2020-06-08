@@ -12,6 +12,7 @@
 - [스프링 부트 개념과 활용 - 스프링 부트 원리](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootPrinciple.md)
 - [스프링 부트 개념과 활용 - 스프링 부트 활용](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootUtilization.md)
     * [ 스프링 부트 활용 - 핵심 기능](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootCore.md)
+    * [ 스프링 부트 활용 - MVC](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootMVC.md)
 
 
 <br>
