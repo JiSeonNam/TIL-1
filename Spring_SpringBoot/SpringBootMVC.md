@@ -145,3 +145,6 @@ public void createUser_XML() throws Exception {
 </dependency>
 ```
 <br>
+
+## 정적 리소스 지원
+- 정적 리소스는 동적으로 생성하지 않은 것, 즉 
