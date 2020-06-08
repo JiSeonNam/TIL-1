@@ -237,3 +237,74 @@ Hello Static Resource
     * 파비콘이 바뀌지 않으면 직접 파비콘 경로로 요청을 하고 새로고침 후 브라우저를 껐다 키면 바뀐다.
     * [파비콘 만들기 사이트](https://favicon.io/) 
 <br>
+
+## Thymeleaf
+- 비교적 최근에 만들어진 템플릿 엔진.
+- 템플릿 엔진은 주로 뷰를 만드는데 사용한다.(뷰를 만드는데만 사용하는 것은 아니다. 뷰 뿐만 아니라 code generation이나 e-mail 템플릿 등에도 사용할 수 있다)
+    * **Thymeleaf**
+    * FreeMarker
+    * Groovy
+    * Mustache
+- 뷰를 만드는데 템플릿 엔진을 쓰는 이유 : 기본적인 템플릿은 같은데 값들이 경우에 따라 달라지는 동적인 컨텐츠를 표현해야 하기 위해 사용한다. 
+<br>
+
+### [JSP를 권장하지 않는 이유](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-jsp-limitations)
+- 스프링 부트가 지향하는 바와 대립이 있다. 
+- JAR 패키징 할 때는 동작하지 않고, WAR 패키징을 해야한다.
+- Undertow는 JSP를 지원하지 않는다.
+<br>
+
+### 스프링 부트에서 Thymeleaf 사용하기
+- spring-boot-starter-thymeleaf 의존성 추가
+- 기본적으로 자동 설정이 적용되면 동적으로 생성되는 모든 뷰들은 src/main/resources/templates에서 찾게 된다.
+- 예시 코드
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest(SampleController.class)
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void hello() throws Exception {
+        // 요청 "/hello"
+        // 응답
+        // - 모델 name : hayoung
+        // - 뷰 이름 : hayoung
+        mockMvc.perform(get("/hello"))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(view().name("hello"))
+                .andExpect(model().attribute("name", is("hayoung")));
+    }
+}
+```
+```java
+@Controller
+public class SampleController {
+
+    @GetMapping("/hello")
+    public String hello(Model model) {
+        model.addAttribute("name", "hayoung");
+        return "hello";
+    }
+}
+```
+```html
+<!-- src/main/resources/templates 폴더에 생성 -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Title</title>
+</head>
+<body>
+    <h1 th:text="${name}">Name</h1>
+</body>
+</html>
+```
+<br>
+
