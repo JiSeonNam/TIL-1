@@ -226,3 +226,14 @@ Hello Static Resource
     * 내부적인 동작은 springframework의 resource chaining에 의해서 이루어진다. (필요할 때 공부)
 <br>
 
+## index 페이지와 파비콘
+- index 페이지(welcome 페이지) : 애플리케이션 root를 요청했을 때 보여주는 페이지.
+    * 리소스를 제공해주는 기본 위치(static, public, resources, META-INF/resources) 중 아무 곳이나 index.html 파일을 두면 된다.
+    * index.html을 찾아 보고 제공
+    * index.템플릿을 찾아 보고 제공
+    * 둘 다 없으면 에러 페이지
+- fabicon : title 옆에 있는 아이콘
+    * 파비콘도 마찬가지로 기본 위치에 놓으면 된다.
+    * 파비콘이 바뀌지 않으면 직접 파비콘 경로로 요청을 하고 새로고침 후 브라우저를 껐다 키면 바뀐다.
+    * [파비콘 만들기 사이트](https://favicon.io/) 
+<br>
