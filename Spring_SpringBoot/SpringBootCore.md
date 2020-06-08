@@ -62,8 +62,8 @@ public class SpringinitApplication {
 ### ApplicationEvent 등록
 - 이벤트 리스너가 bean으로 등록하면 등록되어 있는 bean중에 해당하는 이벤트에 대한 리스너를 알아서 실행해준다.
 - 중요한 점은 이벤트가 언제 발생하는 시점이다.
-    * 1. `ApplicationStartedEvent` : ApplicationContext가 만들어진 다음에 발생한 이벤트들은 bean을 실행할 수 있다.
-    * 2. `ApplicationStartingEvent` : ApplicationContext가 만들어지기 전에 발생한 이벤트는 bean으로 등록한다 하더라도 리스너가 동작하지 않는다.
+    1. `ApplicationStartedEvent` : ApplicationContext가 만들어진 다음에 발생한 이벤트들은 bean을 실행할 수 있다.
+    2. `ApplicationStartingEvent` : ApplicationContext가 만들어지기 전에 발생한 이벤트는 bean으로 등록한다 하더라도 리스너가 동작하지 않는다.
     * 2번의 경우 직접 등록을 해줘야 한다.
 ```java
 // @Component 선언을 해줄 필요가 없다.
