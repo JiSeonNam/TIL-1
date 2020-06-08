@@ -147,4 +147,82 @@ public void createUser_XML() throws Exception {
 <br>
 
 ## 정적 리소스 지원
-- 정적 리소스는 동적으로 생성하지 않은 것, 즉 
+- 정적 리소스는 동적으로 생성하지 않은 것, 즉 웹브라우저나 클라이언트에서 요청이 들어왔을 때 해당하는 리소스가 이미 만들어져 있고 보내주기만 하면 되는 것이다.
+- 기본 리소스 맵핑
+    * classpath:/static
+    * classpath:/public
+    * classpath:/resources/
+    * classpath:/META-INF/resources
+    * 기본 리소스들은 "/**"에 맵핑에 되서 제공이 된다.
+    * ex) "/hello.html"이라는 요청이 들어오면 /static/hello.html이라는 파일이 있으면 요청한 쪽으로 보내준다. (나머지도 마찬가지)
+- Last-Modified 헤더를 보고 변경 사항이 없으면 304 응답을 보낸다. (리소스를 다시 보내지 않기 때문에 응답이 빠르다)
+- ResourceHttpRequestHandler가 처리한다.
+<br>
+
+### 맵핑 설정 변경
+- 기본적으로 root부터 맵핑이 되어 있는데 맵핑을 변경하고 싶다면 application.properties에 spring.mvc.static-path-pattern값을 주면 된다.
+- ex) `spring.mvc.static-path-pattern=/static/**`
+    * 이렇게 주면 root부터 요청할 수 없고 전부 static으로 요청해야한다.
+<br>
+
+### 커스터마이징
+- spring.mvc.static-locations로 리소스 찾을 위치를 변경 가능하지만 기본 리소스 위치를 안쓰게 되서 추천되지 않는다. 
+- 추천되는 방법 : WebMvcConfigurer의 addResourceHandlers로 커스터마이징이 가능하다.
+    * ResourceHandler를 추가하는 것으로 기존의 스프링 부트가 제공하는 4가지 ResourceHandler를 유지하면서 원하는 Handler만 추가할 수 있다.
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/m/**")    // m으로 시작하는 요청이 오면
+            .addResourceLocations("classpath:/m/")  // classpathth 기준으로 m디렉토리 밑에서 제공하겠다. 반드시 /로 끝나야 한다.
+            .setCachePeriod(20);    // 초 단위
+    }
+}
+```
+<br>
+
+## 웹 JAR
+- 스프링 부트는 웹 JAR에 대한 기본 맵핑을 제공하기 때문에 클라이언트에서 사용하는 자바스크립트 라이브러리(jQuery, BootStrap 등등)를 웹JAR 형태로 dependency를 추가해서 사용할 수 있다.
+- [MVN 중앙 저장소](https://mvnrepository.com/)에도 올라와 있기 때문에 검색해서 pom.xml에 의존성 추가하면 사용 가능하다.
+- 예제 코드(jQuery)
+```html
+<dependency>
+    <groupId>org.webjars.bower</groupId>
+    <artifactId>jquery</artifactId>
+    <version>3.5.1</version>
+</dependency>
+```
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+Hello Static Resource
+
+<script src="/webjars/jquery/3.5.1/dist/jquery.min.js"></script>
+<script>
+    ${function() {
+        alert("ready!");
+    })
+</script>
+</body>
+</html>
+```
+- 버젼을 생략할 수 있는 기능이 있다.
+    * 버전을 올릴 때 마다 코드 수정을 안해도 된다.
+    * webjars-locator-core 의존성을 추가하면 된다.
+    ```html
+    <dependency>
+        <groupId>org.webjars</groupId>
+        <artifactId>webjars-locator-core</artifactId>
+        <version>0.45</version>
+    </dependency>
+    ```
+    * 내부적인 동작은 springframework의 resource chaining에 의해서 이루어진다. (필요할 때 공부)
+<br>
+
