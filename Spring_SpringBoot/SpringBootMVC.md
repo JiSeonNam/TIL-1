@@ -308,3 +308,39 @@ public class SampleController {
 ```
 <br>
 
+## HtmlUnit
+- HTML 템플릿 뷰 테스트를 보다 전문적으로 사용 가능하다.
+- htmlunit 의존성을 추가하면 사용할 수 있다.
+    * test scope이므로 test할 때만 사용된다. 
+```html
+<dependency>
+  <groupId>​org.seleniumhq.selenium​</groupId>
+  <artifactId>​htmlunit-driver​</artifactId>
+  <scope>​test​</scope>
+</dependency>
+<dependency>
+  <groupId>​net.sourceforge.htmlunit​</groupId>
+  <artifactId>​htmlunit​</artifactId>
+  <scope>​test​</scope>
+</dependency>
+```
+- webClient로 요청 페이지, 태그, 엘리먼트 등을 가져와서 단위 테스트 한다.
+- Form submit, 특정 브라우저인척 하기, html 문서의 엘리먼트를 가져와서 값들을 비교하거나 확인 해볼 수 있다.
+- 예시 코드
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest(SampleController.class)
+public class SampleControllerTest {
+
+    @Autowired
+    WebClient webClient;    // MockMvc가 아니라 WebClient를 주입받을 수 있다. 
+
+    @Test
+    public void hello() throws Exception {
+        HtmlPage page = webClient.getPage("/hello"); // Page라는 인터페이스로 나온느데 HtmlPage로 바꾸면 다양한 메소드 사용 가능
+        HtmlHeading1 h1 = page.getFirstByXPath("//h1"); //h1 제일 앞에있는 것 하나만 가져오기(Object타입을 HtmlHeading1으로 바꾸기)
+        assertThat(h1.getTextContent()).isEqualToIgnoringCase("hayoung"); // 대소문자인것을 무시하고 문자열이 같은지 비교
+    }
+}
+```
+<br>
