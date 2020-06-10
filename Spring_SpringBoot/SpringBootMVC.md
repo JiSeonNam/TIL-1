@@ -344,3 +344,58 @@ public class SampleControllerTest {
 }
 ```
 <br>
+
+## ExceptionHandler
+- 스프링 부트가 제공하는 기본 예외 처리기
+    * BasicErrorController
+        - HTML과 JSON 응답 지원
+- 커스터마이징 방법
+    * ErrorController 타입의 클래스를 구현하고 bean으로 등록하면 BasicErrorController 대신 동작한다.
+<br>
+
+### 스프링 웹 애노테이션 기반의 MVC에서 ExceptionHandling
+```java
+@Controller
+public class SampleController {
+
+    @GetMapping("/hello")
+    public String hello() {
+        throw new SampleException();
+    }
+
+    // AppError: App에서 만든 커스텀한 에러정보를 담고 있는 클래스가 있다면
+    @ExceptionHandler(SampleException.class)
+    //메서드 파라메터로 해당하는 Exception 정보를 받아 올 수 있음
+    public @ResponseBody AppError sampleError(SampleException e) {
+        AppError appError = new AppError();
+        appError.setMessage("error.app.key");
+        appError.setReason("IDK IDK IDK");
+        return appError;
+    }
+}
+```
+```java
+public class SampleException extends RuntimeException {
+}
+```
+```java
+public class AppError {
+
+    private String message;
+
+    private String reason;
+
+    ... getter and setter ...
+}
+```
+- @ExceptionHandler는 Controller 안에서만 사용하고 전역적으로 사용하고 싶다면 클래스를 따로 만들어 @ControllerAdvice 애노테이션을 붙이고 그 안에 ExceptionHandler를 정의하면 여러 Controller에서 발생하는 SampleException을 처리하는 Handler가 동작하게 된다.
+<br>
+
+### 커스텀 에러 페이지
+- 상태 코드 값에 따라 에러 페이지 보여주기
+- src/main/resources/static|template/error/
+    * 파일 이름이 상태 코드의 값과 같거나 x를 사용해 비슷한 html을 만들면 된다.    
+    * 404.html
+    * 5xx.html
+    * 좀 더 동적인 뷰로 다양하게 커스터마이징 하고싶으면 ErrorViewResolver를 구현하면 된다.
+<br>
