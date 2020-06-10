@@ -156,6 +156,7 @@ SELECT * FROM account;
 <br>
 
 ### PostgreSQL 경고 메세지
+- 해결 메세지를 application.properties에 추가
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringBootSpringData_3.jpg"></p>
 
 <br>
@@ -172,4 +173,137 @@ SELECT * FROM account;
     * 쿼리 메소드 자동 구현
     * @EnableJpaRepositories (스프링 부트가 자동으로 설정 해줌.)
     * SDJ(스프링데이터 JPA) -> JPA -> Hibernate -> Datasource
+<br>
+
+### 스프링 데이터 JPA 연동
+- 스프링 데이터 JPA 의존성 추가
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+- 원래는 @EnableJpaRepositories를 사용해서 설정해야 사용할 수 있지만 자동 설정해준다.
+- @Entity 클래스 만들기
+```java
+@Entity
+public class Account {
+
+    @Id
+    @GeneratedValue // Repository를 통해 저장할 때 값을 자동으로 값 생성, 없으면 Id를 일일히 줘야한다. 
+    private Long id;
+    private String username;
+    private String password;
+
+    ...getter and setter...
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Account account = (Account) o;
+        return Objects.equals(id, account.id) &&
+            Objects.equals(username, account.username) &&
+            Objects.equals(password, account.password);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, username, password);
+    }
+}
+```
+- Repository 만들기
+```java
+@Repository
+public interface AccountRepository extends JpaRepository<Account, Long> {
+
+    Optional<Account> findByUsername(String username);
+}
+```
+- H2 DB를 테스트 의존성 추가
+```html
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+- Repository 테스트 만들기
+    * 슬라이스 테스트(Repository와 관련된 bean들만 등록해서 테스트)
+```java
+@RunWith(SpringRunner.class)
+@DataJpaTest    // 슬라이스 테스트
+public class AccountRepositoryTest {
+
+    @Autowired
+    DataSource dataSource;
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    AccountRepository accountRepository;
+
+    @Test
+    public void di() throws SQLException {  //di : dependency injection
+    //try resource를 사용하면 finally 블록에서 자원 해제 동작을 구현하지 않아도, 자원을 종료해준다.
+        try(Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = dataSource.getConnection().getMetaData();
+            System.out.println(metaData.getURL());
+            System.out.println(metaData.getDriverName());
+            System.out.println(metaData.getUserName());
+        }
+    }
+}
+```
+- @DataJpaTest를 사용하지 않고 @SpringBootTest로 테스트 하면 integration 테스트가 된다.
+    * Application에 있는 @SpringBootApplication을 찾아서 모든 빈들을 다 등록하고 application.properties가 적용되고 postgreSQL 사용하게 된다.
+    * @SpringBootTest로 실제 DB 테스트하는 것보다 빠르고, 실제 DB를 사용한다고 했을때 테스트 코드에서 데이터를 변경하면 실제 DB의 데이터가 변경되기 때문에 별도의 Test DB 설정을 가져가야 한다.
+    * @SpringBootTest(properties = "spring.datasource.url=''") 로 다른 데이터베이스를 설정해서 사용이 가능하긴 하지만 테스트 할때는 인메모리 데이터베이스로 슬라이스 테스트 하기를 권장된다.
+    * 슬라이스 테스트를 할 때는 반드시 In-memory 데이터베이스가 필요 하므로 H2를 test 의존성으로 추가해야 한다. (실습 기준)
+ - Optional 사용
+```java
+@Repository
+public interface AccountRepository extends JpaRepository<Account, Long> {
+
+    Optional<Account> findByUsername(String username);
+}
+```
+```java
+@RunWith(SpringRunner.class)
+@DataJpaTest    // 슬라이스 테스트
+public class AccountRepositoryTest {
+
+    @Autowired
+    DataSource dataSource;
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    AccountRepository accountRepository;
+    
+    @Test
+    public void account() {
+        Account account = new Account();
+        account.setUsername("hayoung");
+        account.setPassword("pass");
+    
+        //Optional<>로 받으면 결과값 검증을 isEmpty(), isNotEmpty()로 해야한다.
+        Account newAccount = accountRepository.save(account);
+        assertThat(newAccount).isNotNull();
+
+        Optional<Account> existingAccount = accountRepository.findByUsername(newAccount.getUsername());
+        assertThat(existingAccount).isNotEmpty();
+
+        Optional<Account> notExistingAccount = accountRepository.findByUsername("Kimhayoung");
+        assertThat(notExistingAccount).isEmpty();
+    }
+}
+```
 <br>
