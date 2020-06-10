@@ -501,3 +501,95 @@ public class SampleController {
 }
 ```
 <br>
+
+## CORS
+- [Reference](https://docs.spring.io/spring/docs/5.0.7.RELEASE/spring-framework-reference/web.html#mvc-cors)
+### SOP와 CORS
+- SOP(Single-Origin-Policy)
+    * 같은 Origin에만 요청을 보낼 수 있다는 Policy
+- CORS(Cross-Origin Resource Sharing)
+    * 서로 다른 Origin끼리 리소스를 share할 수 있는 방법을 제공하는 Policy
+    * SOP를 우회하기 위한 표준 기술
+- Origin이란?
+    * URI 스키마(http, https)
+    * hostname(hayoung.me, localhost)
+    * 포트(8080, 18080)
+    * 세 가지를 조합한 것이 Origin이다.
+- 둘 다 웹 브라우저가 지원하는 표준 기술이다.
+- 기본적으로는 SOP가 적용되어 있기 때문에 Origin이 다르면 호출할 수 없다.
+    * 예를 들어 REST API가 localhost 8080을 통해 띄워져 있는 상태에서 18080이 띄운 웹브라우저에서 8080의 리소스를 가져오지 못한다.
+    * 그것을 우회하기 위한 기법이 CORS이다.
+<br>
+
+### 스프링 MVC에서의 @CrossOrigin
+- 스프링 부트에서는 @CrossOrigin에 관한 빈 설정들을 자동으로 해주기 때문에 그냥 사용하면 된다.
+    * 스프링 MVC에서 쓰려면 여러가지 bean설정을 해줘야 한다.
+- 사용방법
+    * @Controller나 @RequestMapping에 추가하거나
+    * WebMvcConfigurer를 사용해서 글로벌 설정
+- Server쪽 예시 코드
+```java
+@SpringBootApplication
+@RestController
+public class Application {
+
+    //@CrossOrigin 애노테이션을사용하여 허용할 Origin들을 설정
+    @CrossOrigin(origins = "http://localhost:18080")
+    @GetMapping("/hello")
+    public String hello() {
+        return "hello";
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+}
+```
+- 글로벌 설정
+    * Origin 설정을 모든 메소드에 할 순 없으니 @CrossOrigin을 Controller에 붙이거나 여러 Controller에 걸쳐 설정을 해야한다면 WebMvcConfigurer를 구현한 Web관련된 설정파일을 따로 만든다.
+    * 이렇게 만들면 스프링 부트가 제공하는 스프링 MVC 기능을 다 사용하면서 추가로 확장하는 것이다.
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/hello") // hello를 registry에 등록 "/**" 하면 전부다 허용
+                .allowedOrigins("http://localhost:18080");
+    }
+}
+```
+- 요청 Client쪽 예시 코드(jQuery 의존성을 추가해서 ajax로 CORS 동작 확인)
+    * application.properties에서 `server.port=18080`으로 포트 변경
+```html
+<dependency>
+    <groupId>org.webjars.bower</groupId>
+    <artifactId>jquery</artifactId>
+    <version>3.5.1</version>
+</dependency>
+```
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+  <h1>CORS Client</h1>
+</body>
+<script src="/webjars/jquery/3.5.1/dist/jquery.min.js"></script>
+<script>
+  $(function () {
+    $.ajax("http://localhost:8080/hello")
+      .done(function (msg) {
+        alert(msg);
+      })
+      .fail(function () {
+        alert("fail");
+      })
+  })
+</script>
+</html>
+```
