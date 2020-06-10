@@ -391,11 +391,113 @@ public class AppError {
 - @ExceptionHandler는 Controller 안에서만 사용하고 전역적으로 사용하고 싶다면 클래스를 따로 만들어 @ControllerAdvice 애노테이션을 붙이고 그 안에 ExceptionHandler를 정의하면 여러 Controller에서 발생하는 SampleException을 처리하는 Handler가 동작하게 된다.
 <br>
 
-### 커스텀 에러 페이지
+### [커스텀 에러 페이지 만들기](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-error-handling-custom-error-pages)
 - 상태 코드 값에 따라 에러 페이지 보여주기
 - src/main/resources/static|template/error/
     * 파일 이름이 상태 코드의 값과 같거나 x를 사용해 비슷한 html을 만들면 된다.    
     * 404.html
     * 5xx.html
     * 좀 더 동적인 뷰로 다양하게 커스터마이징 하고싶으면 ErrorViewResolver를 구현하면 된다.
+<br>
+
+## Spring HATEOAS
+- Spring HATEOAS는 HATEOAS를 구현하기 위해 편리한 기능을 제공하는 라이브러리
+    * HATEOAS(Hypermedia As The Engine Of Application State)
+        - 서버: 현재 리소스와 **연관된 링크 정보**​를 클라이언트에게 제공한다.
+        - 클라이언트: **연관된 링크 정보​**를 바탕으로 리소스에 접근한다.
+        - 연관된 링크 정보
+            * Rel​ation(Rel)
+            * H​ypertext Ref​erence(Href)
+- 즉, 관련된 링크 정보들을 리소스에 추가해서 리턴하는식으로 구현하고 클라이언트도 그것을 사용하는 방식
+- 사용하려면 spring-boot-starter-hateoas 의존성 추가
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-hateoas</artifactId>
+</dependency>
+```
+- HATEOAS에 대해 자세히 알고 싶으면 다음 Reference를 순서대로 보면 된다.
+    * [https://spring.io/understanding/HATEOAS](https://spring.io/understanding/HATEOAS)
+    * [https://spring.io/guides/gs/rest-hateoas/](https://spring.io/guides/gs/rest-hateoas/)
+    * [https://docs.spring.io/spring-hateoas/docs/current/reference/html/](https://docs.spring.io/spring-hateoas/docs/current/reference/html/)
+<br>
+
+### HATEOAS가 자동설정으로 제공하는 기능
+- ObjectMapper
+    * spring.jackson.*(커스터마이징)
+    * Jackson2ObjectMapperBuilder
+    * 제공하는 리소스를 JSON으로 변환할 때 사용하는 인터페이스로 자주 사용된다.
+- LinkDiscovers
+    * 클라이언트 쪽에서 링크 정보를 Rel 이름으로 찾을때 사용할 수 있는 XPath 확장 클래스
+    * 사용할 일이 많지 않다. 
+<br>
+
+### HATEOAS 구현 테스트
+- 테스트 코드 작성
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest(SampleController.class)
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void hello() throws Exception {
+        mockMvc.perform(get("/hello"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._links.self").exists());
+    }
+}
+```
+- Hello 클래스 작성
+```java
+public class Hello {
+
+    private String prefix;
+    private String name;
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return prefix + " " + name;
+    }
+}
+```
+- Controller 작성
+```java
+@RestController
+public class SampleController {
+
+    @GetMapping("/hello")
+    public Resource<Hello> hello(){
+        Hello hello = new Hello();
+        hello.setPrefix("Hey,");
+        hello.setName("Hayoung");
+
+        // 링크 정보를 추가
+        Resource<Hello> helloResource = new Resource<>(hello);
+        //SampleController 클래스에 존재하는 hello라는 메서드에 대한 링크를 따서 self라는 릴레이션을 만들어서 추가
+        helloResource.add(linkTo(methodOn(SampleController.class).hello()).withSelfRel());
+
+        return helloResource;
+    }
+}
+```
 <br>
