@@ -159,3 +159,17 @@ SELECT * FROM account;
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringBootSpringData_3.jpg"></p>
 
 <br>
+
+## 스프링 데이터 JPA
+- ORM(Object-Relational Mapping)과 JPA (Java Persistence API)
+    * ORM : 객체와 릴레이션을 맵핑할 때 발생하는 개념적 불일치를 해결하는 프레임워크
+    * JPA: ORM을 위한 자바 (EE) 표준
+    * JPA는 [하이버네이트](http://hibernate.org/orm/what-is-an-orm/) 기반으로 만들어져 있다.
+        * 하이버네이트에 있는 모든 기능을 JPA가 모두 커버하진 않는다.
+- 스프링 데이터 JPA
+    * JPA를 아주 쉽게 사용할 수 있게 스프링 데이터로 추상화 시켜놓은 것
+    * Repository 빈 자동 생성
+    * 쿼리 메소드 자동 구현
+    * @EnableJpaRepositories (스프링 부트가 자동으로 설정 해줌.)
+    * SDJ(스프링데이터 JPA) -> JPA -> Hibernate -> Datasource
+<br>
