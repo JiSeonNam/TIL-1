@@ -307,3 +307,39 @@ public class AccountRepositoryTest {
 }
 ```
 <br>
+
+## 데이터 베이스 초기화
+
+### JPA를 사용한 데이터베이스 초기화
+- application.properties에 추가
+- `spring.jpa.hibernate.ddl-auto` : update, create, create-drop 셋 중 하나를 주면 자동으로 스키마가 생성된다.
+    * update : 기존에 있는 스키마를 유지하고 추가된 것만 스키마 변경한다.
+        - 데이터 유지 가능
+        - update로 놓고 쓰는 동안에는 스키마가 지저분해진다
+        - 따라서 개발할 때는 편리하지만 운영 시 위험하다. (개발할 때 잠깐 잠깐 쓰는게 좋다)
+    * create : 초반에 띄울 때 지우고 새로 만든다.
+    * create-drop : 처음에 만들어주고 애플리케이션 종료 시 스키마를 지운다. 
+    * validate: 현재 Entity 맵핑이 릴레이션 DB에 맵핑할 수 있는 상황인지 맵핑이 되는지를 검증(ddl에 변경을 가하는건 아니기 때문에 ddl=false로 준다)
+- `spring.jpa.generate-dll=true`로 설정 해줘야 위의 명령어가 동작한다. (기본은 false로 되어있다)
+- `spring.jpa.show-sql=true`로 설정하면 스키마가 생성되는 것을 볼 수 있다.
+    * console에 hibernate 로그를 보여준다.
+<br>
+
+### SQL 스크립트를 사용한 데이터베이스 초기화
+- JPA를 사용하지 않고 DB 초기화를 진행할 수 있다.
+- 순서는 schema.sql이 먼저 호출되고 다음으로 data.sql이 호출된다.
+    * 초기화 데이터가 필요한 경우 data.sql에 정의해서 초기 데이터를 넣을 수 있다.
+- 각각 platform을 정의해서 platform에 특화된 스크립트도 정의할 수 있다. 
+    * ex) `spring.datasource.platform=postgresql`
+- `schema.sql` 또는 `schema-${platform}.sql`
+- `data.sql` 또는 `data-${platform}.sql`
+- `${platform}` 값은 `spring.datasource.platform` 으로 설정 가능.
+- 테스트 코드 : 데이터베이스 초기화 SQL 생성
+```SQL
+drop table account if exists
+drop sequence if exists hibernate_sequence
+create sequence hibernate_sequence start with 1 increment by 1
+create table account (id bigint not null, email varchar(255), password varchar(255), username varchar(255), primary key (id))
+```
+- src/resources 경로에 schema.sql 파일을 생성하고 SQL을 붙여넣는다.
+<br>
