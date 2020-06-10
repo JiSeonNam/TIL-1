@@ -61,7 +61,7 @@ public class H2Runner implements ApplicationRunner {
 ### DBCP(DataBase Connection Pool)
 - Database의 connection을 미리 여러 개 만들어 놓고 애플리케이션이 필요로 할 때마다 가져다 쓰는 개념
 - connection 유지 갯수, 시간 등 여러가지 설정들을 할 수 있다.
-- DBCP가 애플리케이션 성능에 아주 핵심적인 역할을 하므로 DBCP에 버그가 있으면 Application에 아주 심각한 문제가 발생한다.
+- DBCP가 애플리케이션 성능에 아주 핵심적인 역할을 하므로 DBCP에 버그가 있으면 애플리케이션에 아주 심각한 문제가 발생한다.
     * DBCP에 대해서 충분히 알고 사용을 해야 한다.
 <br>
 
@@ -102,7 +102,7 @@ public class H2Runner implements ApplicationRunner {
 <br>
 
 ### MySQL용 Datasource 설정
-`spring.datasource.url=jdbc:mysql://localhost:3306/springboot?useSSL=false`
+- `spring.datasource.url=jdbc:mysql://localhost:3306/springboot?useSSL=false`
 - `spring.datasource.username=hayoung`
 - `spring.datasource.password=pass`
 <br>
