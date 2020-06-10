@@ -118,3 +118,44 @@ public class H2Runner implements ApplicationRunner {
 - 라이센스 비용을 내고 싶지 않으면 MySQL 대신 MariaDB 사용하면 된다.
 - 소스 코드 공개 의무 여부 확인
 - 사실 가장 좋은건 라이센스 비용도 없고 소스 코드 공개 의무도 없는 Postgre이다.
+<br>
+
+## PostgreSQL 설정
+- 의존성 추가
+```html
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+</dependency>
+```
+- application.properties에 설정 추가
+```
+spring.datasource.url=jdbc:postgresql://localhost:3306/springboot?useSSL=false
+spring.datasource.username=hayoung
+spring.datasource.password=pass
+```
+- PostgreSQL 설치 및 서버 실행 (도커 사용)
+```
+docker run -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=hayoung -e POSTGRES_DB=springboot --name postgres_boot -d postgres
+
+docker exec -i -t postgres_boot bash
+
+su - postgres
+
+psql springboot
+
+데이터베이스 조회
+\list
+
+테이블 조회
+\dt
+
+쿼리
+SELECT * FROM account;
+```
+<br>
+
+### PostgreSQL 경고 메세지
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringBootSpringData_3.jpg"></p>
+
+<br>
