@@ -551,3 +551,148 @@ hget accounts:해쉬값 field
 hgetall accounts:해쉬값
 ```
 <br>
+
+## [MongoDB](https://www.mongodb.com/)
+- JSON 기반의 도큐먼트 데이터베이스이다.
+    * 스키마가 없다.
+- 의존성 추가
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-mongodb</artifactId>
+</dependency>
+```
+<br>
+
+### 스프링 데이터 MongoDB
+- bean들을 자동으로 설정해주고 지원해줘서 바로 주입받아 사용할 수 있다.
+    * MongoTemplate
+    * MongoRepository
+- 내장형 MongoDB (테스트용)
+    * de.flapdoodle.embed:de.flapdoodle.embed.mongo 의존성 추가 시 사용 가능
+- @DataMongoTest
+    * MongoRepository에 관련된 bean들만 등록
+<br>
+
+### MongoDB 설치 및 실행 (도커)
+- `docker run -p 27017:27017 --name mongo_boot -d mongo`
+- `docker exec -i -t mongo_boot bash`
+- `mongo`
+<br>
+
+### MongoDB 실습
+- Account 클래스 생성
+```java
+// collection이 SQL로 치면 table이름이고 각각의 document들이 collection에 들어간다. 
+@Document(collection = "accounts")
+public class Account {
+
+    @Id
+    private String id;
+    private String username;
+    private String email;
+
+    ...getter and setter...
+}
+```
+```java
+@SpringBootApplication
+public class Application {
+
+    @Autowired
+    MongoTemplate mongoTemplate;
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    public ApplicationRunner applicationRunner() {
+        return args -> {
+            Account account = new Account();
+            account.setEmail("aaa@bbb");
+            account.setUsername("aaa");
+
+            mongoTemplate.insert(account);
+
+            System.out.println("finished");
+        };
+    }
+}
+```
+- Repository를 만들어 사용하는 방법
+```java
+public interface AccountRepository extends MongoRepository<Account, String> {
+
+}
+```
+```java
+@SpringBootApplication
+public class Application {
+
+    @Autowired
+    AccountRepository accountRepository;
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    public ApplicationRunner applicationRunner() {
+        return args -> {
+            Account account = new Account();
+            account.setEmail("khy07181@gmail.com");
+            account.setUsername("Kimhayoung");
+            accountRepository.insert(account);
+
+            System.out.println("finished");
+        };
+    }
+}
+```
+<br>
+
+### 내장형 MongoDB (테스트용)을 사용한 Slicing Test
+- 테스트용 코드가 운영용 MongoDB에 데이터를 조회하면 문제가 번거롭기 때문에 내장형 MongoDB를 사용하면 된다.
+- 운영용 MongoDB에 데이터를 조회하는 것이 아니라 Test용 MongoDB를 사용한다.
+- 의존성 추가
+```html
+<dependency>
+    <groupId>de.flapdoodle.embed</groupId>
+    <artifactId>de.flapdoodle.embed.mongo</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+- AccountRepository에 findByEmail을 Optional로 받기
+```java
+public interface AccountRepository extends MongoRepository<Account, String> {
+    Optional<Account> findByEmail(String email);
+}
+```
+- Slicing Test 작성 
+```java
+@RunWith(SpringRunner.class)
+@DataMongoTest  // MongoRepository에 관련된 bean들만 등록된다.
+public class AccountRepositoryTest {
+
+    @Autowired
+    AccountRepository accountRepository;
+
+    @Test
+    public void findByEmail() {
+        Account account = new Account();
+        account.setUsername("hayoung");
+        account.setEmail("hayoung07181@gmail.com");
+
+        accountRepository.save(account);
+
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        assertThat(byId).isNotEmpty();
+
+        Optional<Account> byEmail = accountRepository.findByEmail(account.getEmail());
+        assertThat(byEmail).isNotEmpty();
+        assertThat(byEmail.get().getUsername()).isEqualTo("hayoung");
+    }
+}
+``` 
+<br>
