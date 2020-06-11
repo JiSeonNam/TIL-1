@@ -433,3 +433,121 @@ public class Account {
 ALTER TABLE account ADD COLUMN active BOOLEAN;
 ```
 <br>
+
+## Redis
+- 캐시, 메세지 브로커, key-value 스토어 등으로 사용 가능
+- redis 의존성 추가
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+```
+<br>
+
+### 스프링 데이터 [Redis](https://spring.io/projects/spring-data-redis)
+- 기본적으로 Reids를 사용하는 2가지 방법
+    * StringRedisTemplate 또는 RedisTemplate
+- extends CrudRepository
+<br>
+
+### Redis 설치 및 실행(도커 사용)
+- Redis 설치
+    * `docker run -p 6379:6379 --name redis_boot -d redis`
+    * 기본적으로 컨테이너 밖으로 expose하는 포트가 6379이므로 localhost에서 6379로 받는다
+- Redis 접속
+    * `docker exec -i -t redis_boot redis-cli`
+<br>
+
+### [Redis 주요 커맨드](https://redis.io/commands)
+- keys *
+- get {key}
+- hgetall {key}
+- hget {key} {column}
+<br>
+
+### Redis 커스터마이징
+- spring.redis에 있는 프로퍼티들을 수정하면 된다.
+- 아무런 설정없이 Redis를 쓸 수 있는 이유는 포트번호 6379로 컨테이너에 있는 6379포트를 연결했기 떄문이다.
+    * 스프링 부트의 Redis 기본 포트 : 6379
+- 만약 다른 포트에 연결 했다면 포트 번호를, localhost가 아니라 다른 위치에 있는 Redis에 접속한다면 url도 바꿔야 한다.
+- `spring.redis.*`
+<br>
+
+### Redis 실습
+```java
+@Component
+public class RedisRunner implements ApplicationRunner {
+
+    @Autowired
+    StringRedisTemplate redisTemplate;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        ValueOperations<String, String> values = redisTemplate.opsForValue();
+        values.set("hayoung", "Kimhayoung");
+        values.set("springboot","2.0");
+        values.set("hello", "world");
+    }
+}
+```
+- Repository를 만들어 사용하는 방법
+    * Account 클래스 생성 하고 @RedisHash 추가
+    * Account에 대한 Repository 생성
+    * Runner로 AccountRepository 사용해 Account를 저장하거나 가져올 수 있다.
+```java
+@RedisHash("accounts")
+public class Account {
+
+    @Id
+    private String id;
+    private String username;
+    private String email;
+
+    ...getter and setter...
+}
+```
+```java
+public interface AccountRepository extends CrudRepository<Account, String> {
+
+}
+```
+```java
+@Component
+public class RedisRunner implements ApplicationRunner {
+
+    @Autowired
+    StringRedisTemplate redisTemplate;
+
+    @Autowired
+    AccountRepository accountRepository;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        ValueOperations<String, String> values = redisTemplate.opsForValue();
+        values.set("hayoung", "Kimhayoung");
+        values.set("springboot","2.0");
+        values.set("hello", "world");
+
+        Account account = new Account();
+        account.setEmail("khy07181@gmail.com");
+        account.setUsername("hayoung");
+
+        accountRepository.save(account);
+        // 저장하면 Id가 생기기 때문에 가져올 수 있다.
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        System.out.println(byId.get().getUsername());
+        System.out.println(byId.get().getEmail());
+    }
+}
+```
+- 해쉬 값 조회
+```
+hget accounts:해쉬값 field
+```
+- 전체 해쉬 값 조회
+    * 기본적으로 적은 정보 이외에 class 정보가 추가적으로 들어가 있다.
+```
+hgetall accounts:해쉬값
+```
+<br>
