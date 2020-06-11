@@ -343,3 +343,93 @@ create table account (id bigint not null, email varchar(255), password varchar(2
 ```
 - src/resources 경로에 schema.sql 파일을 생성하고 SQL을 붙여넣는다.
 <br>
+
+## 데이터베이스 마이그레이션
+- Flyway와 Liquibase가 대표적이다. (강의에서는 Flyway마 사용)
+- DB 스키마 변경, 데이터 변경을 버전 관리하듯이 관리할 수 있다.
+
+### [Flayway](https://docs.spring.io/spring-boot/docs/2.0.3.RELEASE/reference/htmlsingle/#howto-execute-flyway-database-migrations-on-startup)
+- 기본적으로 SQL 파일을 사용한다.
+- 의존성 추가
+```html
+<dependency>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-core</artifactId>
+</dependency>
+```
+<br>
+
+### 마이그레이션 디렉토리
+- db/migration 또는 db/migration/{vendor}
+- spring.flyway.locations로 변경 가능
+<br>
+
+### 마이그레이션 파일 이름
+- V숫자__이름.sql
+- V는 꼭 대문자로
+- 숫자는 순차적으로 (타임스탬프 권장)
+- 숫자와 이름 사이에 언더바 두 개(__).​
+- 이름은 가능한 서술적으로
+<br>
+
+### 마이그레이션 실습
+-  /src/resources 에 db/migration 폴더 생성 
+    * db.migration 으로 생성하면 에러 난다
+    * 이 안에 차곡차곡 SQL을 쌓아 나가면 된다.
+-  V1__init.sql 파일 생성
+-  schema.sql의 SQL을 복사해 V1_init.sql에 붙여넣고 schema.sql 파일 제거
+-  V1__init.sql 문법 수정
+    * 한 줄 마다 세미콜론(;)으로 닫아야 한다.
+```SQL
+drop table if exists account;
+drop sequence if exists hibernate_sequence;
+create sequence hibernate_sequence start with 1 increment by 1;
+create table account (id bigint not null, email varchar(255), password varchar(255), username varchar(255), primary key (id));
+```
+- application.properties
+    * `spring.jpa.hibernate.ddl-auto=validate`로 변경(실제 db와 엔티티 맵핑 검증)
+- 애플리케이션을 실행해서 Schema가 정상적으로 생성되는 지 확인
+- Account Entity에 새로운 컬럼 추가 
+    * active boolean
+```java
+@Entity
+public class Account {
+
+    @Id
+    @GeneratedValue //Repository를 통해 저장을 할 때 ID를 자동으로 생성
+    private Long id;
+    private String username;
+    private String password;
+    private String email;
+
+    private boolean active;
+
+    ...getter and setter...
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return active == account.active &&
+                Objects.equals(id, account.id) &&
+                Objects.equals(username, account.username) &&
+                Objects.equals(password, account.password) &&
+                Objects.equals(email, account.email);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, username, password, email, active);
+    }
+}
+```
+- 추가하고 바로 실행하면 맵핑이 안되기 때문에 hibernate가 validation하다가 에러가 난다.
+- 스키마 변경 방법
+    * 한번 적용이 된 migration 스크립트(V1_init.sql)는 절대로 다시 건드리면 안된다.
+    * 따라서 새로운 파일로 만들어야 한다. (V2_add_active.sql)
+    * 스키마 변경뿐만 아니라 데이터 변경도 가능
+```SQL
+ALTER TABLE account ADD COLUMN active BOOLEAN;
+```
+<br>
