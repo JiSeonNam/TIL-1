@@ -696,3 +696,161 @@ public class AccountRepositoryTest {
 }
 ``` 
 <br>
+
+## [Neo4j](https://neo4j.com/)
+- 노드간의 연관 관계를 영속화하는데 유리한 그래프 데이터베이스이다.
+- 의존성 추가
+    * 버전에 따라 여러가지 bean들을 설정해준다. 
+    * 하위호환성이 안좋다
+        - 최신 버전에서는 이전에 제공하던 bean이 등록되지 않는 경우가 있다.
+```html
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-neo4j</artifactId>
+</dependency>
+```
+<br>
+
+### 스프링 데이터 Neo4J
+- Neo4jTemplate (Deprecated)
+- SessionFactory
+- Neo4jRepository
+<br>
+
+### Neo4j 설치 및 실행 (도커)
+- `docker run -p 7474:7474 -p 7687:7687 -d --name noe4j_boot neo4j`
+    * 최신 버전에서는 포트 맵핑을 HTTP용과 Bolt라는 프로토콜용으로 2개 해줘야 한다.
+- UI 브라우저 환경 제공
+    * [http://localhost:7474/browser](http://localhost:7474/browser)
+    * 기본 password는 neo4j이고 로그인하면 무조건 password를 바꿔야한다.
+- password가 바뀌었기 때문에 반드시 application.properties에 neo4j 설정을 해줘야 한다.
+```
+spring.data.neo4j.password=1111
+spring.data.neo4j.username=neo4j
+```
+<br>
+
+### Neo4j 실습
+- Account 클래스 생성
+```java
+@NodeEntity
+public class Account {
+
+    @Id @GeneratedValue
+    private Long id;
+    private String username;
+    private String email;
+
+    ...getter and setter...
+}
+```
+- Neo4jRunner 생성
+```java
+@Component
+public class Neo4jRunner implements ApplicationRunner {
+
+    @Autowired
+    SessionFactory sessionFactory;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        Account account = new Account();
+        account.setEmail("hayoung@gmail.com");
+        account.setUsername("hayoung");
+
+        Session session = sessionFactory.openSession();
+        session.save(account); 
+        sessionFactory.close();
+
+        System.out.println("finished");
+    }
+}
+```
+- 관계 만들기
+```java
+@NodeEntity
+public class Role {
+
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+
+    ...getter and setter...
+}
+```
+- Role을 Acoount에게 주기
+```java
+@NodeEntity
+public class Account {
+
+    @Id @GeneratedValue
+    private Long id;
+    private String username;
+    private String email;
+
+    @Relationship(type = "has")
+    private Set<Role> roles = new HashSet<>();
+
+    ...getter and setter...
+}
+```
+- Runner에서 Role을 만들고 admin 추가
+```java
+@Component
+public class Neo4jRunner implements ApplicationRunner {
+
+    @Autowired
+    SessionFactory sessionFactory;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        Account account = new Account();
+        account.setEmail("hayoung@gmail.com");
+        account.setUsername("hayoung");
+
+        //Role을 만들고 admin 추가
+        Role role = new Role();
+        role.setName("admin"); 
+
+        account.getRoles().add(role);   // Role 셋팅
+
+        Session session = sessionFactory.openSession();
+        session.save(account);
+        sessionFactory.close();
+
+        System.out.println("finished");
+    }
+}
+```
+- Repository를 만들어 사용하는 방법
+    * AccountRepository 생성
+    * Repository를 사용하는 코드
+```java
+public interface AccountRepository extends Neo4jRepository<Account, Long> {
+
+}
+```
+```java
+@Component
+public class Neo4jRunner implements ApplicationRunner {
+
+    @Autowired
+    AccountRepository accountRepository;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        Account account = new Account();
+        account.setEmail("aaaa@gmail.com");
+        account.setUsername("aaaa");
+
+        Role role = new Role();
+        role.setName("user");
+
+        account.getRoles().add(role);
+
+        accountRepository.save(account);
+
+        System.out.println("finished");
+    }
+}
+```
