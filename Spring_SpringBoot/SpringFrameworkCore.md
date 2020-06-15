@@ -15,6 +15,7 @@
     * 리소스 로딩 기능 등
 - 애플리케이션 컴포넌트의 중앙 저장소.
 - 빈 설정 소스로 부터 빈 정의를 읽어들이고, 빈을 구성하고 제공한다.
+- 스프링의 가장 중요한 특징은 객체의 생성과 의존관계를 컨테이너가 자동으로 관리한다는 점이다.
 <br>
 
 ### 빈
@@ -216,6 +217,7 @@ public class BookService {
 ```
 - BookService 자체의 인스턴스는 만들 수 있지만 `@Autowired`라는 애노테이션이 있기 때문에 의존성 주입을 하려고 시도한다가 실패한다.
 - 이런 경우 `@Autowired(required = false)`라고 설정(기본값은 true)하면 BookService의 인스턴스는 만들어져 bean으로 등록되고, BookRepository는 의존성 주입이 안된 상태로 빈으로 등록된다.
+- Setter 메소드는 스프링 컨테이너가 자동으로 호출하며, 호출하는 시점은 bean 객체 생성 직후이다.
 <br>
 
 ### Field에 의존성 주입
@@ -534,7 +536,7 @@ public class Demospring51Application {
        }
 }
 ```
-- `environment.getProperty();` 를 사용해 propery를 얻을 수 있다. 
+- `environment.getProperty();` 를 사용해 property를 얻을 수 있다. 
 ```java
 @Component
 public class AppRunner implements ApplicationRunner {
