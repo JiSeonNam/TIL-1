@@ -1,5 +1,3 @@
-> [강의 링크](https://www.inflearn.com/course/spring-framework_core)
- 
  # 스프링 프레임워크 핵심 기술
 
  ## IoC 컨테이너와 빈
@@ -1190,11 +1188,17 @@ public class AppRunner implements ApplicationRunner {
 
 ### AOP 주요 용어
 - Aspect : 모듈
-- Advice : 해야할 일들
-- Pointcut : 어디에 적용해야 하는지에 대한 정보
+- Advice 
+    * 해야할 일들
+    * 관심에 해당하는 공통 기능의 코드를 의미한다. 
+- Pointcut
+    * 어디에 적용해야 하는지에 대한 정보
+    * 필터링된 조인 포인트를 의미한다.
 - Target : 적용되는 대상
-- Join point : 합류점(모듈이 끼어드는 지점)
-    ex) 메소드 실행 직전, 생성자 호출 직전, 생서자를 호출 했을 때, 필드에 접근하기 전, 필드에서 값을 가져갔을 때 등
+- Joinpoint
+    * 합류점(모듈이 끼어드는 지점)
+    * ex) 메소드 실행 직전, 생성자 호출 직전, 생성자를 호출 했을 때, 필드에 접근하기 전, 필드에서 값을 가져갔을 때 등
+    * 즉, 클라이언트가 호출하는 모든 비즈니스 메소드가 Joinpoint이다.
 - AOP 구현체
 - Java에서는 AspectJ와 Spring AOP
 <br>
@@ -1237,6 +1241,14 @@ public class AppRunner implements ApplicationRunner {
 - 스프링 IoC: 기존 빈을 대체하는 동적 프록시 빈을 만들어 등록 시켜준다.
     * 클라이언트 코드 변경 없음
     * [AbstractAutoProxyCreator](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/aop/framework/autoproxy/AbstractAutoProxyCreator.html) implements [BeanPostProcessor](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/beans/factory/config/BeanPostProcessor.html)
+<br>
+
+### 동작 시점
+|  <center>동작 시점</center> |  <center>설명</center> |
+|:--------|:--------|
+|**Before** | 비즈니스 메소드 실행 전 동작 |
+|**After** | - After Returning : 메소드가 성공적으로 리턴되면 동작<br> - After Throwing : 메소드 실행 중 예외가 발생하면 동작 <br> - After : 메소드가 실행된 후, 무조건 실행 |
+|**Around** | Around는 메소드 호출 자체를 가로채 메소드 실행 전후에 처리할 로직을 삽입할 수 있다. |
 <br>
 
 ### Spring AOP 예시
