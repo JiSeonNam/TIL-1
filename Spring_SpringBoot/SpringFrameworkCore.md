@@ -245,7 +245,7 @@ public class MyBookRepository implements BookRepository {
 ```
 ```java
 @Repository
-public class KeesunBookRepository implements BookRepository {
+public class hayoungBookRepository implements BookRepository {
 }
 ```
 ```java
@@ -269,7 +269,7 @@ public class BookService {
     @Service
     public class BookService { 
      
-        @Autowired @Qualifier("keesunBookRepository")   //첫글자는 소문자!
+        @Autowired @Qualifier("hayoungBookRepository")   //첫글자는 소문자!
         BookRepository bookRepository;
     }
     ```
@@ -584,8 +584,8 @@ public class AppRunner implements ApplicationRunner {
   MessageSource messageSource;
   @Override
   public void run(ApplicationArguments args) throws Exception {
-      System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.KOREA));
-      System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.getDefault()));
+      System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.KOREA));
+      System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.getDefault()));
     }
 }
 ```
@@ -602,8 +602,8 @@ public class AppRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         while (true) {
-            System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.KOREA));
-            System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.getDefault()));
+            System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.KOREA));
+            System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.getDefault()));
             Thread.sleep(1000l);  // 1초에 한번씩 출력
         }
     }
