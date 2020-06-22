@@ -31,7 +31,8 @@
 
 ### 1. Spring bean 설정 파일을 만들고 bean을 주입하는 방법
 - 고전적인 방법으로 요즘에는 거의 쓰이지 않는다.
-- application.xml 파일을 만들고 bean을 등록한다. 
+- application.xml 파일을 만들고 bean을 등록한다.
+- `<bean>`엘리먼트에서 가장 중요한 것은 class 속성값이다. 패키지 경로가 포함된 전체 클래스 경로를 지정해야 한다.
 ```java
 // application.xml
 <? xml version="1.0" encoding="UTF-8"?>
@@ -155,7 +156,7 @@ public class DemoApplication {
 ```
 <br>
 
-### java 설정 파일의 componet-scanning
+### java 설정 파일의 component-scanning
 - java 설정 파일을 통한 방법도 일일히 bean을 등록해야 한다. 따라서 xml에서 했던 것과 비슷하게 component-scanning을 할 수 있다.
 ```java
 @Configuration
@@ -216,6 +217,7 @@ public class BookService {
 - BookService 자체의 인스턴스는 만들 수 있지만 `@Autowired`라는 애노테이션이 있기 때문에 의존성 주입을 하려고 시도한다가 실패한다.
 - 이런 경우 `@Autowired(required = false)`라고 설정(기본값은 true)하면 BookService의 인스턴스는 만들어져 bean으로 등록되고, BookRepository는 의존성 주입이 안된 상태로 빈으로 등록된다.
 - Setter 메소드는 스프링 컨테이너가 자동으로 호출하며, 호출하는 시점은 bean 객체 생성 직후이다.
+- 보통은 Setter를 사용하며, Setter 메소드가 제공되지 않는 클래스에 대해서 생성자를 사용한다.
 <br>
 
 ### Field에 의존성 주입
@@ -234,7 +236,7 @@ public class BookService {
 ### 해당 타입의 빈이 여러 개인 경우
 ```java
 public interface BookRepository {
-}
+}   
 ```
 ```java
 @Repository
@@ -571,7 +573,7 @@ public class AppRunner implements ApplicationRunner {
 ```java
 // messages.properties 파일
 greeting=Hello {0}
-```
+````
 ```java
 // messages_ko_KR.properties 파일
 greeting=안녕, {0}
