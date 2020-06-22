@@ -5,9 +5,9 @@
 <br>
 
 ### 스프링 IoC 컨테이너
-- [BeanFactory](https://docs.spring.io/spring-framework/docs/5.0.8.RELEASE/javadoc-api/org/springframework/beans/factory/BeanFactory.html) : 스프링 IoC 컨테이너의 최상위 인터페이스 
+- [BeanFactory](https://docs.spring.io/spring-framework/docs/5.0.8.RELEASE/javadoc-api/org/springframework/beans/factory/BeanFactory.html) : 스프링 IoC 컨테이너의 최상위 인터페이스
 - ApplicationContext
-    * BeanFactory를 상속받고 있기 때문에 BeanFactory의 모든 기능을 포함하며, 추가 기능도 제공되기 때문에 일반적으로 BeanFactory보다 추천된다. 
+    * BeanFactory를 상속받고 있기 때문에 BeanFactory의 모든 기능을 포함하며, 추가 기능도 제공되기 때문에 일반적으로 BeanFactory보다 추천된다.
     * 메세지 소스 기능(i18n)
     * 이벤트 발행 기능
     * 리소스 로딩 기능 등
@@ -32,21 +32,24 @@
 ### 1. Spring bean 설정 파일을 만들고 bean을 주입하는 방법
 - 고전적인 방법으로 요즘에는 거의 쓰이지 않는다.
 - application.xml 파일을 만들고 bean을 등록한다.
+<<<<<<< HEAD
 - `<bean>`엘리먼트에서 가장 중요한 것은 class 속성값이다. 패키지 경로가 포함된 전체 클래스 경로를 지정해야 한다.
+=======
+>>>>>>> 19678266cde5ddab40a16f58fbbea2a61be0a37d
 ```java
 // application.xml
 <? xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans">
-       
+
   <bean id="bookService"
         class="me.whiteship.springapplicationcontext.BookService">  // 빈 만들기
         <property name="bookRepository" ref="bookRepository" /> // 빈 주입
         // name은 setter에서 가져온 것이고, ref는 다른 bean을 참조한다는 뜻.
-        // ref에는 setter(name)에 들어갈 다른 bean의 id 값이 들어와야한다. 
+        // ref에는 setter(name)에 들어갈 다른 bean의 id 값이 들어와야한다.
   <bean>
-  
+
   <bean id="bookRepository"
          class="me.whiteship.springapplicationcontext.BookService"/>
 ```
@@ -56,13 +59,13 @@ public class DemoApplication {
 
   public static void main(String[] args) {
     ApplicationContext context = new ClassPathXmlApplicationContext("application.xml");
-    
+
     String[] beanDefinitionNames = context.getBeanDefinitionNames();
     System.out.println(Arrays.toString(beanDefinitionNames);
-    
+
     BookService bookService = (BookService) context.getBean("bookService");
     System.out.println(bookService.bookRepository != null);
-    
+
     // application.xml 파일에서 빈으로 등록되고 의존성 주입을 받았기 때문에 true가 출력된다.
 ```
 - 이러한 방법은 모든 빈을 일일히 등록(`<bean id = " ">`)을 해줘야 하기 때문에 번거롭다.
@@ -77,7 +80,7 @@ public class DemoApplication {
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans">
-  
+
   <context:component-scan base-package="me.whiteshp.springapplicationcontext"/>
   //package이하의 애너테이션들을 스캐닝해서 등록해준다
 
@@ -95,7 +98,7 @@ public class BookService {
 
   @Autowired
   BookRepository bookRepository;
-  
+
   public void setBookRepository(BookRepository bookRepository) {
     this.bookRepository = bookRepository;
   }
@@ -110,12 +113,12 @@ public class BookService {
 ```java
 @Configuration
 public class ApplicationConfig {
-  
+
   @Bean
   public BookRepository bookRepository() {
     return new BookRepository();
   }
-  
+
   // 메소드를 호출해서 의존성을 주입받는 방법
   @Bean
   public BookService bookService() {
@@ -123,7 +126,7 @@ public class ApplicationConfig {
     bookService.setBookRepository(bookRepository());
     return bookService;
   }
-  
+
   // 메소드 파라미터로 의존성을 주입받는 방법
   @Bean
   public BookService bookService(BookRepository bookRepository) {
@@ -131,7 +134,7 @@ public class ApplicationConfig {
     bookService.setBookRepository(bookRepository);
     return bookService;
   }
-  
+
   // setter를 사용할 경우 의존성 주입을 직접하지 않고, @Autowired를 쓰는 방법
   @Bean
   public BookService bookService(BookRepository bookRepository) {
@@ -142,10 +145,10 @@ public class ApplicationConfig {
         @Autowired
         BookRepository bookRepository;
             ...
-    } 
+    }
    */
 ```
-- DemoApplication.java 
+- DemoApplication.java
 ```java
 public class DemoApplication {
 
@@ -165,15 +168,15 @@ public class ApplicationConfig {
 }
 ```
 - 현재 사용되고 있는 스프링 부트 기반으로 스프링을 쓰고 있는 가장 가까운 방법이다.
-- 스프링에서는 `@ComponetScan`과 `@Configuration`을 사용하지만 스프링 부트에서는 `@SpringBootApplication`을 붙이면 필요없다. 
+- 스프링에서는 `@ComponetScan`과 `@Configuration`을 사용하지만 스프링 부트에서는 `@SpringBootApplication`을 붙이면 필요없다.
 - DemoApplication의 ApplicationContext와 ApplicationConfig.java도 필요없다.
 - 아래 코드가 사실상 bean 설정 파일이다.
 ```java
 @SpringBootApplication
 public class DemoApplication {
- 
+
  public static void main(String[] args) {
-  
+
   }
 }
 ```
@@ -185,7 +188,7 @@ public class DemoApplication {
 ```java
 @Service    // bean으로 등록
 public class BookService {
-       
+
     BookRepository bookRepository;
 
     @Autowired
@@ -205,7 +208,7 @@ public class BookRepository {
 ```java
 @Service
 public class BookService {
-       
+
     BookRepository bookRepository;
 
     @Autowired
@@ -245,19 +248,19 @@ public class MyBookRepository implements BookRepository {
 ```
 ```java
 @Repository
-public class KeesunBookRepository implements BookRepository {
+public class hayoungBookRepository implements BookRepository {
 }
 ```
 ```java
 @Service
-public class BookService { 
-     
+public class BookService {
+
      @Autowired
      BookRepository bookRepository;
 }
 ```
-- 위와 같은 경우에는 둘 중 어떤 것을 원하는지 알 수 없기 때문에  BookService에 의존성 주입을 못해준다. 
-- 이 경우 다음과 같은 방법으로 해결할 수 있다. 
+- 위와 같은 경우에는 둘 중 어떤 것을 원하는지 알 수 없기 때문에  BookService에 의존성 주입을 못해준다.
+- 이 경우 다음과 같은 방법으로 해결할 수 있다.
     * `@Primary` : 여러가지 동일한 bean 중 이 bean을 사용할 것이다라는 의미
     ```java
     @Repository @Primary
@@ -267,19 +270,19 @@ public class BookService {
     * `@Qualifier` : 사용하고 싶은 bean의 id를 선언해준다.
     ```java
     @Service
-    public class BookService { 
-     
-        @Autowired @Qualifier("keesunBookRepository")   //첫글자는 소문자!
+    public class BookService {
+
+        @Autowired @Qualifier("hayoungBookRepository")   //첫글자는 소문자!
         BookRepository bookRepository;
     }
     ```
     * 여러 개의 bean 모두 받을 수도 있다.
     ```java
     @Service
-    public class BookService { 
-     
+    public class BookService {
+
         @Autowired
-        List<BookRepository> bookRepositories; 
+        List<BookRepository> bookRepositories;
     }
     ```
 <br>
@@ -293,7 +296,7 @@ public class BookService {
 ## @Component와 컴포넌트 스캔
 
 ### component-scan이 되는 대상
-- @Component 
+- @Component
     * @Repository
     * @Service
     * Controller
@@ -316,14 +319,14 @@ public class BookService {
 - 빈의 기본 스코프는 싱클톤 스코프이다.
 - 따라서 아래 코드의 애플리케이션 실행 결과 proto의 인스턴스가 동일하다.
 - 프로퍼티가 공유가 되기 때문에 Thread safe한 방법으로 코딩해야 한다.
-- 모든 sigleton scope의 bean들은 기본값으로 ApplicationContext를 만들 때 만들게 되어 있다. (application 구동 시간이 좀 더 걸릴 수 있다.) 
+- 모든 sigleton scope의 bean들은 기본값으로 ApplicationContext를 만들 때 만들게 되어 있다. (application 구동 시간이 좀 더 걸릴 수 있다.)
 ```java
 @Component
 public class Single {
-       
+
        @Autowired
        private Proto proto;
-       
+
        public Proto getProto() {
               return proto;
        }
@@ -357,7 +360,7 @@ public class AppRunner implements ApplicationRunner {
 ### Prototype scope
 - 매번 새로운 인스턴스를 만들어서 사용
 - Request, Session, WebSocket, Application, Thread scope 등은 프로토타입 scope와 유사하다.
-- 따라서 아래 코드의 애플리케이션 실행 결과 prototype은 항상 다른 래퍼런스가 sigleton은 항상 같은 래퍼런스가 출력된다. 
+- 따라서 아래 코드의 애플리케이션 실행 결과 prototype은 항상 다른 래퍼런스가 sigleton은 항상 같은 래퍼런스가 출력된다.
 ```java
 @Component @Scope("prototype")
 public class Proto {
@@ -366,16 +369,16 @@ public class Proto {
 ```java
 @Component
 public class AppRunner implements ApplicationRunner {
-       
+
        @Autowired
        ApplicationContext ctx;
-       
+
        @Override
        public void run(ApplicationArguments args) throws Exception {
               System.out.println(ctx.getBean(Proto.class));
               System.out.println(ctx.getBean(Proto.class));
               System.out.println(ctx.getBean(Proto.class));
-              
+
               System.out.println(ctx.getBean(Single.class));
               System.out.println(ctx.getBean(Single.class));
               System.out.println(ctx.getBean(Single.class));
@@ -393,20 +396,20 @@ public class Proto {
        @Autowired
        Single Single;
 ```
-- sigle 인스턴스는 매번 같은 인스턴스가 들어오고 prototype 인스턴스는 매번 꺼낼 때마다 새로운 인스턴스가 생성된다. 
+- sigle 인스턴스는 매번 같은 인스턴스가 들어오고 prototype 인스턴스는 매번 꺼낼 때마다 새로운 인스턴스가 생성된다.
 - prototype의 bean은 새롭지만 참조하는 sigleton scope의 bean은 항상 동일하다.
-- 아무 문제가 없다. 
+- 아무 문제가 없다.
 
 2. sigleton bean이 prototype bean을 참조하는 경우
-- sigleton scope의 bean은 인스턴스가 한번만 만들어지고 prototype socpe의 bean도 이미 세팅이 되버린다. 
+- sigleton scope의 bean은 인스턴스가 한번만 만들어지고 prototype socpe의 bean도 이미 세팅이 되버린다.
 - 따라서 sigleton scope의 bean을 계속 쓸 때 prototype scope의 bean이 변경되지 않는다. (문제 발생)
 ```java
 @Component
 public class AppRunner implements ApplicationRunner {
-       
+
        @Autowired
        ApplicationContext ctx;
-       
+
        @Override
        public void run(ApplicationArguments args) throws Exception {
               System.out.println(ctx.getBean(Single.class).getProto());
@@ -442,7 +445,7 @@ public class Single {
 
        @Autowired
        private ObjectProvider<Proto> proto;
-       
+
        public Proto getProto() {
               return proto.getIfAvailable();
        }
@@ -525,28 +528,28 @@ public class TestBookRepository implements BookRepository {
 - 다양한 방법으로 정의할 수 있는 설정값이다.
 - 애플리케이션에 등록된 여러가지 key-value 쌍으로 제공되는 property에 접근할 수 있는 기능
 - 계층형으로 접근한다. (우선 순위가 있다)
-- `@PropertySource`로 property를 추가할 수 있다. 
+- `@PropertySource`로 property를 추가할 수 있다.
 ```java
 @SpringBootApplication
 @PropertySource("classpath:/app.properties") //Environment를 통해 property를 추가
 public class Demospring51Application {
-       
+
        public static void main(String[] args) {
             SpringApplication.run(Demospring51Application.class, args);
        }
 }
 ```
-- `environment.getProperty();` 를 사용해 property를 얻을 수 있다. 
+- `environment.getProperty();` 를 사용해 property를 얻을 수 있다.
 ```java
 @Component
 public class AppRunner implements ApplicationRunner {
 
   @Autowired
   ApplicationContext ctx;
-  
+
   @Autowired
   BookRepository bookRepository;
-  
+
   @Override
   public void run(ApplicationArguments args) throws Exception {
        Environment environment = ctx.getEnvironment();
@@ -584,8 +587,8 @@ public class AppRunner implements ApplicationRunner {
   MessageSource messageSource;
   @Override
   public void run(ApplicationArguments args) throws Exception {
-      System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.KOREA));
-      System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.getDefault()));
+      System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.KOREA));
+      System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.getDefault()));
     }
 }
 ```
@@ -602,8 +605,8 @@ public class AppRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         while (true) {
-            System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.KOREA));
-            System.out.println(messageSource.getMessage("greeting", new String[]{"keesun"}, Locale.getDefault()));
+            System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.KOREA));
+            System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.getDefault()));
             Thread.sleep(1000l);  // 1초에 한번씩 출력
         }
     }
@@ -701,11 +704,11 @@ public class AnotherHandler {
     }
 }
 ```
-- 순서를 정해줄 수도 있다. 
+- 순서를 정해줄 수도 있다.
   * `@Order`
   * ex) `@Order(Ordered.HIGHEST_PRECEDENCE + 2)`
 - 비동기적으로 실행
-  * `@Async` 
+  * `@Async`
   * 비동기적으로 실행할 때는 각각의 쓰레드 풀에서 따로 놀고, 어느 것이 먼저 실행 될지는 쓰레드 스케쥴링에 따라 달라지기 때문에 Order가 더이상 의미 없다.
   * Application 파일에도 `@EnableAsync`를 추가하면 Async하게 동작한다.
 <br>
@@ -750,9 +753,9 @@ public class AppRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         Resource resource = resourceLoader.getResource("classpath:test.txt"); // 파일 읽어오기
-        System.out.println(resource.exists()); // 파일 유무 
+        System.out.println(resource.exists()); // 파일 유무
         System.out.println(resource.getDescription()); // 설명
-        // URI를 받아와서 Path를 만들고 Path에 해당하는 파일을 읽어서 컨텐츠를 출력 
+        // URI를 받아와서 Path를 만들고 Path에 해당하는 파일을 읽어서 컨텐츠를 출력
         System.out.println(Files.readString(Path.of(resource.getURI()))); // URL로 읽어오기
     }
 }
@@ -791,7 +794,7 @@ hello spring
 - **ApplicationContext의 타입에 상관없이 리소스 타입을 강제하려면 java.net.URL 접두어(+classpath:) 중 하나를 사용할 수 있다.**
   * **classpath:**me/whiteship/config.xml -> ClassPathResource
   * **file:///**some/resource/path/config.xml -> FileSystemResource
-  * 이렇게 접두어가 있으면 명시적이다. 
+  * 이렇게 접두어가 있으면 명시적이다.
 - 접두어를 사용하지 않으면 ServletContextResource로 Resolve 된다.
 - 루트는 ///를 사용하고 와일드 카드나 classpath*도 사용할 수도 있다.
 <br>
@@ -1101,9 +1104,9 @@ public class WebConfig implements WebMvcConfigurer {
 <br>
 
 ### 문법
-- #{“표현식"} : #{ }에 들어있는 값을 표현식으로 인식해서 실행한 다음 결과값을 프로퍼티에 넣어준다. 
+- #{“표현식"} : #{ }에 들어있는 값을 표현식으로 인식해서 실행한 다음 결과값을 프로퍼티에 넣어준다.
 - ${“프로퍼티"} : application.properties에 등록한 프로퍼티를 참고해 값을 주입 받을 수 있다.
-- 두 가지 방법을 같이 사용할 수 있는데 표현식 안에는 프로퍼티를 사용할 수 있지만 프로퍼티 안에는 표현식을 사용할 수 없다. 
+- 두 가지 방법을 같이 사용할 수 있는데 표현식 안에는 프로퍼티를 사용할 수 있지만 프로퍼티 안에는 표현식을 사용할 수 없다.
     * @Value("#{${my.value} eq 100}")
 - 이외에도 많지만 필요할 때마다 [래퍼런스](https://docs.spring.io/spring/docs/current/spring-framework-reference/core.html#expressions-language-ref) 참고
 <br>
@@ -1190,9 +1193,9 @@ public class AppRunner implements ApplicationRunner {
 
 ### AOP 주요 용어
 - Aspect : 모듈
-- Advice 
+- Advice
     * 해야할 일들
-    * 관심에 해당하는 공통 기능의 코드를 의미한다. 
+    * 관심에 해당하는 공통 기능의 코드를 의미한다.
 - Pointcut
     * 어디에 적용해야 하는지에 대한 정보
     * 필터링된 조인 포인트를 의미한다.
@@ -1229,10 +1232,10 @@ public class AppRunner implements ApplicationRunner {
 
 ### 프록시 패턴
 - 프록시 패턴을 사용하는 이유 : 기존 코드 변경없이 접근 제어 또는 부가 기능 추가
-- 문제점 
-    * 매 번 프록시 클래스를 작성해야 한다. 
-    * 여러 클래스, 여러 메소드에 적용하려면 비용이 많이 든다. 
-    * 중복 코드가 생긴다. 
+- 문제점
+    * 매 번 프록시 클래스를 작성해야 한다.
+    * 여러 클래스, 여러 메소드에 적용하려면 비용이 많이 든다.
+    * 중복 코드가 생긴다.
 <br>
 
 ### 문제점 때문에 등장한 Spring AOP
@@ -1255,7 +1258,7 @@ public class AppRunner implements ApplicationRunner {
 
 ### Spring AOP 예시
 - `@Around` : 메소드를 감싸는 형태로 적용된다.
-    * 메소드 호출 이전, 이후에 기능을 수행할 수 있다. 
+    * 메소드 호출 이전, 이후에 기능을 수행할 수 있다.
     * 메소드에서 발생한 에러를 잡아 에러가 발생했을 때 특정한 일을 할 수 있다.
     * 굉장히 다용도로 쓰일 수 있다.
 - `@Before` bean의 모든 메서드에 앞에 적용
@@ -1270,7 +1273,7 @@ public class PerfAspect {
 		System.out.println(System.currentTimeMillis() - begin);
 		return retVal;
 	}
-	
+
 	@Before("bean(simpleEventService)") //bean의 모든 메서드에 hello 출력
 	public void hello() {
 		System.out.println("hello");
@@ -1278,10 +1281,10 @@ public class PerfAspect {
 }
 ```
 ```java
-@Documented //javaDoc 만들때 사용 
+@Documented //javaDoc 만들때 사용
 @Target(ElementType.METHOD)
 //이 어노테이션 정보를 .class 파일까지 유지하겠다는 의미, 기본값이 CLASS이다.(Source나 Runtime은 거의 안쓴다.)
-@Retention(RetentionPolicy.CLASS) 
+@Retention(RetentionPolicy.CLASS)
 public @interface PerfLogging {
 }
 ```
@@ -1290,7 +1293,7 @@ public @interface PerfLogging {
 ## Null-safety
 - 목적 : (툴의 지원을 받아) 컴파일 시점에 최대한 NullPointerException을 방지하는 것
 - `@NonNull` - Null을 허용하지 않는다.
-- `@Nullable`- Null을 허용한다. 
+- `@Nullable`- Null을 허용한다.
 - `@NonNullApi`(패키지 레벨 설정) - 패키지 이하에 있는 모든 return 타입과 파라미터에 @NonNull 적용
     * - 패키지에 전부 `@NonNull`을 적용하고 Null을 허용하는 곳에만 `@Nullable`을 붙이는 방식의 코딩이 가능하다.
 - `@NonNullFields`(패키지 레벨 설정)  
