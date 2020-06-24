@@ -286,7 +286,7 @@ public class BookService {
 
 ### Autowired 동작원리
 - [AutowiredAnnotationBeanPostProcessor](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/beans/factory/config/BeanPostProcessor.html) 가 기본적으로 Bean으로 등록되어있고
-- BeanFactory 가 자신에게 등록된 [BeanPostProcessor](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/beans/factory/annotation/AutowiredAnnotationBeanPostProcessor.html) 들을 찾아서 일반적인 Bean들에게 로직을 적용함.
+- BeanFactory 가 자신에게 등록된 [BeanPostProcessor](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/beans/factory/annotation/AutowiredAnnotationBeanPostProcessor.html) 들을 찾아서 일반적인 Bean들에게 로직을 적용한다.
 - 따라서 bean으로 등록되어 있는 모든 bean들은 `@Autowired`로 주입 가능하다.
 <br>
 
@@ -313,7 +313,7 @@ public class BookService {
 
 ### Singleton scope
 - 애플리케이션 전반에 걸쳐서 해당 빈의 인스턴스를 오직 한개 사용.
-- 빈의 기본 스코프는 싱클톤 스코프이다.
+- 빈의 기본 스코프는 싱글톤 스코프이다.
 - 따라서 아래 코드의 애플리케이션 실행 결과 proto의 인스턴스가 동일하다.
 - 프로퍼티가 공유가 되기 때문에 Thread safe한 방법으로 코딩해야 한다.
 - 모든 sigleton scope의 bean들은 기본값으로 ApplicationContext를 만들 때 만들게 되어 있다. (application 구동 시간이 좀 더 걸릴 수 있다.) 
@@ -454,7 +454,7 @@ public class Single {
 ## ApplicationContext - [Environment](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/env/Environment.html)
 
 ### Frofile
-- ApplicationContext가 가지고 있는 기능 [environmentCapable](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/env/EnvironmentCapable.html) 인터페이스를 통해 사용가능
+- ApplicationContext가 가지고 있는 기능으로 [environmentCapable](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/env/EnvironmentCapable.html) 인터페이스를 통해 사용가능하다.
 - bean들의 묶음이며, 환경이다.(test환경에서는 어떤 bean들을 쓰겠다, 실제 production에서는 이러이러한 bean들을 쓰겠다라는 환경)
 - 각각의 환경에 따라 bean을 다르게 사용해야 할 경우, 또는 특정 환경에서만 어떠한 bean을 등록해야하는 경우에 사용한다.
 - environmentCapable 인터페이스의 getEnvironment()를 사용하여 Environment를 가져올 수 있다.
@@ -779,7 +779,7 @@ hello spring
 - UrlResource : 기본으로 지원하는 프로토콜 http, https, ftp, file, jar.
 - ClassPathResource: 지원하는 접두어 classpath:
 - FileSystemResource
-- ServletContextResource: 웹 애플리케이션 루트에서 상대 경로로 리소스 찾는다.
+- ServletContextResource: 웹 애플리케이션 루트에서 상대 경로로 리소스를 찾는다.
   * 읽어들이는 resource타입이 ApplicationContext 타입에 따라 결정되기 때문에 가장 많이 쓴다.
 <br>
 
