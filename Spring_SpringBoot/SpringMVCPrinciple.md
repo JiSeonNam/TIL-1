@@ -27,7 +27,7 @@
 
 ## Servlet
 
-### Servelt 이란
+### Servlet 이란
 - 자바 엔터프라이즈 에디션은 웹 애플리케이션 개발용 스팩과 API 제공한다.
 - 한 요청에 처리할 때마다 새로운 프로세스를 만들고 죽이는 식이 아니라 한 프로세스 내의 자원을 공유하는 쓰레드(만들거나, 풀에서 가져다가)를 요청을 처리한다.
 - 가장 중요한 클래스중 하나가 HttpServlet.
@@ -74,8 +74,154 @@
 
 ### Servlet 필터
 - 들어온 요청을 Servlet으로 보내고, 또 Servlet이 작성한 응답을 클라이언트로 보내기 전에 특별한 처리가 필요한 경우에 사용할 수 있다.
-- Servelt 필터를 사용하면 여러 개의 Servlet에 추가적인 작업을 할 수 있고, 특정한 url 패턴에도 작업을 추가로 할 수 있다.
+- Servlet 필터를 사용하면 여러 개의 Servlet에 추가적인 작업을 할 수 있고, 특정한 url 패턴에도 작업을 추가로 할 수 있다.
 - 동시다발적으로 적용되는 것이 아니라 체인 형태의 구조로 순차적으로 적용된다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringMVCPrinciple_1.jpg" width="600px"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringMVCPrinciple_1.jpg" width="400px"></p>
 
+<br>
+
+## Servlet 애플리케이션에 스프링 연동하는 방법
+
+### 1. 스프링 IoC 컨테이너 연동
+- spring-mvc 의존성 추가
+```html
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-webmvc</artifactId>
+    <version>5.2.6.RELEASE</version>
+</dependency>
+```
+- web.xml에 ContextLoaderListener 추가
+    * ApplicationContext 생성
+    * Servlet 생명주기에 맞춰 ApplicationContext가 실행되도록 한다.
+```html
+<listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+```
+- 스프링 설정 파일 생성 및 위치 설정
+    * ApplicationContext를 만들기 위해서는 스프링 설정 파일이 필요하다.
+```java
+// 스프링 설정 파일
+@Configuration
+@ComponentScan
+public class AppConfig {
+
+}
+```
+```java
+// ApplicationContext에 들어갈 bean
+@Service
+public class HelloService {
+
+    public String getName() {
+        return "kimhayoung";
+    }
+}
+```
+- Servlet 파일에서 ApplicationContext를 생성하여 사용
+```java
+public class HelloServlet extends HttpServlet {
+
+    @Override
+    public void init() throws ServletException {
+        System.out.println("init");
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException, IOException {
+        System.out.println("doGet");
+        
+        ApplicationContext context = (ApplicationContext) getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
+        HelloService helloService = context.getBean(HelloService.class);
+        
+        resp.getWriter().println("<html>");
+        resp.getWriter().println("<head>");
+        resp.getWriter().println("<body>");
+        resp.getWriter().println("<h1>Hello, " + helloService.getName() + "</h1>");
+        resp.getWriter().println("</body>");
+        resp.getWriter().println("</head>");
+        resp.getWriter().println("</html>");
+    }
+
+    @Override
+    public void destroy() {
+        System.out.println("destroy");
+    }
+}
+```
+<br>
+
+### 2. 스프링 MVC 연동
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringMVCPrinciple_2.jpg" width="400px"></p>
+
+- 스프링이 제공하는 Servlet 구현체 DispatcherServlet을 사용하는 방법
+- Root WebApplicationContext를 상속받는 ApplicationContext(Servlet WebApplicationContext)를 하나 더 만든다.
+    * Root WebApplicationContext는 다른 Servlet도 공용으로 사용가능
+    * DispatcherServlet 내부에서 만드는 ApplicationContext는 다른 DispatcherServlet에서 사용 불가능
+- web.xml에 DispatcherServlet 등록
+```html
+<servlet>
+    <servlet-name>app</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+</servlet>
+```
+- Controller를 만들어 DispatcherServlet이 만드는 ApplicationContext에 등록
+```java
+@RestController
+public class HelloController {
+
+    @Autowired
+    HelloService helloService;
+
+    @GetMapping("/hello")
+    public String hello() {
+        return "Hello, " + helloService.getName();
+    }
+}
+```
+- HelloController는 DispatcherServlet이 만드는 ApplicationContext에 등록하고, HelloService는 ContextLoaderListener가 만드는 ApplicationContext에 등록
+```java
+@Configuration
+// Controller는 bean으로 등록하지 않도록 설정
+@ComponentScan(excludeFilters = @ComponentScan.Filter(Controller.class))
+public class AppConfig {
+
+}
+```
+```java
+@Configuration
+// Default 필터들을 사용하지 않고, Controller만 bean으로 등록하도록 설정
+@ComponentScan(useDefaultFilters = false, includeFilters = @ComponentScan.Filter())
+public class WebConfig {
+}
+```
+- web.xml에서 contextClass를 변경
+```html
+<servlet>
+    <servlet-name>app</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+        <param-name>contextClass</param-name>
+        <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+    </init-param>
+    <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>me.hayoung.WebConfig</param-value>
+    </init-param>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>app</servlet-name>
+    <url-pattern>/app/*</url-pattern>
+</servlet-mapping>
+```
+<br>
+
+#### 만약 web.xml이 복잡하고 여러 Servlet을 등록하지 않을 경우
+- 계층 구조를 만들 필요없이 DispatcherServlet에서 만드는 ApplicationContext에 모든 bean을 등록할 수 있다.
+- 위의 예시 코드에서 AppConfig를 삭제하고 WebConfig의 Filter를 삭제
+    * Controller와 Service가 모두 WebConfig에 의해서 ApplicationContext에 등록된다.
+    * 이렇게 되면 Root WebApplicationContext가 있지 않고 DispatcherServlet이 만드는 WebApplicationContext(모든 bean이 여기 등록)가 루트가 된다.
+- 최근에는 대부분 상속구조보다는 DispatcherServlet 하나만 등록되어 있고 DispatcherServlet이 만든 ApplicationContext에 모든 bean이 등록되어 동작하는 방식을 사용한다.
 <br>
