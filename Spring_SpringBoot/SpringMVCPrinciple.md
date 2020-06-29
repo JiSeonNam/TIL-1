@@ -59,3 +59,23 @@
     * 따라서 보통 doGet() 또는 doPost()를 구현한다.
 - Servlet 컨테이너 판단에 따라 해당 Servlet을 메모리에서 내려야 할 시점에 destroy()를 호출한다.
 <br>
+
+## Servlet 리스너와 Servlet 필터
+
+### Servlet 리스너
+- 웹 애플리케이션에서 발생하는 주요 이벤트를 감지하고 각 이벤트에 특별한 작업이 필요한 경우에 사용할 수 있다.
+    * Servlet 컨텍스트 수준의 이벤트
+        - 컨텍스트 라이프사이클 이벤트
+        - 컨텍스트 애트리뷰트 변경 이벤트
+    * 세션 수준의 이벤트
+        - 세션 라이프사이클 이벤트
+        - 세션 애트리뷰트 변경 이벤트
+<br>
+
+### Servlet 필터
+- 들어온 요청을 Servlet으로 보내고, 또 Servlet이 작성한 응답을 클라이언트로 보내기 전에 특별한 처리가 필요한 경우에 사용할 수 있다.
+- Servelt 필터를 사용하면 여러 개의 Servlet에 추가적인 작업을 할 수 있고, 특정한 url 패턴에도 작업을 추가로 할 수 있다.
+- 동시다발적으로 적용되는 것이 아니라 체인 형태의 구조로 순차적으로 적용된다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/SpringMVCPrinciple_1.jpg" width="600px"></p>
+
+<br>
