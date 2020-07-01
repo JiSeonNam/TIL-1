@@ -276,3 +276,17 @@ public class WebConfig {
     * FlashMap은 주로 리다이렉션을 사용할 때 요청 매개변수를 사용하지 않고 데이터를 전달하고 정리할 때 사용한다.
     * ex) `redirect:/events/id=2020`
 <br>
+
+## 스프링 부트와 스프링 MVC
+
+### 스프링 부트를 사용하지 않는 스프링 MVC
+- 서블릿 컨네이너(ex : tomcat)에 등록한 웹 애플리케이션(WAR)에 DispatcherServlet을 등록한다.
+    * web.xml에 서블릿 등록
+    * 또는 WebApplicationInitializer에 자바 코드로 서블릿 등록 (스프링 3.1+, 서블릿 3.0+)
+- 세부 구성 요소는 빈 설정하기 나름.
+<bt>
+
+### 스프링 부트를 사용하는 스프링 MVC
+- 자바 애플리케이션에 내장 톰캣을 만들고 그 안에 DispatcherServlet을 등록한다.
+    * 스프링 부트 자동 설정이 자동으로 해줌.
+- 스프링 부트의 주관에 따라 여러 인터페이스 구현체를 빈으로 등록한다.
