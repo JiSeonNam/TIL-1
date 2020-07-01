@@ -246,3 +246,33 @@ public class WebConfig {
         * @ResponseEntity가 있다면 Converter를 사용해서 응답 본문을 만들고.
 5. (부가적으로) 예외가 발생했다면, 예외 처리 핸들러에 요청 처리를 위임한다.
 6. 최종적으로 응답을 보낸다.
+<br>
+
+## 스프링 MVC 구성 요소
+
+### DispatcherServlet이 사용하는 인터페이스
+- DispatcherSerlvet의 기본 전략
+    * DispatcherServlet.properties
+- MultipartResolver
+    * 파일 업로드 요청 처리에 필요한 인터페이스
+    * HttpServletRequest를 MultipartHttpServletRequest로 변환해주어 요청이 담고 있는 File을
+꺼낼 수 있는 API 제공.
+- LocaleResolver
+    * 클라이언트의 위치(Locale) 정보를 파악하는 인터페이스
+    * 기본 전략은 요청의 accept-language를 보고 판단.
+- ThemeResolver
+    * 애플리케이션에 설정된 테마를 파악하고 변경할 수 있는 인터페이스
+- HandlerAdapter
+    * HandlerMapping이 찾아낸 “핸들러”를 처리하는 인터페이스
+    * 스프링 MVC 확장력의 핵심
+- HandlerExceptionResolver
+    * 요청 처리 중에 발생한 에러를 처리하는 인터페이스
+- RequestToViewNameTranslator
+    * 핸들러에서 뷰 이름을 명시적으로 리턴하지 않은 경우, 요청을 기반으로 뷰 이름을 판단하는 인터페이스
+- ViewResolver
+    * 뷰 이름(string)에 해당하는 뷰를 찾아내는 인터페이스
+- FlashMapManager
+    * FlashMap 인스턴스를 가져오고 저장하는 인터페이스
+    * FlashMap은 주로 리다이렉션을 사용할 때 요청 매개변수를 사용하지 않고 데이터를 전달하고 정리할 때 사용한다.
+    * ex) `redirect:/events/id=2020`
+<br>
