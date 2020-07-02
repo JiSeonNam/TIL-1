@@ -89,3 +89,23 @@ public class WebConfig implements WebMvcConfigurer {
 }
 ```
 <br>
+
+## 스프링 부트의 스프링 MVC 설정
+
+### 스프링 부트의 “주관”이 적용된 자동 설정이 동작한다.
+- JSP 보다 Thymeleaf를 선호한다.
+- JSON 지원 (XML은 지원하지 않는다)
+- 정적 리소스 지원 (+ 웰컴 페이지, 파비콘 등 지원)
+<br>
+
+### 스프링 MVC 커스터마이징
+- application.properties
+    * properties들을 고치는 방법. 
+    * 가장 간단하다.
+- @Configuration + Implements WebMvcConfigurer
+    * 스프링 부트의 스프링 MVC 자동설정 + 추가 설정
+    * 대부분의 경우에 합리적인 선택이다.
+    * 일일히 설정하기 보다는 스프링 부트가 제공하는 설정을 사용하면서 추가로 설정하는 방법이다.
+- @Configuration + @EnableWebMvc + Imlements WebMvcConfigurer
+    * 스프링 부트의 스프링 MVC 자동설정을 사용하지 않음.
+<br>
