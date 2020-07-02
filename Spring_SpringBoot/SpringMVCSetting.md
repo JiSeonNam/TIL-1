@@ -48,3 +48,44 @@ public class WebConfig{
 }
 ```
 <br>
+
+## WebMvcConfigurer
+- `@EnableWebMvc`가 제공하는 빈을 커스터마이징할 수 있는 기능을 제공하는 인터페이스
+- `@EnableWebMvc`를 사용할 때 import하는 `DelegatingWebMvcConfiguration`은 Delegation구조(어딘가에 위임해서 읽어오는 방식)으로 구성되어 있다.
+    * 따라서 처음부터 bean을 등록하는게 아니라 손쉽게 `DelegatingWebMvcConfiguration`가 상속하는 `WebMvcConfigurationSupport`가 설정해주는 bean에 추가하고 싶은 부분을 추가할 수 있다.
+    * 원하는 데로 커스텀할 수 있도록 확장성이 좋다  
+- 이런 확장을 인터페이스를 통해서 지원하고 있는데 그 인터페이스가 WebMvcConfigurer이다. 
+- 예를 들어 ViewResolver를 직접 bean으로 등록하지 않아도 @EnableWebMvc가 등록해주는 viewResolver를 커스터마이징하면서 같은 결과를 얻을 수 있다.
+```java
+@Configuration
+@ComponentScan
+@EnableWebMvc
+public class WebConfig {
+public class WebConfig implements WebMvcConfigurer {
+    /* 직접 구현하지 않아도 된다.
+    @Bean
+    public ViewResolver viewResolver() {
+        InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+        viewResolver.setPrefix("/WEB-INF/");
+        viewResolver.setSuffix(".jsp");
+        return viewResolver;
+    }
+    */
+    @Override
+    public void configureViewResolvers(ViewResolverRegistry registry) {
+        // prefix: /WEB-INF/, suffix: .jsp
+        registry.jsp("/WEB-INF/", ".jsp");
+    }
+    // Formatter 추가
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+
+    }
+    // Interceptor 추가
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+
+    }
+}
+```
+<br>
