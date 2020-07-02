@@ -109,3 +109,92 @@ public class WebConfig implements WebMvcConfigurer {
 - @Configuration + @EnableWebMvc + Imlements WebMvcConfigurer
     * 스프링 부트의 스프링 MVC 자동설정을 사용하지 않음.
 <br>
+
+## 스프링 부트와 JSP
+
+### 스프링 부트에서 JSP 사용하기
+- 제약사항
+    * 프로젝트를 JAR 프로젝트로 만들 수 없고, WAR 프로젝트로 만들어야 한다.
+    * Java -JAR로 실행할 수는 있지만 “실행가능한 JAR 파일”은 지원하지 않는다.
+    * Undertow(JBoss에서 만든 서블릿 컨테이너)는 JSP를 지원하지 않는다.
+    * Whitelabel 에러 페이지를 error.jsp로 오버라이딩 할 수 없다.
+- 스프링 부트 Document에도 가급적이면 JSP 사용을 피하라고 나와있다. 
+> "If possible, JSPs should be avoided. There are several known limitations when using them with embedded servlet containers."
+- 의존성 추가
+```xml
+<dependency>
+<groupId>javax.servlet</groupId>
+<artifactId>jstl</artifactId>
+</dependency>
+
+<dependency>
+<groupId>org.apache.tomcat.embed</groupId>
+<artifactId>tomcat-embed-jasper</artifactId>
+<scope>provided</scope>
+</dependency>
+```
+- Event 클래스와 Controller 생성
+```java
+public class Event {
+
+    private String name;
+
+    private LocalDateTime starts;
+
+    //...getter and setter...
+}
+```
+```java
+@Controller
+public class EventController {
+
+    @GetMapping("/events")
+    public String getEvents(Model model) {
+        Event event1 = new Event();
+        event1.setName("스프링 웹 MVC 스터디 1");
+        event1.setStarts(LocalDateTime.of(2019, 1, 15 ,10, 0));
+        Event event2 = new Event();
+        event2.setName("스프링 웹 MVC 스터디 2");
+        event2.setStarts(LocalDateTime.of(2019, 1, 22 ,10, 0));
+
+        List<Event> events = List.of(event1, event2);
+
+        model.addAttribute("events", events);
+        model.addAttribute("message", "Happy New Year!");
+
+        return "events/list";
+    }
+}
+```
+- 뷰 만들기(JSP), jstl 태그 라이브러리도 선언
+```jsp
+<%@ page contentType="text/html;charset=UTF-8" language="java"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<html>
+<head>
+    <title>Title</title>
+</head>
+<body>
+    <h1>이벤트 목록</h1>
+    <h2>${message}</h2>
+    <table>
+        <tr>
+            <th>이름</th>
+            <th>시작</th>
+        </tr>
+        <c:forEach items="${events}" var="event">
+            <tr>
+                <td>${event.name}</td>
+                <td>${event.starts}</td>
+            </tr>
+        </c:forEach>
+    </table>
+</body>
+</html>
+```
+- application.properties에 prefix와 suffix 설정
+```
+spring.mvc.view.prefix=/WEB-INF/jsp/
+spring.mvc.view.suffix=.jsp
+```
+<br>
