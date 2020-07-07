@@ -999,6 +999,7 @@ must be a well-formed email address
 
 ### [Converter](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/convert/converter/Converter.html)
 - PropertyEditor가 가진 단점을 없애고 대신 사용할 수 있는 인터페이스
+- Fomatter 보다 좀 더 일반적인 용도로 굳이 문자열이 아닌 객체에서 또다른 객체로 변환할 수 있는 인터페이스
 - 상태 정보가 없으므로 얼마 든지 빈으로 등록해서 사용해도 상관 없다.
 - [ConverterRegistry](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/convert/converter/ConverterRegistry.html)에 등록해서 사용한다.
 ```java
