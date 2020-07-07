@@ -198,3 +198,104 @@ spring.mvc.view.prefix=/WEB-INF/jsp/
 spring.mvc.view.suffix=.jsp
 ```
 <br>
+
+## WebMvcConfigurer 설정 - Fomatter 설정
+
+### Formatter
+- 어떠한 객체를 문자열로 변환하거나 문자열을 객체로 변환할 때 사용할 수 있는 인터페이스
+- Formatter를 사용하면 우리가 원하는 데이터를 객체로 받을 수 있다.
+- Formatter는 2가지 인터페이스를 합친 것이다. 
+    * Printer: 객체를 (Locale  정보를 참고하여) 문자열로 어떻게 출력할 것인가
+    * Parser: 문자열을 (Locale 정보를 참고하여) 객체로 어떻게 변  환할 것인가
+
+### 예시코드
+- Controller와 Test코드 추가
+```java
+@RestController
+public class SampleController {
+
+    @GetMapping("/hello/{name}")
+    public String hello(@PathVariable("name") Person person) {
+        return "hello" + person.getName();
+    }
+}
+```
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void hello() throws Exception {
+        this.mockMvc.perform(get("/hello"))
+                .andDo(print())
+                .andExpect(content().string("hello"));
+    }
+}
+```
+- name에 들어오는 문자열을 Person으로 변환해야하는지 Spring MVC는 모르기 때문에 Formatter 추가
+```java
+public class PersonFormatter implements Formatter<Person> {
+    @Override
+    public Person parse(String text, Locale locale) throws ParseException {
+        Person person = new Person();
+        person.setName(text);
+        return person;
+    }
+
+    @Override
+    public String print(Person person, Locale locale) {
+        return person.toString();
+    }
+}
+```
+- 스프링 설정 파일에 Fomatter를 등록
+    * WebMvcConfigurer 인터페이스를 구현할 때 FormatterRegistry를 제공하는 addFormatters 메소드를 구현하면 된다.
+    * 이제는 스프링 MVC가 문자열을 Person이라는 객체로 어떻게 변환해야하는지 알고 있게 된다.
+    * 애플리케이션을 실행하면 잘 동작한다. (localhost:8080/hello/hayoung)
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer{
+    
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        registry.addFormatter(new PersonFormatter());
+    }
+}
+```
+- url path뿐만 아니라 request parameter로도 잘 동작한다. (localhost:8080/hello?name=hayoung)
+```java
+@RestController
+public class SampleController {
+
+    @GetMapping("/hello")
+    public String hello(@RequestParam("name") Person person) {
+        return "hello " + person.getName();
+    }
+}
+```
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void hello() throws Exception {
+        this.mockMvc.perform(get("/hello")
+                    .param("name", "hayoung"))
+                .andDo(print())
+                .andExpect(content().string("hello hayoung"));
+    }
+}
+```
+
+### 스프링 부트에서의 Formatter 
+- 스프링 부트를 쓰면 굳이 스프링 설정 파일에 등록할 필요 없다.
+- Formatter가 bean으로 등록되어 있으면 자동으로 등록해 준다.
+<br>
