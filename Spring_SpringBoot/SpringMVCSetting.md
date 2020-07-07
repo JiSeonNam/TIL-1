@@ -299,3 +299,83 @@ public class SampleControllerTest {
 - 스프링 부트를 쓰면 굳이 스프링 설정 파일에 등록할 필요 없다.
 - Formatter가 bean으로 등록되어 있으면 자동으로 등록해 준다.
 <br>
+
+## 도메인 클래스 컨버터 자동 등록
+- 스프링 데이터 JPA는 스프링 MVC용 도메인 클래스 컨버터를 제공한다. 
+- 도메인 클래스 컨버터
+    * 스프링 데이터 JPA가 제공하는 Repository를 사용해서 ID에 해당하는 엔티티를 읽어온다.
+
+
+- 예시 코드에서 만약 id에 해당하는 person의 이름을 출력하고 싶을 때는 Formatter나 Converter를 직접 만들어도 되지만 스프링 데이터 JPA의 도움을 받으면 쉽게 해결할 수 있다.
+- 스프링 데이터 JPA, H2 의존성 추가
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+</dependency>
+```
+- 엔티티 맵핑
+```java
+@Entity
+public class Person {
+    @Id @GeneratedValue
+    private Long id;
+
+    private String name;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+```
+- Repository 추가
+    * Id값에서 엔티티로 Converting을 할 때 Repository를 사용한다.
+```java
+// JpaRepository를 상속받으면서 첫번째 타입은 엔티티 타입(Person), 두번째 타입은 key값의 타입(Long)
+// Reposiroty를 알아서 bean으로 등록해준다.
+public interface PersonRepository extends JpaRepository<Person, Long> {
+
+}
+```
+- 테스트
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    PersonRepository personRepository;
+
+    @Test
+    public void hello() throws Exception {
+        Person person = new Person();
+        person.setName("hayoung");
+        Person savedPerson = personRepository.save(person);
+
+        this.mockMvc.perform(get("/hello")
+                    .param("id", savedPerson.getId().toString()))
+                .andDo(print())
+                .andExpect(content().string("hello hayoung"));
+    }
+}
+```
