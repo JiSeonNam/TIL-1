@@ -10,6 +10,7 @@
 - [스프링 프레임워크 핵심 기술 - 강의 내용 정리](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringFrameworkCore.md)
 - [스프링 MVC]
     * [스프링 MVC 동작 원리](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringMVCPrinciple.md)
+    * [스프링 MVC 설정](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringMVCSetting.md)
 - [스프링 부트 개념과 활용 - 스프링 부트 시작하기](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootStart.md)
 - [스프링 부트 개념과 활용 - 스프링 부트 원리](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootPrinciple.md)
 - [스프링 부트 개념과 활용 - 스프링 부트 활용](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootUtilization.md)
