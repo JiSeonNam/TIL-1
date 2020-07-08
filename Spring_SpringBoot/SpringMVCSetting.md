@@ -206,9 +206,9 @@ spring.mvc.view.suffix=.jsp
 - Formatter를 사용하면 우리가 원하는 데이터를 객체로 받을 수 있다.
 - Formatter는 2가지 인터페이스를 합친 것이다. 
     * Printer: 객체를 (Locale  정보를 참고하여) 문자열로 어떻게 출력할 것인가
-    * Parser: 문자열을 (Locale 정보를 참고하여) 객체로 어떻게 변  환할 것인가
+    * Parser: 문자열을 (Locale 정보를 참고하여) 객체로 어떻게 변환할 것인가
 
-### 예시코드
+### Formatter 실습
 - Controller와 Test코드 추가
 ```java
 @RestController
@@ -305,7 +305,7 @@ public class SampleControllerTest {
 - 도메인 클래스 컨버터
     * 스프링 데이터 JPA가 제공하는 Repository를 사용해서 ID에 해당하는 엔티티를 읽어온다.
 
-
+### 실습
 - 예시 코드에서 만약 id에 해당하는 person의 이름을 출력하고 싶을 때는 Formatter나 Converter를 직접 만들어도 되지만 스프링 데이터 JPA의 도움을 받으면 쉽게 해결할 수 있다.
 - 스프링 데이터 JPA, H2 의존성 추가
 ```xml
@@ -379,3 +379,98 @@ public class SampleControllerTest {
     }
 }
 ```
+<br>
+
+## HandlerInterceptor
+- 핸들러 맵핑에 설정할 수 있는 인터셉터
+    * 핸들러 맵핑이 찾아주는 핸들러에 인터셉터들을 적용해준다.
+- 핸들러를 실행하기 전(preHandle), 요청 처리 후 뷰 랜더링 전(postHandler), 뷰 렌더링까지 끝난 완료시점(afterCompletion)까지 3가지 시점에 부가 작업을 하고 싶은 경우에 사용할 수 있다.
+- 여러 핸들러에서 반복적으로 사용하는 코드를 줄이고 싶을 때 사용할 수 있다.
+    * 로깅, 인증 체크, Locale 변경 등...
+<br>
+
+### boolean preHandle(request, response, handler)
+- 핸들러 실행하기 전에 호출 된다.
+- "핸들러"에 대한 정보를 사용할 수 있기 때문에 서블릿 필터에 비해 보다 세밀한 로직을 구현할 수 있다.
+- 리턴값으로 계속 다음 인터셉터 또는 핸들러로 요청,응답을 전달할지(true) 응답 처리가 이곳에서 끝났는지(false) 알린다.
+    * false를 리턴하면 요청처리가 끝나기 때문에 afterCompletion까지 가지 않는다.
+<br>
+
+### void postHandle(request, response, modelAndView)
+- 핸들러 실행이 끝나고 아직 뷰를 랜더링 하기 이전에 호출 된다.
+- “뷰"에 전달할 추가적이거나 여러 핸들러에 공통적인 모델 정보를 담는데 사용할 수도 있다.
+    * ModelAndView를 커스터마이징하거나 뷰를 변경하는 것이 가능하다.
+- 인터셉터 역순으로 호출된다.
+- 비동기적인 요청 처리 시에는 호출되지 않는다
+<br>
+
+### void afterCompletion(request, response, handler, ex)
+- 요청 처리가 완전히 끝난 뒤(뷰 랜더링 끝난 뒤)에 호출 됨
+- preHandler에서 true를 리턴한 경우에만 호출 됨
+- 인터셉터 역순으로 호출된다.
+- 비동기적인 요청 처리 시에는 호출되지 않는다.
+<br>
+
+### HandlerInterceptor vs 서블릿 필터
+- 서블릿 보다 구체적인 처리가 가능하다.
+- 서블릿은 보다 일반적인 용도의 기능을 구현하는데 사용하는게 좋다.
+<br>
+
+### HandlerInterceptor 실습
+- HandlerInterceptor 생성
+```java
+public class GreetingInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.out.println("preHandle 1");
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        System.out.println("postHandle 1");
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        System.out.println("afterCompletion 1");
+    }
+}
+```
+```java
+public class AnotherInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.out.println("preHandle 2");
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        System.out.println("postHandle 2");
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        System.out.println("afterCompletion 2");
+    }
+}
+```
+- 설정 파일에 HandlerInterceptor 등록
+    * 따로 설정하지 않으면 add한 순서대로 Interceptor가 적용된다.
+    * 특정 패턴에 해당하는 요청에만 적용할 수도 있다.
+    * order를 사용해 순서를 지정할 수 있다.
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer{
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // 따로 설정하지 않으면 add한 순서대로 Interceptor가 적용된다.
+        registry.addInterceptor(new GreetingInterceptor()).order(0);
+        registry.addInterceptor(new AnotherInterceptor())
+                .addPathPatterns("/hi")
+                .order(-1);
+    }
+}
+```
+<br>
