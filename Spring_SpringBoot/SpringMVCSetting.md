@@ -474,3 +474,56 @@ public class WebConfig implements WebMvcConfigurer{
 }
 ```
 <br>
+
+## [ResourceHandler](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html#addResourceHandlers-org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry-)
+- 이미지, 자바스크립트, CSS 그리고 HTML 파일과 같은 정적인 리소스를 처리하는 핸들러이다.
+
+### Default Servlet
+- ResourceHandler는 Default Servlet을 이해해야 한다.
+- Servlet 컨테이너가 기본으로 제공하는 Servlet으로 정적인 리소스를 처리할 때 사용한다.
+- [참고 자료](https://tomcat.apache.org/tomcat-9.0-doc/default-servlet.html)
+<br>
+
+### 스프링 MVC ResourceHandler 맵핑 등록
+- 정적인 ResourceHandler가 요청을 가로채면 직접 만든 Handler보다 먼저 요청을 찾아지기 때문에 가장 낮은 우선 순위로 등록된다.
+    * 다른 핸들러 맵핑이 “/” 이하 요청을 처리하도록 허용하고
+    * 최종적으로 ResourceHandler가 처리하도록.
+- DefaultServletHandlerConfigurer
+<br>
+
+### ResourceHandler 설정
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/mobile/**")   // 어떠한 패턴의 요청을 처리할 지
+                .addResourceLocations("classpath:/mobile/") // 리소스를 어디서 찾을 지
+                .setCacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES));    // cache 설정, 리소스가 변경되면 10분이 안지났더라도 다시 받아온다.
+    }
+}
+```
+- 테스트
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class SampleControllerTest {
+    @Test
+    public void helloStatic() throws Exception {
+        this.mockMvc.perform(get("/mobile/index.html"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.containsString("Hello Mobile")))
+                .andExpect(header().exists(HttpHeaders.CACHE_CONTROL));
+    }
+}
+```
+- ResourceResolver: 요청에 해당하는 리소스를 찾는 전략
+    * 캐싱, 인코딩(gzip, brotli), WebJar, ...
+- ResourceTransformer: 응답으로 보낼 리소스를 수정하는 전략
+    * 캐싱, CSS 링크, HTML5 AppCache, ...
+- [참고 자료](https://www.slideshare.net/rstoya05/resource-handling-spring-framework-41)
+<br>
+
+\* 스프링 부트에서는 기본 정적 ResourceHandler와 캐싱 제공해준다.
+<br>
