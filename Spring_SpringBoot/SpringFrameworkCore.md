@@ -33,7 +33,7 @@
 - 고전적인 방법으로 요즘에는 거의 쓰이지 않는다.
 - application.xml 파일을 만들고 bean을 등록한다.
 - `<bean>`엘리먼트에서 가장 중요한 것은 class 속성값이다. 패키지 경로가 포함된 전체 클래스 경로를 지정해야 한다.
-```java
+```xml
 // application.xml
 <? xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -72,7 +72,7 @@ public class DemoApplication {
 - bean을 스캐닝해서 등록하는 것이다. (Spring 2.5부터 등장)
 - @Component와 Component 애노테이션을 확장한 @Service, @Repository 등을 사용해 bean으로 등록 할 수 있다.
 - 빈으로 등록만 되기 때문에 의존성 주입은 @Autowired 나 @Inject를 통해 받아야 한다.
-```java
+```xml
 <? xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -501,6 +501,16 @@ public class TestConfiguration {
 - IDE에서 제공하는 Active profiles에 profile 추가
 2. VM options
 - 실습 기준 IntelliJ에서 Community 버젼의 경우 Active profiles가 없을 경우, VM option에 `-Dspring.profiles.active="profile이름"`으로 profile 추가
+<br>
+
+### Component스캔으로 등록되는 bean에 Profile 지정
+```java
+@Repository
+@Profile("test")
+public class TestBookRepository implements BookRepository {
+
+}
+```
 <br>
 
 #### profile 표현 예시
