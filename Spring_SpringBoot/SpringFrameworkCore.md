@@ -535,7 +535,17 @@ public class TestBookRepository implements BookRepository {
 - 다양한 방법으로 정의할 수 있는 설정값이다.
 - 애플리케이션에 등록된 여러가지 key-value 쌍으로 제공되는 property에 접근할 수 있는 기능
 - 계층형으로 접근한다. (우선 순위가 있다)
-- `@PropertySource`로 property를 추가할 수 있다. 
+- `@PropertySource`로 property를 추가할 수 있다.
+- resources 디렉토리 밑에 app.properties파일에 property를 작성하거나 
+```java
+// app.properties
+app.name=spring5
+```
+- VM option에 property 값을 줄 수 있다.
+    * `-Dapp.name=spring5`
+<br>
+
+### Property 실습
 ```java
 @SpringBootApplication
 @PropertySource("classpath:/app.properties") //Environment를 통해 property를 추가
