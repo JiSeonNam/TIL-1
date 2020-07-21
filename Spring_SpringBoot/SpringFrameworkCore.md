@@ -597,6 +597,7 @@ greeting=Hello {0}
 ```java
 // messages_ko_KR.properties 파일
 greeting=안녕, {0}
+```
 ```java
 @Component
 public class AppRunner implements ApplicationRunner {
@@ -620,7 +621,7 @@ public class AppRunner implements ApplicationRunner {
     @Autowired
     MessageSource messageSource;
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) thr  ows Exception {
         while (true) {
             System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.KOREA));
             System.out.println(messageSource.getMessage("greeting", new String[]{"hayoung"}, Locale.getDefault()));
@@ -628,7 +629,6 @@ public class AppRunner implements ApplicationRunner {
         }
     }
 }
-
 ```
 ```java
 @SpringBootApplication
@@ -786,6 +786,7 @@ hello spring
 
 ## [Resource](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/Resource.html) 추상화
 - java.net.URL을 추상화 한 것.
+    * java.net.URL을 감싸서 low-level에 있는 resource에 접근하는 기능을 만든 것이다.
 - 스프링 내부에서 많이 사용하는 인터페이스
 <br>
 
