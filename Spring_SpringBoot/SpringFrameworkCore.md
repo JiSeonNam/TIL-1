@@ -791,7 +791,7 @@ hello spring
 <br>
 
 ### 추상화 한 이유
-- 클래스패스 기준으로 리소스 읽어오는 기능 부재
+- java.net.URL 클래스가 클래스패스 기준으로 리소스 읽어오는 기능 부재
 - ServletContext를 기준으로 상대 경로로 읽어오는 기능 부재
 -  새로운 핸들러를 등록하여 특별한 URL 접미사를 만들어 사용할 수는 있지만 구현이 복잡하고 편의성 메소드가 부족하다.
 <br>
@@ -810,8 +810,8 @@ hello spring
   * FileSystemXmlApplicationContext -> FileSystemResource
   * WebApplicationContext -> ServletContextResource
 - **ApplicationContext의 타입에 상관없이 리소스 타입을 강제하려면 java.net.URL 접두어(+classpath:) 중 하나를 사용할 수 있다.**
-  * **classpath:**me/whiteship/config.xml -> ClassPathResource
-  * **file:///**some/resource/path/config.xml -> FileSystemResource
+  * classpath:me/whiteship/config.xml -> ClassPathResource
+  * file:///some/resource/path/config.xml -> FileSystemResource
   * 이렇게 접두어가 있으면 명시적이다. 
 - 접두어를 사용하지 않으면 ServletContextResource로 Resolve 된다.
 - 루트는 ///를 사용하고 와일드 카드나 classpath*도 사용할 수도 있다.
