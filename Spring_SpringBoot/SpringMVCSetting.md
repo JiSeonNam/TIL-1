@@ -17,6 +17,7 @@ public class WebConfig {
     public HandlerMapping handlerMapping() {
         RequestMappingHandlerMapping handlerMapping = new RequestMappingHandlerMapping();
         //가장 흔히 사용되는 설정 중의 하나, Servlet Filter와 유사한 기능
+        // RequestMappingHandlerMapping은 애노테이션과 관련있다.
         handlerMapping.setInterceptors();
         handlerMapping.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return handlerMapping;
@@ -298,6 +299,10 @@ public class SampleControllerTest {
 ### 스프링 부트에서의 Formatter 
 - 스프링 부트를 쓰면 굳이 스프링 설정 파일에 등록할 필요 없다.
 - Formatter가 bean으로 등록되어 있으면 자동으로 등록해 준다.
+- 하지만 Component로 bean으로 등록하면 애플리케이션을 잘 동작하지만 Test는 실패한다.
+    * `@WebMvcTest`가 slicing-test용으로, 웹과 관련된 bean들만 등록해주기 때문에 Formatter를 인식하지 못한다.
+    * `@WebMvcTest`를 `@SpringBootTest`로 통합 Test를 하면 된다.
+    * mockMvc가 자동으로 bean으로 등록되지 않기 때문에 `@AutoConfigureMockMvc` 애노테이션도 Test에 붙여줘야 한다.
 <br>
 
 ## 도메인 클래스 컨버터 자동 등록
@@ -487,7 +492,7 @@ public class WebConfig implements WebMvcConfigurer{
 ### 스프링 MVC ResourceHandler 맵핑 등록
 - 정적인 ResourceHandler가 요청을 가로채면 직접 만든 Handler보다 먼저 요청을 찾아지기 때문에 가장 낮은 우선 순위로 등록된다.
     * 다른 핸들러 맵핑이 “/” 이하 요청을 처리하도록 허용하고
-    * 최종적으로 ResourceHandler가 처리하도록.
+    * 최종적으로 ResourceHandler가 처리하도록 한다.
 - DefaultServletHandlerConfigurer
 <br>
 
