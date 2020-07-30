@@ -386,7 +386,7 @@ public class SampleControllerTest {
 ```
 <br>
 
-## HandlerInterceptor
+## [HandlerInterceptor](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/HandlerInterceptor.html)
 - 핸들러 맵핑에 설정할 수 있는 인터셉터
     * 핸들러 맵핑이 찾아주는 핸들러에 인터셉터들을 적용해준다.
 - 핸들러를 실행하기 전(preHandle), 요청 처리 후 뷰 랜더링 전(postHandler), 뷰 렌더링까지 끝난 완료시점(afterCompletion)까지 3가지 시점에 부가 작업을 하고 싶은 경우에 사용할 수 있다.
