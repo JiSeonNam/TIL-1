@@ -594,3 +594,57 @@ public class SampleControllerTest {
     * 메이븐 또는 그래들 설정에 의존성을 추가하면 그에 따른 컨버터가 자동으로 등록 된다.
     * WebMvcConfigurationSupport 클래스에서 판단 후 등록
 <br>
+
+### HTTP Message Converter : JSON Converter
+- 스프링 부트를 사용하지 않는 경우
+    * 사용하고 싶은 JSON 라이브러리를 의존성으로 추가
+    * GSON
+    * JacksonJSON
+    * JacksonJSON 2
+- 스프링 부트를 사용하는 경우
+    * 기본적으로 JacksonJSON 2가 의존성에 들어있다.
+    * 따라서 JSON용 HTTP 메시지 컨버터가 기본으로 등록되어 있다.
+<br>
+
+#### 실습
+```java
+@RestController
+public class SampleController {
+    // 요청 본문으로 받은 JSON 문자열을 Person으로 받아서 return하기
+    @GetMapping("/jsonMessage")
+    public Person jsonMessage(@RequestBody Person person) {
+        return person;
+    }
+}
+```
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
+    @Test
+    public void jsonMessage() throws Exception {
+        // JSON 문자열을 생성
+        Person person = new Person();
+        person.setId(2020l);
+        person.setName("hayoung");
+        // Person 객체를 JSON 문자열로 변환
+        String jsonString = objectMapper.writeValueAsString(person);
+
+        this.mockMvc.perform(get("/jsonMessage")
+                    .contentType(MediaType.APPLICATION_JSON_UTF8) // 보내는 데이터가 어떤 타입인지
+                    .accept(MediaType.APPLICATION_JSON_UTF8)    // 응답으로 어떠한 타입의 데이터를 원하는지
+                    .content(jsonString))
+                .andDo(print())
+                .andExpect(status().isOk())
+        ;
+    }
+}
+```
+<br>
