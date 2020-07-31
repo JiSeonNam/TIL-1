@@ -386,7 +386,7 @@ public class SampleControllerTest {
 ```
 <br>
 
-## [HandlerInterceptor](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/HandlerInterceptor.html)
+## [HandlerInterceptor](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/HandlerInterceptor.html    )
 - 핸들러 맵핑에 설정할 수 있는 인터셉터
     * 핸들러 맵핑이 찾아주는 핸들러에 인터셉터들을 적용해준다.
 - 핸들러를 실행하기 전(preHandle), 요청 처리 후 뷰 랜더링 전(postHandler), 뷰 렌더링까지 끝난 완료시점(afterCompletion)까지 3가지 시점에 부가 작업을 하고 싶은 경우에 사용할 수 있다.
@@ -531,4 +531,66 @@ public class SampleControllerTest {
 <br>
 
 \* 스프링 부트에서는 기본 정적 ResourceHandler와 캐싱 제공해준다.
+<br>
+
+## [HTTP Message Converter](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html#configureMessageConverters-java.util.List-)
+- 요청 본문에서 메시지를 읽어들이거나(@RequestBody), 응답 본문에 메시지를 작성할 때(@ResponseBody) 사용한다.
+- 예를 들어
+    * 요청 본문에 들어있는 문자열을 변환하거나
+    * 문자열이 JSON인 경우 객체로 변환하거나
+    * 문자열이 XML인 경우 객체로 변환하거나
+    * 문자열로 받거나 할 수 있다.
+
+### 기본으로 등록해주는 HTTP 메시지 컨버터
+- 바이트 배열 컨버터
+- 문자열 컨버터
+- Resource 컨버터
+- Form 컨버터 (폼 데이터 to/from MultiValueMap<String, String>)
+- (JAXB2 컨버터)
+- (Jackson2 컨버터)
+- (Jackson 컨버터)
+- (Gson 컨버터)
+- (Atom 컨버터)
+- (RSS 컨버터) 등등
+\* 괄호가 있는 컨버터는 classpath의 pom.xml파일에 해당 dependency가 있는 경우에만 등록된다.
+
+### 문자열 변환 실습
+```java
+@RestController
+public class SampleController {
+
+    @GetMapping("/message")
+    public String message(@RequestBody String body) {
+        return body;
+    }
+
+}
+```
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void stringMessage() throws Exception {
+        this.mockMvc.perform(get("/message")
+                .content("hello"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string("hello"))
+        ;
+    }
+}
+```
+### 설정 방법
+- extendMessageConverters
+    * 기본으로 등록해주는 컨버터에 새로운 컨버터 추가하기
+- configureMessageConverters
+    * 기본으로 등록해주는 컨버터는 다 무시하고 새로 컨버터 설정하기
+- 의존성 추가로 컨버터 등록하기 (주로 사용되고 추천된다)
+    * 메이븐 또는 그래들 설정에 의존성을 추가하면 그에 따른 컨버터가 자동으로 등록 된다.
+    * WebMvcConfigurationSupport 클래스에서 판단 후 등록
 <br>
