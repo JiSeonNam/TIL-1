@@ -648,3 +648,87 @@ public class SampleControllerTest {
 }
 ```
 <br>
+
+### HTTP Message Converter : XML Converter
+- OXM(Object-XML Mapper) 라이브러리 중에 스프링이 지원하는 의존성 추가
+    * 의존성만 추가하면 기본 메세지 컨버터에 추가된다.
+    * JacksonXML
+    * JAXB
+- JSON과 달리 스프링 부트에서 기본으로 XML 의존성을 추가해주지 않는다.
+
+#### 사용방법
+- JAXB 의존성 추가
+```xml
+<dependency>
+    <groupId>javax.xml.bind</groupId>
+    <artifactId>jaxb-api</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.jaxb</groupId>
+    <artifactId>jaxb-runtime</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-oxm</artifactId>
+    <version>${spring-framework.version}</version>
+</dependency>
+```
+- 스프링 OXM이 제공하는 Marshaller를 등록한다.
+    * Marshaller를 사용해 객체를 XML로, XML을 문자열로 변환해 사용 가능하다.
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Bean
+    public Jaxb2Marshaller jaxb2Marshaller() {
+        Jaxb2Marshaller jaxb2Marshaller = new Jaxb2Marshaller();
+        jaxb2Marshaller.setPackagesToScan(Person.class.getPackageName());
+        return jaxb2Marshaller;
+    }
+}
+```
+- 도메인 클래스(Person)에 `@XmlRootElement` 애노테이션 추가
+- 테스트
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
+    @Autowired
+    Marshaller marshaller;
+
+    @Test
+    public void xmlMessage() throws Exception {
+        Person person = new Person();
+        person.setId(2020l);
+        person.setName("hayoung");
+
+        StringWriter stringWriter = new StringWriter();
+        Result result = new StreamResult(stringWriter);
+        marshaller.marshal(person, result);
+        String xmlString = stringWriter.toString();
+
+        this.mockMvc.perform(get("/jsonMessage")
+                // XML로 보내고 XML로 받기
+                .contentType(MediaType.APPLICATION_XML)
+                .accept(MediaType.APPLICATION_XML)
+                .content(xmlString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(xpath("person/name").string("hayoung"))
+                .andExpect(xpath("person/id").string("2020"))
+        ;
+    }
+}
+```
+<br>
+
+\* JSON과 XML의 본문을 확인하고 싶을 때는 path를 사용하면 된다.
+- [JSON path 문법](https://github.com/json-path/JsonPath)
+- [Xpath 문법](https://www.w3schools.com/xml/xpath_syntax.asp)
