@@ -119,6 +119,18 @@ public class HelloService {
     }
 }
 ```
+- web.xml에 context-param 추가
+```xml
+<context-param>
+    <param-name>contextClass</param-name>
+    <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+</context-param>
+
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>me.hayoung.AppConfig</param-value>
+</context-param>
+```
 - Servlet 파일에서 ApplicationContext를 생성하여 사용
 ```java
 public class HelloServlet extends HttpServlet {
