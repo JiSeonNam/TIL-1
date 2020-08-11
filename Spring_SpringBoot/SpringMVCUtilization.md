@@ -96,3 +96,116 @@ public class SampleControllerTest {
 ```
 <br>
 
+## 요청 맵핑하기 2. URI 패턴 맵핑
+
+### 요청 식별자로 맵핑하기
+- `@RequestMapping`은 다음과 같은 패턴을 지원한다.
+    * ? : 한 글자 ex) /author/??? => /author/123
+    * *: 여러 글자 ex) /author/* => /author/hayoung
+    * ** : 여러 패스 ex) /author/** => /author/hayoung/book
+- 패턴이 중복되는 경우에는 가장 구체적으로 맵핑되는 핸들러를 사용하게 된다.
+    * 밑의 코드에서 URI를 `"/hello/hayoung"`이라고 보내면 두 핸들러 모두 해당되지만 helloHayoung()이 맵핑된다.
+```java
+@Controller
+@RequestMapping("/hello")
+public class SampleController {
+    @RequestMapping("/hayoung")
+    @ResponseBody
+    public String helloHayoung() {
+        return "hello hayoung";
+    }
+
+    @RequestMapping("/**")
+    @ResponseBody
+    public String hello() {
+        return "hello";
+}
+```
+- 테스트 
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void helloTest() throws Exception {
+        mockMvc.perform(get("/hello"))
+        mockMvc.perform(get("/hello/hayoung"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string("hello hayoung"))
+                //핸들러 확인
+                .andExpect(handler().handlerType(SampleController.class)) 
+                .andExpect(handler().methodName("helloHayoung")) // 핸들러의 메소드 이름이 helloHayoung일 것이다.
+        ;
+    }
+}
+```
+<br>
+
+### 클래스에 선언한 @RequestMapping과 조합
+- 클래스에 선언한 URI 패턴과 이어서 맵핑할 수도 있다.
+- 예를 들어 `@RequestMapping("/hello/**")`를 다음 코드와 같이 작성할 수 있다.
+```java
+@Controller
+@RequestMapping("/hello")
+public class SampleController {
+
+    @RequestMapping("/**")
+    @ResponseBody
+    public String hello() {
+        return "hello";
+    }
+}
+```
+
+### 정규 표현식으로 맵핑하기
+- `/{name:정규식}`
+```java
+@Controller
+@RequestMapping("/hello")
+public class SampleController {
+
+    @RequestMapping("/{name:[a-z]+}")   // a~z에 해당하는 문자열 패턴이 올 수 있다. name으로 받겠다.
+    @ResponseBody
+    // @PathVariable를 사용해 받을 수 있다. ex) hello hayoung 등
+    public String hello(@PathVariable String name) {
+        return "hello" + name;
+    }
+}
+```
+- 테스트 
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void helloTest() throws Exception {
+        mockMvc.perform(get("/hello"))
+        mockMvc.perform(get("/hello/hayoung"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string("hello hayoung"))
+        ;
+    }
+}
+```
+<br>
+
+### URI 확장자 맵핑 지원
+- 기본적으로 스프링 MVC가 지원하지만 권장되지 않는다.
+    * 보안 이슈 ([RFD Attack](https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/reflected-file-download-a-new-web-attack-vector/))
+    * URI 변수, Path 매개변수, URI 인코딩을 사용할 때 할 때 불명확하다.
+- 예를 들어 `RequestMapping("/hayoung")` 이라고 설정하면 스프링이 알아서 자동으로 `RequestMapping({"/hayoung", "/hayoung.*})` 이러한 맵핑을 해준다.
+    * hayoung.html, hayoung.json, hayoung.xml 등의 요청도 처리할 수 있게 등록해준다.
+- 스프링 부트는 기본으로 이 기능을 사용하지 않도록 설정 해준다.
+- 최근에는 URI에 확장자 패턴을 쓰는 것이 아니라 accept header에 표현한다.
+    * parameter를 사용할 수도 있다. ex) `RequestMapping("/hayoung?type=xml")`
+<br>
