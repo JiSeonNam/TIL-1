@@ -209,3 +209,67 @@ public class SampleControllerTest {
 - 최근에는 URI에 확장자 패턴을 쓰는 것이 아니라 accept header에 표현한다.
     * parameter를 사용할 수도 있다. ex) `RequestMapping("/hayoung?type=xml")`
 <br>
+
+## 요청 맵핑하기 3. 미디어 타입
+
+### 특정한 타입의 데이터를 담고 있는 요청만 처리하는 핸들러
+- consumes를 사용하여 원하는 타입의 데이터 요청만 처리할 수 있다.
+- ex) `@RequestMapping(value = "/hello", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)`
+    * 문자열(application/json)을 입력하는 대신 MediaType을 사용하면 상수를 (IDE에서) 자동 완성(MediaType.APPLICATION_JSON_UTF8_VALUE)으로 사용할 수 있다.
+- Content-Type 헤더로 필터링한다.
+- 매치 되는 않는 경우에 415(Unsupported Media Type) 에러가 난다.
+<br>
+
+### 특정한 타입의 응답을 만드는 핸들러
+- produces를 사용하여 원하는 응답을 설정할 수 있다.
+- ex) `@RequestMapping(produces=”application/json”)`
+    * 문자열 대신 자동완성으로 사용 가능하다.
+- Accept 헤더로 필터링한다.
+    * accept type이 없는 경우에는 content type이 반드시 맞아야 하는게 아니라 다 맵핑이 된다.
+- 매치 되지 않는 경우에 406(Not Acceptable) 에러가 난다.
+<br>
+
+### 클래스에 선언한 @RequestMapping과 조합
+- 클래스에 선언한 @RequestMapping에 사용한 것과 조합이 되지 않고 메소드에 사용한 @RequestMapping의 설정으로 덮어쓴다(Overriding).
+<br>
+
+### 미디어 타입 실습
+- Not (!)을 사용해서 특정 미디어 타입이 아닌 경우로 맵핑 할 수도 있다.
+```java
+@Controller
+@RequestMapping(consumes = MediaType.APPLICATION_XML_VALUE) // 클래스에 선언해도 밑의 메소드에 선언한 설정으로 덮어쓴다.
+public class SampleController {
+
+    @RequestMapping("/hayoung")
+    @GetMapping(
+            value = "/hello",
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, // 요청 설정
+            produces = MediaType.TEXT_PLAIN_VALUE   // 응답 설정
+    )
+    @ResponseBody
+    public String hello() {
+        return "hello";
+    }
+}
+```
+- 테스트
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void helloTest() throws Exception {
+        mockMvc.perform(get("/hello"))
+        mockMvc.perform(get("/hello/hayoung"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+        ;
+    }
+}
+```
