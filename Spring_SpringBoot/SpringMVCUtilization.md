@@ -294,3 +294,20 @@ public class SampleControllerTest {
     * `@RequestMapping(params = “a=b”)`
     * ex) `@GetMapping(value = "/hello", params = "name=hayoung")`
 <br>
+
+## 요청 맵핑하기 5. HEAD와 OPTIONS 요청 처리
+- 직접 구현하지 않아도 스프링 웹 MVC에서 제공해주는 기능의 HTTP Method
+    * HEAD
+    * OPTIONS
+- 참고 - [HTTP Method Definitions](https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html)
+<br>
+
+### HEAD
+- GET 요청과 동일하지만 응답 본문을 받아오지 않고 응답 헤더만 받아온다.
+<br>
+
+### OPTIONS
+- 서버 또는 URI에 해당하는 특정 리소스가 제공하는 기능을 확인할 수 있다.
+- 사용할 수 있는 HTTP Method 제공해 준다.
+- 서버는 Allow 응답 헤더에 사용할 수 있는 HTTP Method 목록을 제공한다.
+<br>
