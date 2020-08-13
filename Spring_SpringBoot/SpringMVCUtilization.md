@@ -273,3 +273,24 @@ public class SampleControllerTest {
     }
 }
 ```
+<br>
+
+## 요청 맵핑하기 4. 헤더와 매개변수
+- 특정한 헤더가 있는 요청을 처리하고 싶은 경우
+    * `@RequestMapping(headers = “key”)`
+    * ex) `@GetMapping(value = "/hello", headers = HttpHeaders.AUTHORIZATION)`
+- 특정한 헤더가 없는 요청을 처리하고 싶은 경우
+    * `@RequestMapping(headers = “!key”)`
+    * ex) `@GetMapping(value = "/hello", headers = "!" + HttpHeaders.FROM)`
+- 특정한 헤더 키/값이 있는 요청을 처리하고 싶은 경우
+    * `@RequestMapping(headers = “key=value”)`
+    * ex) `@GetMapping(value = "/hello", headers = HttpHeaders.AUTHORIZATION + "=" + "111")`
+- 특정한 요청 매개변수 키를 가지고 있는 요청을 처리하고 싶은 경우
+    * `@RequestMapping(params = “a”)`
+    * ex) `@GetMapping(value = "/hello", params = "name")`
+- 특정한 요청 매개변수가 없는 요청을 처리하고 싶은 경우
+    * `@RequestMapping(params = “!a”)`
+- 특정한 요청 매개변수 키/값을 가지고 있는 요청을 처리하고 싶은 경우
+    * `@RequestMapping(params = “a=b”)`
+    * ex) `@GetMapping(value = "/hello", params = "name=hayoung")`
+<br>
