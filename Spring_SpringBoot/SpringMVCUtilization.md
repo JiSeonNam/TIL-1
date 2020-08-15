@@ -424,3 +424,278 @@ public class SampleControllerTest {
 | Map<br>Model | (RequestToViewNameTranslator를 통해서) 암묵적으로 판단한 뷰 랜더링할 때 사용할 모델 정보 |
 | @ModelAttribute | (RequestToViewNameTranslator를 통해서) 암묵적으로 판단한 뷰 랜더링할 때 사용할 모델 정보에 추가한다.<br> 이 애노테이션은 생략할 수 있다. |
 <br>
+
+- [Return Values](https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#mvc-ann-return-types)
+<br>
+
+## 핸들러 메소드 2. URI 패턴
+
+### @PathVariable
+- 요청 URI 패턴의 일부를 핸들러 메소드 아규먼트로 받는 방법이다.
+- 자동으로 타입 변환을 지원한다.
+- (기본)값이 반드시 있어야 한다.
+- Optional을 지원한다.
+<br>
+
+### @PathVariable 실습
+```java
+public class Event {
+
+    private Integer id;
+
+    private String name;
+
+    ...getter and setter...
+}
+```
+```java
+@Controller
+@RequestMapping(method = RequestMethod.GET)
+public class SampleController {
+
+    @GetMapping("/events/{id}")
+    @ResponseBody
+    public Event getEvent(@PathVariable Integer id) {
+        Event event = new Event();
+        event.setId(id);
+        return event;
+    }
+}
+```
+- 테스트
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void helloTest() throws Exception {
+        mockMvc.perform(get("/events/1"))   // 넘겨준 값은 문자열이지만 int형으로 자동으로 타입 변환을 지원해준다.
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("id").value(1))
+        ;
+    }
+
+}
+```
+<br>
+
+### @MatrixVariable
+- 요청 URI 패턴에서 키/값 쌍의 데이터를 메소드 아규먼트로 받는 방법
+- 자동으로 타입 변환을 지원한다.
+- (기본)값이 반드시 있어야 한다.
+- Optional을 지원한다.
+- 이 기능은 기본적으로 비활성화 되어 있다. 
+    * 활성화 하려면 추가 설정을 해야 한다.(실습에 있음)
+<br>
+
+### @MatrixVariable 실습
+```java
+public class Event {
+
+    private Integer id;
+
+    private String name;
+
+    ...getter and setter...
+}
+```
+```java
+@Controller
+@RequestMapping(method = RequestMethod.GET)
+public class SampleController {
+
+    @GetMapping("/events/{id}")
+    @ResponseBody
+    public Event getEvent(@PathVariable Integer id, @MatrixVariable String name) {
+        Event event = new Event();
+        event.setId(id);
+        event.setName(name);
+        return event;
+    }
+}
+```
+- @MatrixVariable 사용을 위한 추가 설정
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        UrlPathHelper urlPathHelper = new UrlPathHelper();
+        urlPathHelper.setRemoveSemicolonContent(false); // 세미콜론을 제거하지 않도록
+        configurer.setUrlPathHelper(urlPathHelper);
+    }
+}
+```
+- 테스트
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void helloTest() throws Exception {
+        mockMvc.perform(get("/events/1;name=hayoung"))   
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("id").value(1))
+        ;
+    }
+
+}
+```
+<br>
+
+## 핸들러 메소드 3. 요청 매개변수
+- `@RequestParam`애노테이션을 사용하여 받을 수 있다.
+<br>
+
+### 요청 매개변수
+- 쿼리 매개변수
+- 폼 데이터
+<br>
+
+### @RequestParam
+- 요청 매개변수에 들어있는 단순 타입 데이터를 메소드 아규먼트로 받아올 수 있다.
+- 값이 반드시 있어야 한다.
+    * required=false 또는 Optional을 사용해서 부가적인 값으로 설정할 수도 있다.
+    * `required= "true"`가 기본값이다.
+    * `defaultValue = "원하는이름"`으로 기본값을 정할 수 있다.
+- String이 아닌 값들은 타입 컨버전을 지원한다.
+- Map<String, String> 또는 MultiValueMap<String, String>에 사용해서 모든 요청 매개변수를 받아 올 수도 있다.
+- 이 애노테이션은 생략 할 수 있다. (헷갈릴 수가 있기 때문에 명시적으로 적어주는 것도 좋다.)
+<br>
+
+### 요청 매개변수 실습(쿼리 파라미터)
+```java
+public class Event {
+
+    private Integer id;
+
+    private String name;
+
+    private Integer limit;
+
+    ...getter and setter...
+}
+```
+```java
+@Controller
+@RequestMapping(method = RequestMethod.GET)
+public class SampleController {
+
+    @PostMapping("/events")
+    @ResponseBody
+    public Event getEvent(@RequestParam String name, @RequestParam Integer limit) {
+        Event event = new Event();
+        event.setName(name);
+        event.setLimit(limit);
+        return event;
+    }
+}
+```
+- 테스트
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void helloTest() throws Exception {
+        mockMvc.perform(post("/events")
+                    .param("name", "hayoung")
+                    .param("limit", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("name").value("hayoung"))
+        ;
+    }
+
+}
+```
+<br>
+
+## 폼 서브밋
+- 폼 데이터도 `@RequestParam`으로 받을 수 있다.
+<br>
+
+### 요청 매개변수 실습(폼 데이터)
+- 폼을 보여줄 요청 처리
+    * 컨트롤러 : GET /events/form
+    * 뷰 : events/form.html
+    * 모델 : "event", new Event()
+- 타임리프
+    * @{}: URL 표현식
+    * ${}: variable 표현식
+    * *{}: selection 표현식
+- 컨트롤러 작성
+```java
+@Controller
+public class SampleController {
+
+    @GetMapping("/events/form")
+    public String eventsForm(Model model) {
+        Event newEvent = new Event();
+        newEvent.setLimit(50);
+        model.addAttribute("event", newEvent);
+        return "/events/form";
+    }
+
+    @PostMapping("/events")
+    public @ResponseBody Event events(@RequestParam String name, @RequestParam Integer id) {
+        Event event = new Event();
+        event.setId(id);
+        event.setName(name);
+        return event;
+    }
+}
+```
+- 뷰 작성
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create New Event</title>
+</head>
+<body>
+<form action="#" th:action="@{/events}" method="post" th:object="${event}">
+    <input type="text" title="name" th:field="*{name}"/>
+    <input type="text" title="limit" th:field="*{limit}"/>
+    <input type="submit" value="Create"/>
+</form>
+</body>
+</html> 
+```
+- 테스트
+    * 타임리프 html은 test코드를 작성하여 어떻게 렌더링되는지 확인이 가능하다. (jsp는 불가능)
+```java
+@RunWith(SpringRunner.class)
+@WebMvcTest
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void eventForm() throws Exception {
+        mockMvc.perform(get("/events/form"))
+                .andDo(print())
+                .andExpect(view().name("/events/form"))
+                .andExpect(model().attributeExists("event"))
+        ;
+    }
+
+}
+```
