@@ -592,7 +592,7 @@ public class AppRunner implements ApplicationRunner {
 - 스프링 부트에서는 message로 시작하는 properties들을 다 읽어주기 때문에 별다른 설정 필요없이 사용 가능하다.
 ```java
 // messages.properties 파일
-greeting=Hello {0}
+greeting=Hello, {0}
 ```
 ```java
 // messages_ko_KR.properties 파일
