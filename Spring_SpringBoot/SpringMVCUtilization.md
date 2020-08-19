@@ -626,7 +626,7 @@ public class SampleControllerTest {
 ```
 <br>
 
-## 폼 서브밋
+## 핸들러 메소드 4. 폼 서브밋
 - 폼 데이터도 `@RequestParam`으로 받을 수 있다.
 <br>
 
@@ -699,3 +699,74 @@ public class SampleControllerTest {
 
 }
 ```
+<br>
+
+## 핸들러 메소드 5. @ModelAttribute
+- `@RequestParam`이 request parameter를 하나씩 받아왔다면, `@ModelAttribute`는한꺼번에 객체에 맵핑해주는 기능이다.
+- 여러 곳(URI 패스, 요청 매개변수, 세션 등)에 있는 단순 타입 데이터를 복합 타입의 객체로 받아오거나 해당 객체를 새로 만들 때 사용할 수 있다.
+- 생략 가능하다.
+- 값을 바인딩 할 수 없는 경우
+    * BindException이 발생하고 400에러가 발생한다.
+```java
+// @PostMapping("/events")
+// public @ResponseBody Event events(@RequestParam String name, @RequestParam Integer id) {
+//     Event event = new Event();
+//     event.setId(id);
+//     event.setName(name);
+//     return event;
+// }
+@Controller
+public class SampleController {
+    
+  @PostMapping("/events")
+  @ResponseBody
+  public Event postEvent(@ModelAttribute Event event) {
+    return event;
+  }
+}
+```
+<br>
+
+### 바인딩 에러를 직접 다루고 싶은 경우
+- @ModelAttribute가 붙은 메소드 아규먼트 옆에 BindingResult를 추가하면 된다.
+- bindingResult에 바인딩과 관련된 에러가 담겨온다.
+- 요청은 처리된다. (바인딩은 제대로 되지 않는다.)
+```java
+@Controller
+public class SampleController {
+    
+  @PostMapping("/events")
+  @ResponseBody
+  public Event postEvent(@ModelAttribute Event event, BindingResult bindResult) {
+    if(bindingReuslt.hasError()) {
+      bindingResult.getAllErrors().forEach(c -> {
+        System.out.println(c.toString());
+      });
+    }
+    return event;
+  }
+}
+```
+<br>
+
+### 바인딩 이후에 검증 작업을 추가로 하고 싶은 경우
+- `@Valid` 또는 `@Validated` 애노테이션을 사용한다.
+- Validation에 관련한 에러도 bindingResult에 담긴다.
+- `@Validated`는 group validation을 지원한다.
+```java
+@Controller
+public class SampleController {
+    
+  @PostMapping("/events")
+  @ResponseBody
+  public Event postEvent(@Valid @ModelAttribute Event event, BindingResult bindResult) {
+    if(bindingReuslt.hasError()) {
+      bindingResult.getAllErrors().forEach(c -> {
+        System.out.println(c.toString());
+      });
+    }
+    return event;
+  }
+}
+```
+<br>
