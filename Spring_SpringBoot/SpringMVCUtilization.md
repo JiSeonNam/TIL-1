@@ -770,3 +770,47 @@ public class SampleController {
 }
 ```
 <br>
+
+
+## 핸들러 메소드 6. @Validated
+- 스프링 MVC 핸들러 메소드 아규먼트에 사용할 수 있으며 validation group이라는 힌트를 사용할 수 있다.
+- `@Valid` 애노테이션에는 그룹을 지정할 방법이 없다.
+- `@Validated`는 스프링이 제공하는 애노테이션으로 그룹 클래스를 설정할 수 있다.
+<br>
+
+### @Validated 실습
+```java
+public class Event {
+
+    interface ValidateLimit {}
+    interface ValidateName{}
+
+    private Integer id;
+
+    @NotBlank(groups = ValidateName.class)
+    private String name;
+
+    @Min(value = 0, groups = ValidateLimit.class)
+    private Integer limit;
+    
+    ...getter and setter...
+}
+```
+```java
+@Controller
+public class SampleController {
+    
+  @PostMapping("/events")
+  @ResponseBody
+  // ValidateLimit이라는 그룹으로 검증을 하겠다고 했으므로 Event클래스의 @NotBlank 애노테이션은 적용되지 않고 @Min 애노테이션만 검증에 사용된다.
+  public Event postEvent(@Validated(Event.ValidateName.class) @ModelAttribute Event event, BindingResult bindResult) {
+    if(bindingReuslt.hasError()) {
+      bindingResult.getAllErrors().forEach(c -> {
+        System.out.println(c.toString());
+      });
+    }
+    return event;
+  }
+}
+```
+<br>
