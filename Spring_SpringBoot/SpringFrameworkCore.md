@@ -296,8 +296,8 @@ public class BookService {
 - @Component 
     * @Repository
     * @Service
-    * Controller
-    * Configuration
+    * @Controller
+    * @Configuration
 <br>
 
 ### 컴포넌트 스캔의 주요 기능
