@@ -893,7 +893,17 @@ public class IndexController {
 {{>layout/footer}} 
 ```
 - 수정 기능을 위해 index.js 파일에 update function 추가
-    * `$(`)
+    * `$(`btn-update`).on('click')`
+        - btn-update란 id를 가진 HTML 엘리먼트에 click 이벤트가 발생할 때 update function을 실행하도록 이벤트 등록한다.
+    * `type: "PUT"`
+        - 여러 HTTP Method 중 PUT 메서드를 선택
+        - REST에서 CRUD는 다음과 같이 HTTP Method에 매핑된다.
+            * 생성(Create) - POST
+            * 읽기(Read) - GET
+            * 수정(Update) - PUT
+            * 삭제(Delete) - DELETE
+    * `url: '/api/v1/posts/'+id`
+        - 어느 게시글을 수정할지 URL path로 구분하기 위해 Path에 id를 추가한다.
 ```js
 var index = {
     
