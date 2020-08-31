@@ -1709,11 +1709,14 @@ public class JpaConfig {
     * 기존에 생성된 보안 그룹이 없으므로 유의미한 이름으로 변경한다.
     * pem 키 관리를 잘해야하고 지정된 IP에서만 ssh 접속이 가능하도록 구성하는 것이 안전하다.
     * 현재 접속한 장소의 IP를 등록하고 카페 또는 다른 장소에서 접속할 때는 해당 장소의 IP를 다시 SSH규칙에 추가하는 것이 안전하다.
+    * 현재 프로젝트의 기본 포트인 8080도 추가하고 검토 및 시작 버튼을 누른다.
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_7.jpg"></p>
 
 - 인스턴스 시작 검토
-    * 현재 프로젝트의 기본 포트인 8080도 추가하고 검토 및 시작 버튼을 누른다.
+    * 보안 그룹 경고를 하는데 이는 8080이 전체 오픈 되어서 발생한다.
+    * 8080을 열어 놓는 것은 위험한 일이 아니므로 시작하기 버튼 클릭
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_8.jpg"></p>
+
 - 할당할 pem 키 선택
     * 인스턴스로 접근하기 위해서는 pem 키(비밀키)가 필요하다.
     * 인스턴스는 지정된 pem 키와 매칭되는 공개키를 가지고 있어, 해당 pem 키 외에는 접근을 허용하지 않는다.
