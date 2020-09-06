@@ -2429,9 +2429,8 @@ cd /home/ec2-user/app/step2/zip
 <br>
 
 ### 9-5 배포 자동화 구성
-- Travis CI, S3, CodeDeploy 연동까지 구현 후 실제로 Jar를 배포하여 실행
-<br>
 
+#### Travis CI, S3, CodeDeploy 연동까지 구현 후 실제로 Jar를 배포하여 실행하기
 - deploy.sh 파일 추가
     * 프로젝트의 scripts 디렉토리를 생성하고 여기에 스크립트를 생성한다.
 ```sh
