@@ -18,6 +18,7 @@
     * [ 스프링 부트 활용 - 핵심 기능](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootCore.md)
     * [ 스프링 부트 활용 - MVC](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootMVC.md)
     * [ 스프링 부트 활용 - 스프링 데이터](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootSpringData.md)
+- [스프링 부트와 AWS로 혼자 구현하는 웹 서비스](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/Springboot_AWS_Webservice.md)
 <br>
 
 ### Git
