@@ -19,16 +19,16 @@ sudo yum install nginx
 sudo service nginx start
 ```
 - Nginx의 포트번호를 보안 그룹에 추가
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_75.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch10_1.jpg"></p>
 
 - 리다이렉션 주소 추가
     * 8080이 아닌 80포트로 주소가 변경되기 때문에 구글과 네이버 로그인에도 변경된 주소를 등록해야 한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_76.jpg"></p>
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_77.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch10_2.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch10_3.jpg"></p>
 
 - 이제 EC2 도메인으로 접근할 때 8080포트를 제거하고 접근하면 다음과 같이 Nginx 웹 페이지를 볼 수 있다.
     * 80번 포트는 기본적으로 도메인에서 포트번호가 제거된 상태이다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_78.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch10_4.jpg"></p>
 
 - Nginx와 스프링 부트 연동
     * Nginx가 현재 실행 중인 스프링 부트 프로잭트를 바라볼 수 있도록 프록시 설정을 한다.
@@ -36,14 +36,14 @@ sudo service nginx start
 ```
 sudo vim /etc/nginx/nginx.conf
 ```
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_79.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch10_5.jpg"></p>
 
 - 수정이 끝나면 Nginx를 재시작한다.
 ```
 sudo service nginx restart
 ```
 - 브라우저로 접속해 Nginx 시작페이지를 새로고침하면 다음과 같이 Nginx가 스프링 부트 프로젝트를 프록시하는 것이 확인된다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_80.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch10_6.jpg"></p>
 
 ### 10-2 무중단 배포 스크립트 만들기
 - 무중단 배포 스프립트 만들기 전 API 추가
@@ -174,7 +174,7 @@ public class ProfileController {
 ```
 - 테스트가 완료되면 깃허브로 푸시하여 배포한다. 
 - 배포가 끝나면 브라우저에서 /profile로 접속해서 profile이 잘 나오는지 확인한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_81.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch10_7.jpg"></p>
 <br>
 
 #### 무중단 배포를 위한 profile 2개 추가하기
@@ -210,7 +210,7 @@ set $service_url http://127.0.0.1:8080;
 sudo vim /etc/nginx/nginx.conf
 ```
 - location / 부분을 찾아서 다음과 같이 변경한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_82.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch10_8.jpg"></p>
 
 - Nginx 재시작
 ```

@@ -6,19 +6,19 @@
 
 ### 7-1. RDS 인스턴스 생성하기
 - RDS를 검색하고 RDS 대시보드에서 데이터베이스 생성 버튼을 클릭한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_18.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_1.jpg"></p>
 
 - DB 엔진 옵션과 템플릿 선택
     * 각각 MariaDB와 프리 티어 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_19.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_2.jpg"></p>
  
 - 상세 설정에서 스토리지를 20으로 입력하고 DB인스턴스와 마스터 사용자 정보를 등록한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_20.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_3.jpg"></p>
 
 - 네트워크 및 보안
     * 퍼블릭 엑세스를 예로 변경한다.
     * 이후 보안 그룹에서 지정된 IP만 접근하도록 막을 예정
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_21.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_4.jpg"></p>
 
 - 데이터베이스 옵션 
     * 데이터베이스 이름을 작성하고 포트는 3306으로 입력
@@ -31,10 +31,10 @@
     * Character Set
     * Max Connection
 - 카테고리에서 파라미터 그룹을 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_22.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_5.jpg"></p>
 
 - 파라미터 그룹 생성을 클릭하고 DB엔진을 선택하는 항목에서 전에 생성한 MaridDB와 같은 버전을 맞춰야 한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_23.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_6.jpg"></p>
 
 - 생성이 완료되면 해당 파라미터 그룹을 클릭하고 파라미터를 편집한다.
     * 각 항목들을 검색해서 편집한다.
@@ -49,37 +49,37 @@
     * max_connections : 150
 
 - 완성된 파라미터 그룹을 데이터베이스에 연결한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_24.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_7.jpg"></p>
 
 - 데이터베이스 옵션 항목에서 DB 파라미터 그룹을 default에서 방금 생성한 신규 파라미터 그룹으로 변경한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_25.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_8.jpg"></p>
 
 - 저장을 누르고 수정사항 요약을 즉시 적용으로 한다.
     * 예약된 다음 유지 관리 기간에 적용하면 지금 하지 않고, 새벽 시간대에 진행된다.
     * 수정사항이 반영되는 동안 데이터베이스가 작동하지 않을 수 있으므로 예약 시간을 걸어두는 의미지만 서비스가 오픈되지 않았기 때문에 즉시 적용한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_26.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_9.jpg"></p>
 
 - 간혹 파라미터 그룹이 제대로 반영되지 않을 때가 있어 정상 적용을 위해 재부팅을 진행한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_27.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_10.jpg"></p>
 <br>
 
 ### 7-3. 내 PC에서 RDS 접속하기
 - 로컬 PC에서 RDS로 접근하기 위해 RDS의 보안 그룹에 본인 PC의 IP를 추가한다.
     * RDS 세부정보 페이지 - 보안 그룹
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_28.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_11.jpg"></p>
 
 - 브라우저를 새로 열어 보안 그룹 목록 중 EC2에 사용된 보안 그룹의그룹 ID를 복사한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_29.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_12.jpg"></p>
 
 - 복사된 보안 그룹 ID와 본인의 IP를 RDS보안 그룹의 인바운드로 추가한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_30.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_13.jpg"></p>
 <br>
 
 #### 7-3-1. 로컬에서 테스트하기
 - 실습 기준 IntelliJ Community 버전에서 Database Navigator 플러그인 설치
 - Database Navigator를 실행하고 RDS 접속 정보 등록을 한다.
     * Host에는 RDS의 엔드 포인트를 등록한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_31.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch7_14.jpg"></p>
 
 - Test Connection을 통해 연결 테스트를 하고 SQL을 실행할 콘솔창을 연다.
 - 쿼리가 수행될 database를 선택

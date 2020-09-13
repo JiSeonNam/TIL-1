@@ -4,7 +4,7 @@
 
 #### TRavis CI 웹 서비스 설정
 - [Travis](https://travis-ci.org/)에서 깃허브 계정으로 로그인 한뒤 Setting에서 저장소 이름을 검색한 뒤 상태바를 활성화 시킨다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_39.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_1.jpg"></p>
 <br>
 
 #### 프로젝트 설정
@@ -51,23 +51,23 @@ notifications:
 - IAM은 AWS에서 제공하는 서비스의 접근 방식과 권한을 관리한다. 
 - IAM을 통해 Travis CI가 AWS의 S3와 CodeDeply에 접근할 수 있도록 한다.
 - AWS에서 IAM을 검색하고 사용자 추가
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_40.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_2.jpg"></p>
 
 - 생성할 사용자의 이름과 엑세스 유형을 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_41.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_3.jpg"></p>
 
 - 권한 설정 방식은 기존 정책 직접 연결을 선택하고 정책 검색 화면에서 s3full과 CodeDeployFull을 검색하여 각각 체크한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_42.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_4.jpg"></p>
 
 - 태그 추가에서는 Name값을 본인이 인지 가능한 정도의 이름으로 만든다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_43.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_5.jpg"></p>
 
 - 권한 최종 확인
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_44.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_6.jpg"></p>
 
 - 최종 생성이 완료되면 엑세스 키와 비밀 엑세스 키가 생성된다.
     * 이 두 값이 Travis CI에서 사용될 Key이다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_45.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_7.jpg"></p>
 <br>
 
 #### Travis CI에 Key 등록
@@ -75,21 +75,21 @@ notifications:
     * AWS_ACESS_KEY : 엑세스 키 ID
     * AWS_SECRET_KEY : 비밀 엑세스 키
     * 등록하면 이제 .travis.yml에서 `$AWS_ACESS_KEY`, `$AWS_SECRET_KEY`로 사용할 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_46.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_8.jpg"></p>
 <br>
 
 #### S3 버킷 생성
  - AWS에서 S3를 검색 후 버킷 만들기를 선택한다.
  - 원하는 버킷명을 작성한다.
     * 이 버킷에 배포할 Zip 파일이 모여있ㄴ튼 장소임을 의미하도록 짓는 것이 좋다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_47.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_9.jpg"></p>
 
 - 버전관리 설정은 별다른 설정 할 것 없이 넘어가고 버킷의 보안과 권한 설정 부분에서 모든 차단을 해야 한다.
     * 실제 서비스를 햘 경우 Jar 파일이 public일 경우 누구나 내려받을 수 있어 코드나 설정값, 주요 키값들이 발취될 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_48.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_10.jpg"></p>
 
 - 버킷이 생성되면 다음과 같이 버킷 목록에서 확인할 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_49.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_11.jpg"></p>
 
 #### .travis.yml 수정
 - Travis CI에서 빌드하여 만든 Jar 파일을 S3에 올릴 수 있도록 다음 코드를 .travis.yml에 추가한다.
@@ -117,10 +117,10 @@ deploy:
 # ...
 ```
 - 설정이 완료되면 깃허브로 푸시한다. Travis CI에서 자동으로 진행되는 것과 모든 빌드과 성공하는지 확인한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_50.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_12.jpg"></p>
 
 - S3 버킷에도 업로드가 성공한 것을 확인할 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_51.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_13.jpg"></p>
 <br>
 
 ### 9-4. Travis CI와 AWS S3, CodeDeploy 연동하기
@@ -129,30 +129,30 @@ deploy:
 
 #### EC2에 IAM 역할 추가하기
 - IAM을 검색하고 역할 -> 역할만들기를 차례로 클릭한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_52.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_14.jpg"></p>
 
 - 서비스 선택에서 AWS 서비스, EC2를 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_53.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_15.jpg"></p>
 
 - 정책에선 EC2RoleForA를 검색하여 AmazonEc2RoleforAWS-CodeDeploy를 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_54.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_16.jpg"></p>
 
 - 태그는 원하는 이름으로 만든다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_55.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_17.jpg"></p>
 
 - 마지막으로 역할의 이름을 등록하고 나머지 등록 정보를 최종적으로 확인한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_56.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_18.jpg"></p>
 
 - 만든 역할을 EC2 서비스에 등록하기
     * EC2 인스턴스 목록이르 이동하고 인스턴스를 다음과 같이 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_57.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_19.jpg"></p>
 
 - 방금 생성한 역할을 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_58.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_20.jpg"></p>
 
 - 역할 선택이 완료되면 해당 EC2 인스턴스를 재부팅한다.
     * 재부팅해야만 역할이 정상적으로 적용된다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_59.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_21.jpg"></p>
 <br>
 
 #### CodeDeploy 에이전트 설치
@@ -178,37 +178,37 @@ sudo service codedeploy-agent status
 #### CodeDeploy를 위한 권한 생성
 - CodeDeploy에서 EC2의 접근도 권한이 필요하므로 IAM 역할을 생성한다.
 - 서비스는 AWS 서비스 - CodeDeploy를 차례로 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_60.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_22.jpg"></p>
 
 - CodeDeploy는 권한이 하나뿐이라서 선택 없이 다음으로 넘어간다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_61.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_23.jpg"></p>
 
 - 태그도 원하는 이름으로 짓고 생성완료한다.
 <br>
 
 #### CodeDeploy 생성
 - CodeDeploy 서비스로 이동해 애플리케이션 생성을 한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_62.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_24.jpg"></p>
 
 - 생성할 CodeDeploy 이름과 컴퓨팅 플랫폼을 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_63.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_25.jpg"></p>
 
 - 생성이 완료되면 배포 그룹 생성을 한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_64.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_26.jpg"></p>
 
 - 배포 그룹 이름과 서비스 역할 등록한다. 
     * 서비스 역할은 CodeDeploy용 IAM 역할을 선택하면 된다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_65.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_27.jpg"></p>
 
 - 배포 유형에서는 현재 위치를 선택한다.
     * 배포할 서비스가 2대 이상이라면 블루/그린 선택
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_66.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_28.jpg"></p>
 
 - 환경 구성에서는 Amazon EC2 인스턴스에 체크한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_67.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_29.jpg"></p>
 
 - 마지막으로 배포 설정과 로드 밸런서를 선택한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_68.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_30.jpg"></p>
 <br>
 
 #### Travic CI, S3, CodeDeploy 연동
@@ -245,7 +245,7 @@ files:
 ```
 - 프로젝트를 커밋하고 푸시한다.
 - Travis Ci가 끝나면 CodeDeploy 화면에서 배포가 수행되는 것을 확인할 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_69.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_31.jpg"></p>
 
 - 배포가 끝나면 EC2 서버에서 파일들이 잘 도착했는지 확인
 ```
@@ -332,12 +332,12 @@ hooks:
       runas: ec2-user 
 ```
 - 모든 설정이 완료되면 깃허브로 커밋과 푸시해서 Travis와 CodeDeploy의 성공 메세지를 확인한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_70.jpg"></p>
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_71.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_32.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_33.jpg"></p>
 <br>
 
 - 웹 브라우저에서 EC2 도메인을 입력해서 확인하기
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_72.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_34.jpg"></p>
 <br>
 
 #### 실제 배포 과정 체험
@@ -350,7 +350,7 @@ version '1.0.1-SNAPSHOT'
 <h1>스프링 부트로 시작하는 웹 서비스 Ver.2</h1>
 ```
 - 깃허브로 커밋과 푸시하면 다음과 같이 변경된 코드가 배포된 것을 확인할 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_73.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_35.jpg"></p>
 <br>
 
 ### 9-6 CodeDeploy 로그 확인
@@ -358,4 +358,4 @@ version '1.0.1-SNAPSHOT'
 - 따라서 배포가 실패하면 로그를 보고 오류를 해결하는 방법이 좋다.
 - CodeDeploy의 대부분 내용은 /opt/codedeploy-agent/deployment-root에 있다.
 - 이 디렉토리로 이동한 뒤 목록을 확인하면 로그를 확인할 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Webservice_74.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch9_36.jpg"></p>
