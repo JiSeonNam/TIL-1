@@ -208,31 +208,31 @@ curl localhost:8080
 ### 8-5. EC2에서 소셜 로그인하기
 - EC2에 스프링 부트 프로젝트가 8080포트로 배포되었으므로 8080포트가 보안 그룹에 열려있는지 확인한다.
     * 만약 열려 있지 않다면 편집 버튼을 눌러 추가해 준다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch8_1.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Ch8_1.jpg"></p>
 
 - 인스턴스 메뉴를 클릭하면 다음과 같이 퍼블릭 DNS를 확인할 수 있다.
     * 이 주소가 EC2에 자동으로 할당된 도메인이다.
     * 어디에서나 이 주소를 입력하면 EC2서버에 접근할 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch8_2.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Ch8_2.jpg"></p>
 
 <br>
 
 #### 8-5-1. 구글 로그인 서비스 등록
 - 구글 웹 콘솔로 접속하여 본인의 프로젝트로 이동한 다음 API 및 서비스 -> 사용자 인증 정보로 이동한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch8_3.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Ch8_3.jpg"></p>
 
 - OAuth 동의 화면 탭을 선택하고 승인된 도메인에 http:// 없이 EC2의 퍼블릭 DNS를 등록한다. 
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch8_4.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Ch8_4.jpg"></p>
 
 - 사용자 인증 정보 탭을 클릭하여 본인의 서비스 이름을 선택하고 퍼블릭 DNS 주소에 :8080/login/oauth2/code/google주소를 추가하여 승인된 리디렉션 URI에 등록한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch8_5.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Ch8_5.jpg"></p>
 <br>
 
 #### 8-5-2. 네이버 로그인 서비스 등록
 - 네이버 개발자 센터로 접속해서 본인의 프로젝트로 이동한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch8_6.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Ch8_6.jpg"></p>
 
 - PC 웹 항목의 서비스 URL과 Callback URL 2개를 수정한다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_Springboot_AWS_Ch8_7.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/Springboot_AWS_Ch8_7.jpg"></p>
 
 - 완료하면 구글 로그인과 네이버 로그인이 정상적으로 연동 완료된다.
