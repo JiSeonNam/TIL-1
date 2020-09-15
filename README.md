@@ -21,6 +21,10 @@
 - [스프링 부트와 AWS로 혼자 구현하는 웹 서비스](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/Springboot_AWS_Webservice.md)
 <br>
 
+### JPA
+- [자바 ORM 표준 JPA 프로그래밍 - 기본편](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/Java_ORM_Standard_JPA_Programming.md)
+<br>
+
 ### Git
 - [Git 명령어 정리](https://github.com/qlalzl9/TIL/blob/master/Git/GitCommand.md)
 <br>
