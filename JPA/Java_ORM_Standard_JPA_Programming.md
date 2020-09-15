@@ -3,7 +3,7 @@
 <bR>
 
 ### 목차
-- 1. JPA 소개
+- 1. [JPA 소개](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_Intro.md)
 - 2. JPA 시작하기
 - 3. 영속성 관리 - 내부 동작 방식]()
 - 4. 엔티티 맵핑
