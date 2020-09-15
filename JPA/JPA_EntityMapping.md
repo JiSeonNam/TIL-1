@@ -84,3 +84,98 @@
     * `@Column(unique = true)`
 - DDL 생성 기능은 DDL을 자동 생성할 때만 사용되고 JPA의 실행 로직에는 영향을 주지 않는다.
 <br>
+
+## 필드와 컬럼 맵핑
+- 요구사항 예시
+    * 회원은 일반 회원과 관리자로 구분해야 한다.
+    * 회원 가입일과 수정일이 있어야 한다.
+    * 회원을 설명할 수 있는 필드가 있어야 한다. 이 필드는 길이 제한이 없다.
+```java
+@Entity
+public class Member {
+
+    @Id
+    private Long id;
+
+    @Column(name = "name") // 객체는 username, DB에는 name으로 써야할 때
+    private String username;
+
+    private Integer age;
+
+    @Enumerated(EnumType.STRING)
+    private RoleType roleType;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdDate;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lastModifiedDate;
+
+    @Lob
+    private String description;
+
+    //..getter and setter
+}
+```
+<br>
+
+### 필드-컬럼 매핑 어노테이션 정리
+
+#### @Column
+- name
+    - 필드와 매핑할 테이블의 컬럼 이름
+    - 기본값 : 객체의 필드이름
+- insertable, updatable
+    - 컬럼의 등록, 변경을 할건지 하지 않을건지 정해줄 수 있다.
+    - TRUE/FALSE로 설정하며 기본값은 TRUE이다.
+- nullable(DDL)
+    - null 허용여부 설정한다.
+    - false로 설정하면 DDL 생성 시 not null 제약조건이 붙는다.
+- unique(DDL)
+    - `@Table`의 uniqueConstraints 속성과 같지만 한 컬럼에 간단히 유니크 제약조건을 걸 때 사용한다.
+    - 실제로는 유니크 제약조건을 만들어주긴 하지만 컬럼명이 랜덤으로 생성되서 `@Table`의 uniqueConstraints 속성을 보통 사용한다.
+    - @Table의 uniqueConstrains 옵션에 이름까지 줄 수 있다.
+- columnDefinition(DDL)
+    - 컬럼 정의를 직접 할 수 있다.
+    - ex) `columnDefinition = "varchar(100) default 'EMPTY'"`
+    - 정의한 문구가 DDL에 그대로 들어간다.
+    - default는 자바 필드 타입과 DB 방언 정보를 사용해서 만든다.
+- length(DDL)
+    - 문의 길이 제약조건, String 타입에만 사용한다.
+    - 기본값 : 255
+- precision, scale(DDL)
+    - 큰 숫자를 표현하는 자료형 BigDecimal 타입에서 사용한다.(BigInteger도 사용가능)
+    - precision은 소수점을 포함한 전체 자릿수를 지정하는 옵션이고, scale은 소수점 자리수를 지정하는 옵션이다.
+    - Double, float 타입에는 적용되지 않으며, 정밀한 소수를 다루어야 할 때 사용한다.
+    - 기본값 :  precision = 19, scale = 20
+<br>
+
+#### @Enumerated
+- 자바의 Enum 타입 매핑을 지원한다.
+- EnumType.STRING은 enum의 이름을 DB에 저장하고 EnumType.ORDINAL은 enum의 순서를 DB에 저장한다.
+- 기본값인 ORDINAL로 설정하면 Enum 순서로 숫자가 매핑되는데, Enum 중간에 필드가 하나 추가 되어 순서가 꼬이게 되면 매우 위험하다.
+- EnumType을 반드시 EnumType.STRING으로 지정해야 한다.
+<br>
+
+#### @Temporal
+- 날짜 타입(java.util.Date, java.util.Calendar)을 맵핑할 때 사용한다.
+- 요즘에는 자바 8부터 LocalDate와 LocalDateTime이 들어와 최신 하이버네이트에서는 생략하고 그냥 쓰면 된다.
+```java
+private LocalDate testLocalDate;
+private LocalDateTime testLocalDateTime;
+```
+<br>
+
+#### @Lob
+- DB에 varchar를 넘어서는 큰 내용을 넣고 싶은 경우에 사용한다.
+- `@Lob`에는 지정할 수 있는 속성이 없다.
+- 맵핑하는 필드 타입이 문자면 CLOB 맵핑, 나머지는 BLOB 맵핑
+    * CLOB : String, char[], java.sql.CLOB
+    * BLOB : byte[], java.sql.BLOB
+<br>
+ 
+#### @Transient
+- `@Transient`애노테이션이 붙은 필드는 매핑하지 않는다.
+- 데이터베이스에 저장, 조회되지 않는다.
+- 주로 메모리상에서만 임시로 관리하고 싶을 경우 사용한다.
+<br>
