@@ -9,6 +9,7 @@
 
 ### 엔티티 매니저 팩토리와 엔티티 매니저
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_PersistenceContext_1.jpg"></p>
+
 - 사용자의 요청이 올 때마다 EntityManagerFactory를 통해서 EntityManager를 생성한다.
 - EntityMagager는 내부적으로 DB 커넥션을 사용해서 DB를 사용한다.
 <br>
@@ -332,7 +333,7 @@ Member member = em.find(Member.class, 150L);
 
 tx.commit();
 
-// 따라서 SELECT 쿼리가 나온다. 
+// 따라서 실행해보면 SELECT 쿼리가 2번 나온다. 
 ```
 - 영속성 컨텍스트 종료
     * `em.close()`
