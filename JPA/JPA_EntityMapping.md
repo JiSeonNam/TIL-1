@@ -179,3 +179,105 @@ private LocalDateTime testLocalDateTime;
 - 데이터베이스에 저장, 조회되지 않는다.
 - 주로 메모리상에서만 임시로 관리하고 싶을 경우 사용한다.
 <br>
+
+## 기본 키 맵핑
+
+### 기본 키 맵핑 어노테이션
+- `@Id`
+    * 직접 할당
+- `@GeneratedValue`
+    * 자동 생성
+    * `@GenetratedValue(strategy = GenerationType.타입)`
+
+### @GeneratedValue strategy
+- 기본값은 AUIO로 DB 방언에 따라 IDENTITY, SEQUENCE, TABLE 중 자동으로 선택된다.
+<br>
+
+#### IDENTITY
+- 기본 키 생성을 데이터베이스에 위임한다.
+- 주로 MYSQL, PostgreSQL, SQL Server, DB2 등에서 사용한다.
+    * ex) MYSQL : AUTO_INCREMNET
+- IDENTITY 전략의 특징
+    * JPA는 보통 트랜잭션 커밋 시점에 INSERT SQL을 실행한다.
+    * 하지만 AUTO_INCREMENT는 DB에 INSERT SQL 실행 후에야 ID값을 알 수 있다.
+    * 문제는 영속성 컨텍스트에 관리되려면 PK값이 있어야하는데 PK값을 DB에 들어가봐야 안다는 것이다.
+    * 이 문제를 해결하기 위해 IDENTITY 전략에서만 예외적으로 `em.persist()`를 호출한 시점에 DB에 INSERT 쿼리를 날려버린다.
+    * 결과적으로 쓰기 지연(버퍼링)을 사용할 수 없다. (사실 버퍼링하는게 큰 의미가 없어서 성능 차이가 비약적으로 나진 않는다.)
+
+```java
+@Entity
+public class Member {
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+    
+    // ...
+```
+<br>
+
+#### SEQUENCE 
+- 데이터베이스 시퀀스는 유일한 값을 순서대로 생성하는 특별한 DB 오브젝트(Oracle 시퀀스)
+- 주로 Oracle, PostgreSQL, DB2, H2 DB에서 사용한다.
+- 기본적으로 하이버네이트가 만드는 기본 시퀀스 오브젝트를 쓰는데, 테이블마다 시퀀스를 따로 관리하고 싶으면 `@SequenceGenerator`를 사용하면 된다.
+- SEQUENCE 전략의 특징
+    * SEQUENCE 전략도 DB에서 만드는 시퀀스 오브젝트를 참조해야 한다.
+        - 시퀀스 오브젝트도 DB에서 관리한다.
+    * `em.persist()`호출 시점에(영속성 컨텍스트에 저장할 때) DB 시퀀스 오브젝트에서 next value를 호출해서 값을 얻어온 다음 member에 Id값을 넣어주고 영속성 컨텍스트에 저장한다.
+        - 이 때까지 DB에 INSERT 쿼리는 날라가지 않는다.
+    * PK값만 얻고 영속성 컨텍스트에 쌓여있다가 트랜잭션 커밋시점에 INSERT 쿼리가 호출된다. (버퍼링 사용 가능)
+    * 이 방식의 경우 네트워크를 많이 왔다갔다 하기 때문에 성능이 나쁘다고 생각될 수 있지만 allocationSize로 해결 가능하다.
+        - allocationSize만큼 next call 한번 할때 한꺼번에 DB에 올려놓고 메모리에 1씩 쓰는 것이다.
+            * 쭉 사용하다가 시퀀스값이 51일 때 다시 한번 호출한다.
+            * 이론적으로는 많이 쓰면 좋지만 적절히 값을 설정해서 쓰는게 좋다.
+        - 기본값 : 50
+        - 여러 웹 서버에서도 동시성 문제가 없다.
+
+```java
+@Entity
+@SequenceGenerator(
+    name = "MEMBER_SEQ_GENERATOR",
+    sequesceName = "MEMBER_SEQ",  // 맵핑할 데이터베이스 시퀀스 이름
+    initialValue = 1, allocationSize = 1)
+public class Member {
+    @Id
+    @GenerateValue(strategy = GenerationType.SEQUESCE, 
+                   generator = "MEMBER_SEQ_GENERATOR")
+    private Long id;
+
+    // ...
+}
+```
+<br>
+
+#### TABLE
+- 키 생성 전용 테이블을 생성해서, 데이터베이스 시퀀스를 흉내내는 전략.
+- 모든 데이터베이스에 적용 가능하지만 최적화가 되어있지 않은 테이블을 직접 사용해 성능이 떨어진다.
+- TABLE 전략의 특징
+    * SEQUENCE 전략의 allocationSize를 똑같이 사용가능하다.
+```java
+@Entity
+@TableGenerator(
+    name = "MEMBER_SEQ_GENERATOR",
+    table = "MY_SEQUENCES", // 테이블 이름
+    pkColumnValue = "MEMBER_SEQ", allocationsize = 1) // pkColumn 이름
+public class Member {
+    @Id
+    @GenerateValue(strategy = GenerationType.TABLE, 
+                   generator = "MEMBER_SEQ_GENERATOR")
+    private Long id;
+
+    // ...
+}
+```
+<br>
+
+### 권장하는 식별자 전략
+- 기본 키 제약 조건 : null이면 안된다. 유일해야한다. 변하면 안된다.
+- 미래까지 이 조건을 만족하는 자연키는 찾기 어렵다.
+    * 대리키(대체키)를 사용하자.
+        - 자연키 : 비즈니스적으로 의미있는 키 ex) 전화번호, 주민등록번호
+        - 대리키 : 비즈니스와 관련없는 키 ex) GeneratedValue, 랜덤값
+- 예를 들어, 주민등록번호도 기본 키로 적절하지 않다.
+    * PK로 주민번호를 쓰면 FK로 주민번호가 퍼져있어서 주민번호를 쓰지 못할 때 다 바꾸려면 마이그레이션이 난리가 난다.
+    * 만약 PK를 대체키로 썼으면 간단한 문제이다.
+- 권장사항 : Long형 + 대체키 + 키 생성전략 사용
+<br>
