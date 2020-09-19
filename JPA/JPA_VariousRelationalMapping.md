@@ -456,6 +456,6 @@ public class MemberProduct {
     // ...getter and setter
 }
 ```
-- 위의 다대다 매핑의 한계 첨부 그림에서는 MemberProduct의 MEMBER_ID, PRODUCT_ID를 묶어서 PK로 썼지만, 실제로는 `@GeneratedValue`로 자동생성되는 id를 사용하는 것을 권장한다.
+- 위의 다대다 맵핑의 한계 첨부 그림에서는 MemberProduct의 MEMBER_ID, PRODUCT_ID를 묶어서 PK로 썼지만, 실제로는 `@GeneratedValue`로 자동생성되는 id를 사용하는 것을 권장한다.
     * 왠만하면 PK는 의미없는 값을 써야한다.
 - Id가 두 개의 테이블에 종속되지 않고 더 유연하게 사용할 수 있다.
