@@ -182,3 +182,57 @@ public abstract class Item { //  ITEM 엔티티는 실제 생성되는 테이블
     * 굉장히 심플하고 확장의 가능성도 적으면 단일 테이블 전략을 사용하고 비즈니스 적으로 중요하고, 복잡하고, 확장될 확률이 높으면 조인 전략을 사용하는 것이 권장된다.
 <br>
 
+## @MappedSuperclass
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_AdvancedMapping_5.jpg"></p>
+
+- 객체 입장에서 공통 맵핑 정보가 필요할 때 사용한다.(id, name)
+- 공통 속성을 부모 클래스에 선언하고 속성만 상속 받아서 사용하고 싶을 경우 `@MappedSuperclass`를 사용한다.
+<br>
+
+### 코드로 이해하기
+- 생성자, 생성시간, 수정자, 수정시간을 모든 엔티티에 공통으로 가져가야 하는 상황이라고 가정하면
+```java
+@MappedSuperclass // 맵핑정보만 상속받는 Superclass라는 의미의 @MappedSuperclass 어노테이션 선언해야 한다.
+public abstract class BaseEntity {
+
+    // @Column 애노테이션의 name 속성으로 이름을 변경해도 상속받는 엔티티에 모두 적용된다. 
+    private String createdBy;
+
+    private LocalDateTime createdDate;
+
+    private String lastModifiedBy;
+
+    private LocalDateTime lastModifiedDate;
+
+    // ...getter and setter...
+}
+```
+- 엔티티에 BaseEntity를 상속받도록 코드 수정
+```java
+@Entity
+public class Member extends BaseEntity {
+    
+    // ...
+}
+```
+```java
+@Entity
+public class Team extends BaseEntity {
+    
+    // ...
+}
+```
+- 이렇게 하면 엔티티에 BaseEntity에 선언된 컬럼들이 생성 된다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_AdvancedMapping_6.jpg"></p>
+
+<br>
+
+### @MappedSuperclass 정리
+- 상속광계 맵핑이 아니다.
+- `@MappedSuperclass`가 선언되어 있는 클래스는 엔티티가 아니므로 테이블과 맵핑도 안된다.
+- 부모 클래스를 상속 받는 자식 클래스에 맵핑 정보만 제공한다.
+- 조회, 검색이 불가능하다. 부모 타입으로 조회하는 것이 불가능하다는 이야기.(em.find(BaseEntity) 불가능)
+- 직접 생성해서 사용할 일이 없으므로 추상 클래스로 만드는 것을 권장된다.-
+- 테이블과 관계가 없고, 단순히 엔티티가 공통으로 사용하는 맵핑 정보를 모으는 역할을 한다.
+- 주로 등록일, 수정일, 등록자, 수정자 같은 전체 엔티티에서 공통으로 적용하는 정보를 모을 때 사용한다.
+- JPA에서 @Entity클래스는 `@Entity`나 `@MappedSuperclass`로 지정한 클래스만 상속할 수 있다.
