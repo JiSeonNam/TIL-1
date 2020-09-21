@@ -279,3 +279,29 @@ member.setHomeAddress(newAddress);
 tx.commit();
 ```
 <br>
+
+## 값 타입의 비교
+- 값 타입은 인스턴스가 달라도 그 안의 값이 같으면 같은 것으로 봐야 한다.
+```java
+int a = 10;
+int b = 10;
+// a == b : true
+```
+- 객체 타입은 값이 같아도 주소가 달라서 == 비교하면 false로 나온다.
+    * 인스턴스 자체가 달라서 참조값이 다르다.
+```java
+Address a = new Address("서울시");
+Address b = new Address("서울시");
+// a == b : false
+```
+- 동일성(identity) 비교
+    * 인스턴스의 참조 값을 비교한다.
+    * `==`을 사용한다.
+- 동등성(equivalence) 비교
+    * 인스턴스의 값을 비교한다.
+    * `equals()`를 사용한다.
+- 값 타입은 `a.equals(b)`를 사용해서 동등성 비교를 해야 한다.
+- 값 타입은 `equals()` 메소드를 적절하게 재정의해야 한다.
+    * 주로 모든 필드를 다 재정의 해야 한다.
+    * `equals()`를 재정의하면 `hashCode()`도 재정의 해야한다.
+<br>
