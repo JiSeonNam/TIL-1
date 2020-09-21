@@ -210,7 +210,6 @@ tx.commit();
 - Member와 Team을 자주 함께 사용해야 할 때 사용한다.
 - Member와 Team을 JOIN해서 한번에 가져온다.
     * 둘 다 프록시가 아니라 실제 객체를 가져온다.
-- 
 ```java
 @Entity
 public class Member extends BaseEntity {
