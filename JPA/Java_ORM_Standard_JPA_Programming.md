@@ -9,7 +9,7 @@
 - [4. 엔티티 맵핑](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_EntityMapping.md)
 - [5. 연관관계 맵핑 기초](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_RelationalMapping.md)
 - [6. 다양한 연관관계 맵핑](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_VariousRelationalMapping.md)
-- 7. 고급 맵핑]
+- [7. 고급 맵핑](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_AdvancedMapping.md)
 - 8. 프록시와 연관관계 관리
 - 9. 값 타입
 - 10. 객체지향 쿼리 언어1 - 기본 문법
