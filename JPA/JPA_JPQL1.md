@@ -342,3 +342,49 @@ for (Member member : members) {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_JPQL1_3.jpg"></p>
 
 <br>
+
+### 조인
+- SQL JOIN과 실행은 똑같지만 엔티티 중심으로 동작한다. 객체 스타일로 JOIN 문법이 나간다.
+- 내부 조인
+    * ex) Member와 연관있는 Team을 t로 JOIN
+```sql
+SELECT m FROM Member m [INNER] JOIN m.team t
+```
+- 외부 조인
+```sql
+SELECT m FROM MEMBER m LEFT [OUTER] JOIN m.team t
+```
+- 세타 조인
+    * 일명 막(?) 조인이다. 
+    * 연관관계 상관 없이 'm.username과 t.uame이 같은 경우 찾아라'라는 쿼리 날릴 수 있다. 
+    * 이런 조인을 세타 조인이라고 한다.
+```sql
+SELECT COUNT(m) FROM Member m, Team t WHERE m.username = t.name
+```
+<br>
+
+### 조인 - ON절
+- JPA 2.1부터 ON절을 활용한 조인이 가능하다.
+    * 조인할 때 조인 대상을 미리 필터링 할 수 있다.
+    * 연관관계가 없는 엔티티를 외부 조인할 수 있다.(하이버네이트 5.1부터)
+- 조인 대상 필터링
+    * ex) Member와 Team을 조인하면서, Team이름이 A인 Team만 조인하고 싶은 경우
+    * JPQL
+    ```sql
+    SELECT m,t FROM Member m LEFT JOIN m.team t on t.name = 'A'
+    ```
+    * SQL
+    ```sql
+    SELECT m.*, t.* FROM Member m LEFT JOIN TEAM t ON m.TEAM_ID = t.id AND t.name = 'A'
+    ```
+- 연관관계 없는 엔티티 외부 조인
+    * ex) Member 이름과 Team의 이름이 같은 대상을 외부 조인할 수 있다.
+    * 서로 아무 연관관계가 없어도 LEFT JOIN이 가능하다.
+    * JPQL
+    ```sql
+    SELECT m,t FROM Member m LEFT JOIN Team t on m.username = t.name
+    ```
+    * SQL
+    ```sql
+    SELECT m.*, t.* FROM Member m LEFT JOIN TEAM t ON m.TEAM_ID = t.id AND t.name = 'A'
+    ```
