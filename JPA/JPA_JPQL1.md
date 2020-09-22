@@ -318,3 +318,27 @@ System.out.println("age = " + memberDTO.getAge()); // age = 10
 tx.commit();
 ```
 <br>
+
+### 페이징 API
+- 몇 번째 부터 몇 개 가져올 것인가
+- JPA는 페이징을 다음 두 API로 추상화 해준다.
+- `setFirstResult(int startPosition)`
+    * 조회 시작 위치(0부터 시작)
+- `setMaxResults(int maxResult)`
+    * 조회할 데이터 수
+```java
+// 페이징에서 order by가 있어야 잘 되는지 알 수 있다. 
+List<Member> members = em.createQuery("select m from Member m order by m.age desc", Member.class)
+        .setFirstResult(1) // 1번째 부터
+        .setMaxResults(10) // 10개
+        .getResultList(); // 
+
+for (Member member : members) {
+    System.out.println("member.getUsername() = " + member.getUsername());
+}
+```
+- Spring Data JPA를 쓰면 생각보다 페이징이 쉽게 되는데, 결과적으로 JPA가 해주는 것이다.
+- 참고) 페이징 API - MySQL, Oracle 방언
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_JPQL1_3.jpg"></p>
+
+<br>
