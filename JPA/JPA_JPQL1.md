@@ -109,7 +109,7 @@ tx.commit();
 - JPQL은 SQL을 추상화해서 특정 데이터베이스 SQL에 의존하지 않는다.
 - JPQL은 결국 SQL로 변환된다.
 - 예제 객체 모델과 DB모델
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_JPQL1_1.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_JPQL1_2.jpg"></p>
 
 <br>
 
@@ -192,5 +192,129 @@ TypedQuery<Member> memberTypedQuery = em.createQuery("select m from Member m whe
 // setParameter 를 활용하여 바인딩 해준다.
 memberTypedQuery.setParameter("username", "member1");
 Member singleResultMember = memberTypedQuery.getSingleResult();
+```
+<br>
+
+## 프로젝션
+- 프로젝션은 SELECT 절에 조회할 대상을 지정하는 것을 말한다.
+    * 무엇을 가져올 것인가를 뽑는 것.
+- 프로젝션의 대상 : 엔티티, 임베디드 타입, 스칼라 타입(숫자, 문자등 기본 데이터 타입)
+    * 관계형 데이터베이스에서는 SELECT 절에 스칼라 타입만 넣을 수 있지만, JPQL에서는 모두 다양하게 선택 가능하다.
+- SELECT **m** FROM Member m
+    * 엔티티 프로젝션
+    * Member 엔티티를 조회한다는 것이다.
+```java
+// ...
+
+// 엔티티 프로젝션의 대상인 Member 리스트는 영속성 컨텍스트에서 관리 된다.
+// 대상이 리스트에 10개 20개 나와도 모두 관리된다.
+List<Member> members = em.createQuery("select m from Member m", Member.class).getResultList();
+
+// age를 20살로 바꾼다음 실행했을 때 바뀌면 영속성 컨텍스트에서 관리되는 것, 안바뀌면 관리되지 않는 것이다.
+Member findMember = members.get(0);
+findMember.setAge(20);
+
+// 실행해보면 update 쿼리 나가고 값이 바뀐다.
+tx.commit();
+```
+- SELECT **m.team** FROM MEMBER m
+    * 엔티티 프로젝션
+    * Member와 연관된 team을 가져온다. (결과가 Team이다.)
+```java
+// ...
+
+// 실제 SQL로 번역되면 Member와 Team을 JOIN해서 연관된 Team을 찾는다.
+// JPQL 조인을 명시하는 것이 좋다.
+// List<Team> members = em.createQuery("select m.team from Member m", Team.class).getResultList(); -> 명시하지 않은 코드
+List<Team> members = em.createQuery("select m.team from Member m join m.team t", Team.class).getResultList();
+
+// 실행하면 JOIN 쿼리가 나간다. 
+tx.commit();
+```
+- SELECT **m.address** FROM Member m
+    * 임베디드 타입 프로젝션
+    * 임베디드 타입 자체로 엔티티 프로젝션처럼 사용할 수는 없다. 
+        * 엔티티에 속해 있기 때문에. 엔티티에서 시작해야 한다.
+        * `address` -> `o.address`
+```java
+// ...
+
+// order안에 있는 값 타입
+em.createQuery("select o.address from Order o", Address.class).getResultList();
+
+tx.commit();
+```
+- SELECT **m.username**, m.age FROM Member m
+    * 스칼라 타입 프로젝션
+    * 원하는 것은 SQL 짜듯이 막 가져올 수 있다.
+```java
+// ...
+
+em.createQuery("select m.username, m.age from Member m").getResultList();
+
+tx.commit();
+```
+- DISTINCT로 중복 제거가 가능하다.
+<br>
+
+### 프로젝션 - 여러 값 조회
+- 스칼라 타입 프로젝션(SELECT **m.username, m.age** FROM Member m)에서 타입이 String, int인데 어떻게 가져와야 할까?
+- Query 타입을 조회
+    * 반환 타입이 명확하지 않을 때 사용
+    * 타입을 지정하지 못하기 때문에 type casting을 해야한다.
+```java
+List resultList = em.createQuery("select m.username, m.age from Member m").getResultList();
+
+Object o = resultList.get(0);
+// type casting
+Object[] result = (Object[]) o;
+System.out.println("username = " + result[0]); // username = member1
+System.out.println("age = " + result[1]); // age = 10
+
+tx.commit();
+```
+- Object[] 타입으로 조회
+    * generic에 Object[]를 선언하면 type casting 과정을 생략할 수 있다.
+```java
+List<Object[]> resultList = em.createQuery("select m.username, m.age from Member m").getResultList();
+
+Object[] result = resultList.get(0);
+System.out.println("username = " + result[0]); // username = member1
+System.out.println("age = " + result[1]); // age = 10
+
+tx.commit();
+```
+- new 명령어로 조회
+    * 가장 깔끔한 방법이다.
+    * 단순 값을 DTO로 바로 조회하는 방법이다.
+        * `SELECT new UserDTO(m.username, m,age) FROM Member m`
+    * 순서와 타입이 일치하는 생성자가 필요하고, DTO의 패키지명을 다 적어줘야 한다.
+        * 패키지명은 QueryDSL을 사용하면 자바 코드로 짜기 때문에 패키지명을 import해서 쓸 수 있다. 
+```java
+// MemberDTO 생성
+public class MemberDTO {
+
+    private String username;
+
+    private int age;
+
+    // 생성자
+    public MemberDTO(String username, int age) {
+        this.username = username;
+        this.age = age;
+    }
+
+    // ...getter and setter...
+}
+```
+```java
+// new 명령어를 사용하고 패키지를 적는다. 생성자를 통해서 호출된다.
+List<MemberDTO> result = em.createQuery("select new jpql.MemberDTO(m.username, m.age) from Member m", MemberDTO.class).getResultList();
+
+MemberDTO memberDTO = result.get(0);
+System.out.println("username = " + memberDTO.getUsername()); // username = member1
+System.out.println("age = " + memberDTO.getAge()); // age = 10
+
+tx.commit();
 ```
 <br>
