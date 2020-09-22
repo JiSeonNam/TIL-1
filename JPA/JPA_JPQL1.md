@@ -99,3 +99,98 @@ tx.commit();
 - 단, 영속성 컨텍스트를 적절한 시점에 강제로 플러시 하는 것이 필요하다.
 - ex) JPA를 우회해서 SQL을 실행하기 직전에 영속성 컨텍스트 수동 플러시
 <br>
+
+## JPQL 기본 문법과 기능
+- JPQL(Java Persistence Query Language)
+<br>
+
+### JPQL 소개
+- JPQL은 객체지향 쿼리 언어다. 따라서 테이블을 대상으로 쿼리하는 것이 아니라 엔티티 객체를 대상으로 쿼리 한다.
+- JPQL은 SQL을 추상화해서 특정 데이터베이스 SQL에 의존하지 않는다.
+- JPQL은 결국 SQL로 변환된다.
+- 예제 객체 모델과 DB모델
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_JPQL1_1.jpg"></p>
+
+<br>
+
+### JPQL 문법
+```sql
+select_문 :: = 
+    select_절
+    from_절
+    [where_절]
+    [groupby_절]
+    [having_절]
+    [orderby_절]
+```
+```sql
+update_문 :: = update_절 [where_절]
+```
+```sql
+delete_문 :: = delete_절 [where_절]
+```
+- `select m from Member as m where m.age > 18`
+    * from 엔티티
+- 엔티티와 속성은 대소문자를 구분한다.
+    * Member 엔티티나 m.age 필드
+- JPQL 키워드는 대소문자 구분 하지 않는다.
+- 테이블 이름이 아닌 엔티티 이름을 사용한다.
+- 별칭은 필수이다.(as는 생략가능)
+    * Member의 별칭 m
+<br>
+
+### 집합과 정렬
+- 기본적으로 집합함수 모두 동작한다.
+```sql
+select
+    COUNT(m),   //회원수
+    SUM(m.age), //나이 합
+    AVG(m.age), //평균 나이
+    MAX(m.age), //최대 나이
+    MIN(m.age)  //회소 나이
+from Member m
+```
+- `GROUP BY`, `HAVING`, `ORDER BY` 다 똑같이 쓰면 된다.
+<br>
+
+### TypeQuery, Query
+- TypeQuery
+    * 반환 타입이 명확할 때 사용한다.
+```java
+TypedQuery<Member> query = em.createQuery("SELECT m FROM Member m", Member.class); // 반환 타입이 Member.class로 명확하다.
+```
+
+- Query
+    * 반환 타입이 명확하지 않을 때 사용
+```java
+Query query = 
+    em.createQuery("SELECT m.username, m.age FROM Member m"); // username은 String, age는 int라서 반환 타입이 명확하지 않다.
+```
+<br>
+
+### 결과 조회 API
+- `query.getResultList()` 
+    * `List<Member> members = memberQuery.getResultList();`
+    * 결과가 하나 이상 일 때, 리스트를 반환한다.
+    * 결과가 없으면 빈 리스트를 반환한다.
+- `query.getSingleResult()`
+    * `Member singleMember = memberQuery.getSingleResult();`
+    * 결과가 정확히 하나, 단일 객체를 반환한다.(정확히 하나가 아니면 예외 발생)
+    * 결과가 없으면 : javax.persistence.NoResultException
+    * 결과가 둘 이상이면 : javax.persistence.NonUniqueResultException
+- Spring Data JPA 에서는 단일건 함수들을 추상화 해서 제공한다. 결과가 없을시 Optional, null 을 반환하고, 예외를 발생하지 않는다.
+- 표준 스펙이기 때문에 Spring Data JPA에서도 이를 사용해야한다. 코드를 까보면 try-catch 로 null or Optional을 반환해주는 식으로 구현이 되어있다.
+
+<br>
+
+### 파라미터 바인딩
+- 위치 기반의 파라미터 바인딩도 지원하지만 왠만하면 이름으로 바인딩하는 것이 좋다.
+    * 중간에 끼워넣으면 순서가 다 밀려서 장애로 이어진다.
+```java
+// 파라미터 바인딩
+TypedQuery<Member> memberTypedQuery = em.createQuery("select m from Member m where m.username = :username", Member.class);
+// setParameter 를 활용하여 바인딩 해준다.
+memberTypedQuery.setParameter("username", "member1");
+Member singleResultMember = memberTypedQuery.getSingleResult();
+```
+<br>
