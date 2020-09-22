@@ -305,3 +305,251 @@ Address b = new Address("서울시");
     * 주로 모든 필드를 다 재정의 해야 한다.
     * `equals()`를 재정의하면 `hashCode()`도 재정의 해야한다.
 <br>
+
+## 값 타입 컬렉션
+- 값 타입을 컬렉션에 담아서 쓰는 것을 말한다.
+- 값 타입을 하나 이상 저장할 때 사용한다.
+- `@ElementCollection`, `@CollectionTable` 어노테이션을 사용해서 맵핑한다.
+- 데이터베이스는 컬렉션을 같은 테이블에 저장할 수 없기 때문에 컬렉션을 저장하기 위한 별도의 테이블이 필요하다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_ValueType_3.jpg"></p>
+
+- 예를 들어 Member가 그림과 같은 값 타입을 가지고 있다고 가정하자.
+- 그런데 DB테이블로 구현할 때 문제가 발생한다.
+    * 단순하게 값 타입이 하나이면 Member에 필드 속성으로 넣으면 되지만
+    * 관계형 DB는 내부적으로 컬렉션을 담을 수 있는 구조가 없다.
+    * 요즘에야 JSON을 지원하면서 되는 DB가 있긴 하지만 기본적으로는 안된다.
+- 따라서 Member 입장에서는 컬렉션이 일대다 관계이기 때문에 위의 그림과 같이 별도의 테이블로 만들어야 한다.
+
+#### 코드 실습
+- Member 클래스에 값 타입 컬렉션 추가
+    * `@ElmentCollection`으로 맵핑해준다. 
+    * `@CollectionTable`으로 테이블 명을 지정해준다.
+
+```java
+@Entity
+public class Member extends BaseEntity {
+
+    @Id @GeneratedValue
+    private Long id;
+
+    // ...
+
+    @ElementCollection
+    @CollectionTable(
+        name = "FAVORITE_FOODS", // 테이블 명을 지정
+        joinColumns = @JoinColumn(name = "MEMBER_ID")) // 외래키 설정
+    @Column(name = "FOOD_NAME") // 값이 하나이므로 예외적으로 컬럼명 지정
+    private Set<String> favoriteFoods = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(
+        name = "ADDRESS",
+        joinColumns = @JoinColumn(name = "MEMBER_ID"))
+    private List<Address> addressHistory = new ArrayList<>();
+
+    // ...
+}
+```
+<br>
+
+### 컬렉션 값 타입 저장
+- 다음 코드와 같이 컬렉션에 값을 저장한다.
+```java
+Member member = new Member();
+member.setUsername("member1");
+member.setHomeAddress(new Address("homeCity", "street", "10000"));
+
+member.getFavoriteFoods().add("치킨");
+member.getFavoriteFoods().add("족발");
+member.getFavoriteFoods().add("피자");
+
+member.getAddressHistory().add(new Address("old1", "street1", "10001"));
+member.getAddressHistory().add(new Address("old2", "street2", "10002"));
+
+em.persist(member);
+
+tx.commit();
+```
+- `em.persist()`한번에 Insert 쿼리가 나간다.
+- 흥미로운 것은 값 타입 컬렉션을 따로 persist하지 않아도 Member만 저장하니까 자동으로 INSERT 쿼리가 나갔다.
+    * 값 타입이기 때문이 그렇다.
+    * Member에 소속된 값 타입들은 생명주기가 Member를 따라간다.
+    * 별도로 persist하거나 update할 필요없이 자동으로 변경된다.
+    * 일대다 연관관계에서 Cascade ALL로 설정하고, orphanRemoval true 설정한 것과 비슷하다.
+    * 값 타입 컬렉션은 영속성 전이(Cascade) + 고아 객체 제거 기능을 필수로 가진다고 볼 수 있다.
+<br>
+
+### 컬렉션 값 타입 조회
+- 다음 코드와 같이 멤버를 조회하면 Member와 Member에 소속된 Embedded 타입의 homeAddress만 조회되고 컬렉션들은 조회 되지 않는다.
+- 컬렉션 값 타입들은 지연로딩이다.
+```java
+Member member = new Member();
+member.setUsername("member1");
+member.setHomeAddress(new Address("homeCity", "street", "10000"));
+
+member.getFavoriteFoods().add("치킨");
+member.getFavoriteFoods().add("족발");
+member.getFavoriteFoods().add("피자");
+
+member.getAddressHistory().add(new Address("old1", "street1", "10001"));
+member.getAddressHistory().add(new Address("old2", "street2", "10002"));
+
+em.persist(member);
+
+// 영속성 컨텍스트를 비워 놓고. 깔끔한 상태가 된다.
+em.flush();
+em.clear();
+
+System.out.println("============== START ==============");
+Member finMember = em.find(Member.class, member.getId());
+```
+- 직접 컬렉션 값 타입을 사용하면 쿼리가 나간다.
+```java
+System.out.println("============== START ==============");
+Member finMember = em.find(Member.class, member.getId());
+
+List<Address> addressHistory = findMember.getAddressHistory();
+for (Address address : addressHistory) {
+    System.out.println("address = " + address.getCity());
+}
+
+Set<String> favoriteFoods = findMember.getFavoriteFoods();
+for (String favoriteFood : favoriteFoods) {
+    System.out.println("favoriteFood = " + favoriteFood);
+}
+
+tx.commit();
+```
+<br>
+
+### 컬렉션 값 타입 수정
+- 값 타입 수정
+    * 값 타입은 Immutable 해야 한다.
+    * 따라서 homeAddress를 수정하려면 Address 인스턴스 자체를 new로 갈아 끼워야 한다.
+```java
+// ...
+
+Member findMember = em.find(Member.class, member.getId());
+
+// findMember.getHomeAddress().setCity("newCity"); 이렇게 하면 안된다. 부작용 발생
+findMember.setHomeAddress(new Address("newCity", "newStreet", "20001"));
+
+tx.commit();
+```
+- 값 타입 컬렉션 수정
+    * 컬렉션에 값을 지운 다음 새로 컬렉션에 추가한다.
+    * 코드만 변경했을 뿐인데 JPA가 알아서 테이블에 DELETE, INSERT 해준다.
+```java
+Member findMember = em.find(Member.class, member.getId());
+
+// 치킨 -> 한식 수정하고 싶은 경우
+findMember.getFavoriteFoods().remove("치킨");
+findMember.getFavoriteFoods().add("한식");
+
+tx.commit();
+```
+- 값 타입 컬렉션 수정 2 - Address 객체
+    * 대부분의 컬렉션들은 대상을 찾을 때 `equals()`를 사용하기 때문에 `equals()`, `hashCode()` 재정의가 중요하다.
+    * 수정한 뒤 실행해보면 테이블을 통으로 날린 뒤에 새롭게 Address 2개를 새로 INSERT 하는 것을 볼 수 있다. (값 타입 컬렉션의 제약사항 참조)
+```java
+Member findMember = em.find(Member.class, member.getId());
+
+// 대부분의 컬렉션들은 대상을 찾을 때 equals()를 사용하기 때문에 완전히 똑같은 객체를 넣어준다.
+findMember.getAddressHistory().remove(new Address("old1", "street1", "10001"));
+findMember.getAddressHistory().add(new Address("new city1", "street1", "10001"));
+
+tx.commit();
+```
+<br>
+
+### 값 타입 컬렉션의 제약사항
+- 값 타입은 엔티티와 다르게 식별자 개념이 없다.
+- 값은 변경하면 추척이 어렵다.
+- **값 타입 컬렉션에 변경 사항이 발생하면, 주인 엔티티와 연관된 모든 데이터를 삭제하고, 값 타입 컬렉션에 있는 현재 값을 모두 다시 저장한다.**
+    * 참고) `@OrderColumn`을 사용해서 어떻게 해결이 되긴 하지만 복잡하고 위험하다. 따라서 다른 방법으로 풀어내는 것이 낫다.(값 타입 컬렉션 대안 참고)
+- 값 타입 컬렉션을 매핑하는 테이블은 모든 컬럼을 묶어서 기본 키를 구성해야 한다.
+    * NULL 입력 X, 중복 저장X
+<br>
+
+### 값 타입 컬렉션 대안
+- 실무에서는 상황에 따라 값 타입 컬렉션 대신에 일대다 관계를 고려하는 것이 낫다.
+- 일대다 관계를 위한 엔티티를 만들고, 여기에서 값 타입을 사용하는 것이다.
+- 영속성 전이 + 고아 객체 제거를 사용해서 값 타입 컬렉션 처럼 사용하자.
+- 실무에서 쿼리 최적화도 훨씬 유리하다.
+<br>
+
+#### 실습
+- AddressEntity 생성
+```java
+@Entity
+@Table(name = "ADDRESS")
+public class AddressEntity {
+
+    @Id @GeneratedValue
+    private Long id;
+
+    private Address address;
+
+    public AddressEntity() {
+    }
+
+    public AddressEntity(String city, String street, String zipcode) {
+        this.address = new Address(city, street, zipcode);
+    }
+    
+    // ...getter and setter...
+}
+```
+- Member 수정
+    * 값 타입이 아닌 엔티티 타입으로 맵핑
+    * 일대다 단방향 or 양방향 맵핑
+```java
+@Entity
+public class Member extends BaseEntity {
+
+    @Id @GeneratedValue
+    private Long id;
+
+    // ...getter and setter...
+
+    @ElementCollection
+    @CollectionTable(
+        name = "FAVORITE_FOOD",
+        joinColumns = @JoinColumn(name = "MEMBER_ID"))
+    @Column(name = "FOOD_NAME")
+    private Set<String> favoriteFoods = new HashSet<>();
+
+    // @ElementCollection
+    // @CollectionTable(
+    //     name = "ADDRESS",
+    //     joinColumns = @JoinColumn(name = "MEMBER_ID"))
+    // private List<Address> addressHistory = new ArrayList<>();
+
+    // 값 타입으로 맵핑하는 것이 아니라 엔티티로 맵핑
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true) 
+    @JoinColumn(name = "MEMBER_ID") // 일대다 단방향 맵핑
+    private List<AddressEntity> addressHistory = new ArrayList<>();
+
+    // ...
+}
+```
+- 이제 ADDRESS 테이블에 ID라는 개념이 생겼다. 그리고 Member ID를 FK로 가지고 있다.
+    * 엔티티라는 얘기고, 이제는 특정 row를 찾아서 내부의 값을 수정할 수 있다.
+- `@OneToMany`와 `@JoinColumn`으로 일대다 단방향 매핑을 했으므로, Member 테이블의 반대인 AddressEntity(Address 테이블)에 Update 쿼리가 나가는 것은 어쩔 수 없다.
+- 이런식으로 값 타입 컬렉션은 엔티티로 승격 시켜서 많이 사용한다.
+    * 정말 단순하다면 값 타입을 써도 된다.
+<br>
+
+### 정리
+- 엔티티 타입의 특징
+    * 식별자(ID)가 있다.
+    * 생명 주기가 관리 된다.
+    * 공유 할 수 있다.
+- 값 타입의 특징
+    * 식별자가 없다.
+    * 생명 주기를 엔티티에 의존한다.
+    * 공유하지 않는 것이 안전하다.(복사해서 사용)
+    * 불변 객체로 만드는 것이 안전하다.
+- 값 타입은 정말 값 타입이라 판단될 때만 사용해야 한다.
+- 엔티티와 값 타입을 혼동해서 엔티티를 값 타입으로 만들면 안된다.
+- 식별자가 필요하고, 지속해서 값을 추적, 변경해야 한다면 그것은 값 타입이 아닌 엔티티다.
