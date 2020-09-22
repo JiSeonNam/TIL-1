@@ -319,7 +319,7 @@ tx.commit();
 ```
 <br>
 
-### 페이징 API
+## 페이징 API
 - 몇 번째 부터 몇 개 가져올 것인가
 - JPA는 페이징을 다음 두 API로 추상화 해준다.
 - `setFirstResult(int startPosition)`
@@ -343,7 +343,7 @@ for (Member member : members) {
 
 <br>
 
-### 조인
+## 조인
 - SQL JOIN과 실행은 똑같지만 엔티티 중심으로 동작한다. 객체 스타일로 JOIN 문법이 나간다.
 - 내부 조인
     * ex) Member와 연관있는 Team을 t로 JOIN
@@ -386,5 +386,5 @@ SELECT COUNT(m) FROM Member m, Team t WHERE m.username = t.name
     ```
     * SQL
     ```sql
-    SELECT m.*, t.* FROM Member m LEFT JOIN TEAM t ON m.TEAM_ID = t.id AND t.name = 'A'
+    SELECT m.*, t.* FROM Member m LEFT JOIN TEAM t ON m.username = t.name
     ```
