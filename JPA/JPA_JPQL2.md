@@ -379,6 +379,7 @@ select m.* from Member m where m.team_id = ?
 - Spring Data Jpa에서는 JpaRepository 인터페이스 메소드 위에 `@Query()`로 등록해서 사용하는데, NamedQuery로 등록되서, 애플리케이션 로딩 시점에 가져갈 수 있는 이점들을 얻을 수 있다.
 - 사실 엔티티에 `@NamedQuery`를 등록하면 엔티티가 너무 복잡해지고 지저분해 진다. 
     * 따라서 실무에서는 Spring Data JPA를 사용하자.
+    * 참고) [Using @Query](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#jpa.query-methods.at-query)
 <br>
 
 #### 사용 예시 코드
@@ -406,4 +407,51 @@ List<Member> resultList =
 ### Named 쿼리 환경에 따른 설정
 - XML이 항상 우선권을 가진다.
 - 애플리케이션 운영 환경에 따라 다른 XML을 배포할 수 있다.
+<br>
+
+## 벌크 연산
+- PK를 찍어서 딱 한 건을 UPDATE, DELETE하는 것을 제외한 일반적인 SQL의 UPDATE, DELETE라고 보면 된다.
+- 예를 들어, 재고가 10개 미만인 모든 상품의 가격을 10% 상승 하려면?
+    * JPA의 변경 감지 기능만으로 실행하려면 너무 많은 SQL을 실행해야 한다.
+        - 1.재고가 10개 미만인 상품을 리스트로 조회한다. 메모리에 가져온다.
+        - 2.상품 엔티티의 가격을 10% 증가한다.
+        - 3.트랜잭션 커밋 시점에 변경감지가 동작한다.
+    * 변경된 데이터가 100건이라면 100건의 UPDATE SQL이 실행 된다.
+- JPA는 상품이 100개 라면 100개의 UPDATE, DELETE를 한 번의 쿼리로 할 수 있는 기능을 제공하는데 그것이 벌크 연산이다.
+<br>
+
+### 벌크 연산 예제
+- 쿼리 한번으로 여러 테이블 row 변경(엔티티)
+- `executeUpdate()`의 결과는 영향받은 엔티티 수를 반환한다.
+- UPDATE, DELETE를 다 지원한다.
+- INSERT(`insert into ... select`)도 지원한다. (표준 스펙이 아닌 하이버네이트에서 지원)
+```java
+// 모든 회원의 나이를 20살로 설정, flush가 자동으로 된다.
+int resultCount = em.createQuery("update Member m set m.age = 20").excuteUpdate();
+
+System.out.println("resultCount = " + resultCount); // 3
+```
+<br>
+
+### 벌크 연산 주의점
+- 벌크 연산은 영속성 컨텍스트를 무시하고 DB에 직접 쿼리 한다.
+    * 잘못하면 꼬일 수 있다.
+- 해결 방법
+    * 1. 벌크 연산을 먼저 실행한다.
+    * 2. **벌크 연산 수행 후 영속성 컨텍스트만 초기화 시킨다.**
+        - 벌크 연산을 수행하면 JPQL이 실행되기 때문에 `flush()`가 된다. 따라서 영속성 컨텍스트만 초기화(`clear()`) 하면 된다.
+        - 벌크 연산을 하면 flush만 자동으로 되므로 영속성 컨텍스트에 있는 수정사항만 DB에 반영된다. DB의 수정사항이 영속성 컨텍스트에 반영되도록 왠만하면 초기화 하는게 좋다.
+        ```java
+        int resultCount = em.createQuery("update Member m set m.age = 20").excuteUpdate();
+
+        // 초기화
+        em.clear();
+
+        Member findMember = em.find(Member.class, member1.getId());
+
+        // 초기화 하지 않으면 영속성 컨텍스트에는 DB값이 반영되지 않아 기본값인 0이 출력된다.
+        Systyem.out.println("findMember = " + findMember.getAge()); // 20, 
+        ```
+- Spring Data JPA에서는 `@Modifying`을 지원해 벌크 연산을 수행할 수 있다.
+    * 참고) [Modifying Queries](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#jpa.modifying-queries)
 <br>
