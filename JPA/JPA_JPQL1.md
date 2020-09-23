@@ -395,11 +395,11 @@ SELECT COUNT(m) FROM Member m, Team t WHERE m.username = t.name
     * 쿼리안에 또 쿼리가 있다.
 - 메인쿼리와 서브쿼리 사이에 연관관계가 없어야 성능이 좋다.
 - ex) 나이가 평균보다 많은 회원
-```java
+```sql
 select m from Member m where m.age > (select avg(m2.age) from Member m2)
 ```
 - 한 건이라도 주문한 고객
-```java
+```sql
 select m from Member m where (select count(o) from Order o where m = o.member) > 0
 ```
 <br>
@@ -436,4 +436,33 @@ select m from Member m where m.team = ANY (select t from Team t)
         - 네이티브SQL을 사용하거나
         - 어플리케이션에서 조작하거나
         - 쿼리를 두번 날려서 해결할 수 있다.
+<br>
+
+## JPQL 타입 표현과 기타식
+
+### JPQL 타입 표현
+- 문자
+    * 'HELLO', 'She''s'(single quotation을 표현해야하면 2개)
+- 숫자
+    * 10L(Long), 10D(Double), 10F(Float)
+- Boolean
+    * TRUE, FALSE
+- ENUM
+    * Jpabook.MemberType.Admin(패키지명 포함해서 넣어야한다.)
+    * 보통은 파라미터 바인딩으로 처리한다.
+    * QueryDSL에서는 복잡하지 않게 자바 코드로 import해서 사용한다.
+- 엔티티 타입
+    * TYPE(m) = Member (상속 관계에서 사용)
+    * ex) Item을 상속받은 여러개의 클래스 중 Book만 조회하고 싶은 경우
+    ```java
+    em.createQuery("select i from Item i where type(i) = Book", Item.class).getResultList();
+    ```
+<br>
+
+### JPQL 기타식
+- SQL과 문법이 같은 식(SQL과 문법이 똑같다.)
+- EXISTS, IN
+- AND, OR, NOT
+- =, >, >=, <, <=, <>
+- BETWEEN, LIKE, IS NULL
 <br>
