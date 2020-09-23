@@ -13,4 +13,4 @@
 - [8. 프록시와 연관관계 관리](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_Proxy_RelationManaging.md)
 - [9. 값 타입](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_ValueType.md)
 - [10. 객체지향 쿼리 언어1 - 기본 문법](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_JPQL1.md)
-- 11. 객체지향 쿼리 언어2 - 중급 문법
+- [11. 객체지향 쿼리 언어2 - 중급 문법](https://github.com/qlalzl9/TIL/blob/master/JPA/JPA_JPQL2.md)
