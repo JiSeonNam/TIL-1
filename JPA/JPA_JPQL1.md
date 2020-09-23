@@ -499,3 +499,76 @@ from Team t
     ```sql
     select NULLIF(m.username, '관리자') from Member m
 <br>
+
+## JPQL 함수
+
+### JPQL 기본 함수
+- JPQL이 제공하는 표준 함수이다.
+    * 만약 함수가 안되면 사용자 정의 함수를 호출해서 사용한다.
+- 실제로 함수를 쓸 일은 많지만 표준 함수는 적다.
+    * 기본적으로 하이버네이트 구현체를 쓰면 registerFunction()으로 이미 구현된 대부분의 함수들을 쓸 수 있다.
+    * 등록되어 있지 않은 함수들에 대해 사용자 정의 함수를 등록한다.
+- CONCAT
+    * 문자를 2개 더하는 것
+    * `||`으로 합칠수도 있다.(concat이 좀 더 표준적이다.) 
+    ```java
+    String query = "select concat('a', 'b') from Member m";
+    ```
+- SUBSTRING
+    * 문자열 자르기
+    ```java
+    String query = "select substring(m.username, 2, 3) from Member m";
+    ```
+- TRIM
+    * 공백 제거
+- LOWER, UPPER
+    * 대소문자 변경
+- LENGTH
+    * 길이
+- LOCATE
+    * indexOf와 같이 index반환
+    ```java
+    String query = "select locate('de', 'abcdefg') from Member m"; // 4를 반환
+    ```
+- ABS, SQRT, MOD
+    * 수학 관련 함수
+- SIZE, INDEX(JPA 용도)
+    * size : 컬렉션의 크기를 반환
+    * index : 일반적으로 쓰이는 것은 아니고 `OrderColumn` 애노테이션을 사용할 경우 컬렉션의 위치값을 구할 수 있다.
+        - `OrderColumn`를 쓰는것이 권장되지 않기 때문에 이 함수도 권장되지 않는다.
+    ```java
+    String query = "select size(t.members) from Team t";
+    String query = "select index(t.members) from Team t";
+    ```
+<br>
+
+### 사용자 정의 함수
+- 하이버네이트는 사용전 방언에 추가해야 한다.
+    * 사용하는 DB 방언을 상속받고, 사용자 정의 함수를 등록해서 사용한다.
+```java
+select function('group_concat', i.name) from Item i
+```
+
+#### 사용자 정의 함수 만들기 실습
+- 사용하는 데이터베이스(h2데이터)의 Dialect를 상속받아서 registerFunction을 등록한다.
+```java
+public class MyH2Dialect extends H2Dialect {
+
+    public MyH2Dialect() {
+        // 이름으로 매칭한다.
+        registerFunction("group_concat", new StandardSQLFunction("group_concat", StandardBasicTypes.STRING));
+    }
+}
+```
+- persistence.xml에 등록
+```xml
+<!-- <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/> -->
+<property name="hibernate.dialect" value="jpql.dialect.MyH2Dialect"/>
+```
+- 사용자 정의 함수 사용
+```java
+String query = "select function('group_concat', m.username) from Member m";
+
+List<String> result = em.createQuery(query, String.class).getResultList();
+```
+<br>
