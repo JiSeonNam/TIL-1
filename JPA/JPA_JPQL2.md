@@ -291,3 +291,38 @@ String query = "select t from Team t join t.members m where m.age > 10";
         - JPQL을 처음 작성할 때 부터, DTO로 결과를 받아올 수 있게 한다.
 - 페치 조인을 잘 알아야 성능상 이점이 된다.
 <br>
+
+## 다형성 쿼리
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_JPQL2_3.jpg"></p>
+
+- 그림과 같이 다형적으로 설계를 한 경우 JPA는 특수 기능을 지원한다.
+- 조회 대상을 특정 자식으로 한정 지을 수 있다.
+- ex) Item 중에 Book, Movie를 조회
+- JPQL
+```sql
+select i from Item i
+where type(i) IN (Book, Movie)
+```
+- 실제 번역된 SQL
+```sql
+select i from i
+where i.DTYPE in ('B', 'M')
+```
+<br>
+
+### TREAT(JPA 2.1)
+- 자바의 타입 캐스팅과 유사하다.
+- 상속 구조에서 부모 타입을 특정 자식 타입으로 다룰 때 사용한다.
+- FROM, WHERE, SELECT(하이버네이트 지원)절에서 사용한다.
+- ex) 부모인 Item과 자식 Book이 있다.
+- JPQL
+```sql
+select i from Item i
+where treat(i as Book).author = 'kim'
+```
+- 실제 번역된 SQL
+```sql
+select i.* from Item i
+where i.DTYPE = 'B' and i.author = 'kim'
+```
+<br>
