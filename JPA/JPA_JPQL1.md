@@ -388,3 +388,52 @@ SELECT COUNT(m) FROM Member m, Team t WHERE m.username = t.name
     ```sql
     SELECT m.*, t.* FROM Member m LEFT JOIN TEAM t ON m.username = t.name
     ```
+<br>
+
+## 서브쿼리
+- SQL에서 말하는 서브쿼리와 같다. 
+    * 쿼리안에 또 쿼리가 있다.
+- 메인쿼리와 서브쿼리 사이에 연관관계가 없어야 성능이 좋다.
+- ex) 나이가 평균보다 많은 회원
+```java
+select m from Member m where m.age > (select avg(m2.age) from Member m2)
+```
+- 한 건이라도 주문한 고객
+```java
+select m from Member m where (select count(o) from Order o where m = o.member) > 0
+```
+<br>
+
+### 서브 쿼리 지원 함수
+- `[NOT] EXISTS (subquery)` : 서브쿼리에 결과가 존재하면 참이다.
+    * {ALL | ANY | SOME} (subquery)
+    * ALL : 조건이 모두 만족하면 참이다.
+    * ANY, SOME : 같은 의미, 조건을 하나라도 만족하면 참이다.
+- `[NOT] IN (subquery)` : 서브쿼리의 결과 중 하나라도 같은 것이 있으면 참이다.
+<br>
+
+### 서브 쿼리 - 예제
+- 팀A 소속인 회원 - EXISTS
+```sql
+select m from Member m where exists (select t from m.team t where t.name = '팀A')
+```
+- 전체 상품 각각의 재고보다 주문량이 많은 주문들 - ALL
+```sql
+select o from Order o where o.orderAmount > ALL (select p.stockAmount from Product p)
+```
+- 어떤 팀이든 팀에 소속된 회원 - ANY
+```sql
+select m from Member m where m.team = ANY (select t from Team t)
+```
+<br>
+
+### JPA 서브 쿼리의 한계
+- JPA는 WHERE, HAVING 절에서만 서브 쿼리 사용이 가능하다.
+- 하이버네이트에서는 SELECT절에서도 서브쿼리 사용이 가능하다.
+- FROM 절의 서브 쿼리는 현재 JPQL에서 불가능하다.
+    * 조인으로 풀 수 있으면 풀어서 해결해야 한다.(대부분 풀 수 있다.)
+    * 조인으로 해결하지 못하면 하이버네이트에서는 포기해야 한다.
+        - 네이티브SQL을 사용하거나
+        - 어플리케이션에서 조작하거나
+        - 쿼리를 두번 날려서 해결할 수 있다.
+<br>
