@@ -326,3 +326,42 @@ select i.* from Item i
 where i.DTYPE = 'B' and i.author = 'kim'
 ```
 <br>
+
+## 엔티티 직접 사용
+
+### 엔티티 직접 사용 - 기본 키 값
+- JPQL에서 엔티티를 직접 사용하면 SQL에서 해당 엔티티의 기본키 값을 사용한다.
+- JPQL
+```sql
+select count(m.id) from Member m // 엔티티의 아이디를 사용
+select count(m) from Member m // 엔티티를 직접 사용
+```
+- 실제 번역된 SQL
+    * 둘 다 같은 SQL이 실행된다.(id가 기본키 값이므로)
+    * 참고) 파라미터로 넘겨도, 식별자를 직접 전달해도 똑같다.
+```sql
+select count(m.id) as cnt from Member m
+```
+<br>
+
+### 엔티티 직접 사용 - 외래 키 값
+- JPQL
+```java
+Team team = em.find(Team.class, 1L);
+// 파라미터로 넘긴 team은 Team 엔티티의 PK이고 
+// m.team이 가르키는 것은 Member 엔티티가 가지고 있는(@JoinColumn에 선언되어 있는) TEAM_ID(FK)이다.
+String query = "select m from Member m where m.team = :team";
+List result = em.createQuery(query)
+	            .setParameter("team", teamA)
+	            .getResultList();
+```
+```java
+String query = "select m from Member m where m.team.id = :teamId";
+List result = em.createQuery(query)
+	.setParameter("teamId", teamId)
+	.getResultList();
+```
+- 실제 번역된 SQL
+```sql
+select m.* from Member m where m.team_id = ?
+```
