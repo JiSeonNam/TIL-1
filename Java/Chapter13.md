@@ -23,11 +23,13 @@ class MyThread implements Runnable {
 }
 // Runnable 인터페이스의 run()을 구현
 ```
+<br>
 
 ### 2. start( )와 run( )
 - main 메서드에서 run( )을 호출하는 것은 생성된 쓰레드를 실행시키는 것이 아니라 단순히 클래스에 선언된 메서드를 호출하는 것이다.
 - start( )는 새로운 쓰레드가 작업을 실행하는데 필요한 호출스택을 생성한 다음에 run( )을 호출해서, 생성된 호출스택에 run( )이 첫 번째로 올라가게 한다.
 - 실행 중인 사용자 쓰레드가 하나도 없을 때 프로그램은 종료된다.
+<br>
 
 ### 3. 쓰레드의 우선순위
 - 쓰레드는 우선순위라는 속성을 가지고 있어 이 우선순위에 따라 쓰레드가 얻는 실행시간이 달라진다.
@@ -42,12 +44,14 @@ public static final int MAX_PRIORITY = 10;		// 최대우선순위
 public static final int MIN_PRIORITY = 1; 		// 최소우선순위
 public static final int NORM_PRIORITY = 5;		// 보통우선순위
 ```
+<br>
 
 ### 4. 쓰레드 그룹
 - 쓰레드 그룹은 서로 관련된 쓰레드를 그룹으로 다루기 위한 것으로, 폴더를 생성해서 관련된 파일들을 함께 넣어서 관리하는 것처럼 쓰레드 그룹을 생성해서 쓰레드를 그룹으로 묶어서 관리할 수 있다.
 - 보안상의 이유로 도입된 개념으로, 자신이 속한 쓰레드 그룹이나 하위 쓰레드 그룹은 변경할 수 있지만 다른 쓰레드 그룹의 쓰레드를 변경할 수 없다.
 - 모든 쓰레드는 반드시 쓰레드 그룹에 포함되어 있어야 하기 때문에, 그룹을 지정하는 생성자를 사용하지 않은 쓰레드는 기본적으로 자신을 생성한 쓰레드와 같은 그룹에 속하게 된다.
 - 자바 어플리케이션이 실행되면, JVM은 main과 system이라는 쓰레드 그룹을 만들고 JVM운영에 필요한 쓰레드들을 생성해서 이 쓰레드 그룹에 포함시킨다.
+<br>
 
 ### 5. 데몬 쓰레드
 - 데몬 쓰레드는 다른 일반 쓰레드의 작업을 돋는 보조적인 역할을 수행하는 쓰레드이다.
@@ -60,14 +64,17 @@ public static final int NORM_PRIORITY = 5;		// 보통우선순위
 boolean isDaemon()		// 쓰레드가 데몬 쓰레드인지 확인. 데몬쓰레드이면 true를 반환
 void setDaemon(boolean on) 	// 쓰레드를 데몬 쓰레드로 또는 사용자 쓰레드로 변경. on이 true이면 데몬 쓰레드
 ```
+<br>
 
 ### 6. 쓰레드의 실행제어
 
-##### 6.1 쓰레드의 상태
+#### 6.1 쓰레드의 상태
 ![](https://github.com/qlalzl9/TIL/blob/master/Java/img/13_1.png)
 ![](https://github.com/qlalzl9/TIL/blob/master/Java/img/13_2.png)
 
-##### 6.2 쓰레드의 스케쥴링
+<br>
+
+#### 6.2 쓰레드의 스케쥴링
 ![](https://github.com/qlalzl9/TIL/blob/master/Java/img/13_3.png)
 - sleep(long millis) : 일정 시간 동안 쓰레드를 멈추게 한다.
 ```java
@@ -91,6 +98,7 @@ void join()
 void join(long millis)
 void join(long millis, int nanos)
 ```
+<br>
 
 ### 7. 쓰레드의 동기화
 - 한 쓰레드가 진행 중인 작업을 다른 쓰레드가 간섭하지 못하도록 막는 것을 쓰레드의 동기화라고 한다.
