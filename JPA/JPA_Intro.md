@@ -170,7 +170,18 @@ member.getOrder(); // null
 <br>
 
 ### 엔티티 신뢰 문제
-- 만약 다음과 코드와 같이 비즈니스 로직이 있고 memberDAO를 다른 사람이 개발 했다고 가정했을 때 memberDAO안에서 어떤 쿼리가 날라가고 어떻게 데이터를 조립했는지를 눈으로 확인하지 않는 이상 **반환된 엔티티를 신뢰하고 사용할 수 없다.**
+- 만약 다음 코드와 같이 비즈니스 로직이 있고 memberDAO를 다른 사람이 개발 했다고 가정했을 때 memberDAO안에서 어떤 쿼리가 날라가고 어떻게 데이터를 조립했는지를 눈으로 확인하지 않는 이상 **반환된 엔티티를 신뢰하고 사용할 수 없다.**
+```java
+class MemeberService {
+    // ...
+    
+    public void process() {
+  	    Member member = memberDAO.find(memberId);
+        member.getTeam();
+        member.getOrder().getDelivery();
+    }
+}
+```
 - 물리적으로는 나눠져있지만 논리적으로는 엮여있다고 보는게 맞다. 
     * dependency가 좋지 않다.
 - 그렇다고 모든 객체를 미리 로딩할 수는 없다.
@@ -364,9 +375,9 @@ member1 == member2; //같다.
 <br>
 
 **1차 캐시와 동일성 보장**
-    * 같은 트랜잭션 안에서는 같은 엔티티를 반환한다. - 약간의 조회 성능이 향상된다.
-        - 처음에는 SQL로 실행하고 2번째는 캐싱하고 있다가 1번째를 그대로 반환해준다.(굉장히 짧은 시간의 캐싱)
-        - 결과적으로 SQL이 1번만 실행된다.
+- 같은 트랜잭션 안에서는 같은 엔티티를 반환한다. - 약간의 조회 성능이 향상된다.
+    * 처음에는 SQL로 실행하고 2번째는 캐싱하고 있다가 1번째를 그대로 반환해준다.(굉장히 짧은 시간의 캐싱)
+    * 결과적으로 SQL이 1번만 실행된다.
     ```java
     String memberId = "100";
     Member member1 = jpa.find(memberId); // SQL
@@ -374,7 +385,7 @@ member1 == member2; //같다.
 
     member1 == member2; //같다.
     ```
-    * DB Isolation Level이 Read Commit이어도 애플리케이션에서 Repeatable Read를 보장한다.
+- DB Isolation Level이 Read Commit이어도 애플리케이션에서 Repeatable Read를 보장한다.
 <br>
 
 **트랜잭션을 지원하는 쓰기 지연(버퍼링 기능)**
