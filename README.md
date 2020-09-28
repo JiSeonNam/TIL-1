@@ -22,7 +22,7 @@
 <br>
 
 ### JPA
-- [자바 ORM 표준 JPA 프로그래밍 - 기본편](https://github.com/qlalzl9/TIL/blob/master/JPA/Java_ORM_Standard_JPA_Programming.md)
+- [자바 ORM 표준 JPA 프로그래밍 - 기본편](https://github.com/qlalzl9/TIL/blob/master/JPA/Java_ORM_Standard_JPA_Programming/Java_ORM_Standard_JPA_Programming.md)
 <br>
 
 ### Git
