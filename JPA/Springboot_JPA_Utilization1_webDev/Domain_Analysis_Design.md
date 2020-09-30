@@ -144,14 +144,14 @@ public class Order {
     @Column(name = "order_id")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "member_id") // 맵핑을 member_id로 한다.
     private Member member;
 
     @OneToMany(mappedBy = "order")
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    @OneToOne
+    @OneToOne(fetch = LAZY)
     @JoinColumn(name = "delivery_id")
     private Delivery delivery;
 
@@ -175,9 +175,11 @@ public class OrderItem {
     @Column(name = "order_item_id")
     private Long id;
 
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "item_id")
     private Item item;
 
-    @ManyToOne
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "order_id")
     private Order order;
 
@@ -257,7 +259,7 @@ public class Delivery {
     @Column(name = "delivery_id")
     private Long id;
 
-    @OneToOne(mappedBy = "delivery")
+    @OneToOne(mappedBy = "delivery", fetch = LAZY)
     private Order order;
 
     @Embedded // 내장 타입이기 때문에 @Embedded 어노테이션 사용
@@ -291,12 +293,145 @@ public class Category {
             inverseJoinColumns = @JoinColumn(name = "item_id"))
     private List<Item> items = new ArrayList<>();
 
-    @ManyToOne
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "parent_id")
     private Category parent;
 
     @OneToMany(mappedBy = "parent")
     private List<Category> child = new ArrayList<>();
+
+}
+```
+<br>
+
+## 엔티티 설계시 주의점
+
+### 엔티티에는 가급적 Setter를 사용하지 말자
+- Setter가 열려있으면 변경 포인트가 너무 많아진다.
+- 유지보수가 어렵다.
+- 리펙토링으로 Setter를 제거하는 것이 좋다.
+<br>
+
+### 모든 연관관계는 지연로딩으로 설정해야 한다.
+- 즉시로딩(EAGER)은 예측이 어렵고, 어떤 SQL이 실행될지 추적하기 어렵다.
+    * JPQL을 실행할 때 N+1 문제가 자주 발생한다.
+- 실무에서는 모든 연관관계를 지연로딩(LAZY)으로 설정해야 한다.
+- 연관된 엔티티를 함께 DB에서 조회해야 하면, fetch join 또는 엔티티 그래프 기능을 사용한다.
+- `@OneToOne`, `@ManyToOne` 관계는 기본이 즉시로딩이므로 직접 지연로딩으로 설정해야 한다.
+<br>
+
+### 컬렉션은 필드에서 초기화 하자.
+- 컬렉션은 필드에서 바로 초기화하는 것이 안전하다. 
+- null 문제에서 안전하다. 
+- 하이버네이트는 엔티티를 영속화(persist)할 때 컬랙션을 감싸서 하이버네이트가 제공하는 내장 컬렉션으로 변경한다. 
+    * 만약 `getOrders()`처럼 임의의 메서드에서 컬력션을 잘못 생성하면 하이버네이트 내부 메커니즘에 문제가 발생할 수 있다. 
+    * 따라서 필드 레벨에서 생성하는 것이 가장 안전하고, 코드도 간결하다.
+    * 컬렉션을 생성하면 변경하지 않는 것이 안전하다.
+```java
+Member member = new Member(); 
+System.out.println(member.getOrders().getClass()); 
+em.persist(team); 
+System.out.println(member.getOrders().getClass());
+
+//출력 결과 
+class java.util.ArrayList 
+class org.hibernate.collection.internal.PersistentBag // 하이버네이트가 추적할 수 있는 내장 컬렉션으로 변경한다.
+```
+<br>
+
+### 테이블, 컬럼명 생성 전략
+- 스프링 부트에서 하이버네이트 기본 맵핑 전략을 변경해서 실제 테이블 필드명은 다르다.
+- 하이버네이트 기본 맵핑 전략 : 엔티티의 필드명을 그대로 테이블 명으로 사용한다.
+    * SpringPhysicalNamingStrategy
+- 스프링 부트 신규 설정
+    * 엔티티(필드) -> 테이블(컬럼)
+    * 1. 카멜 케이스 -> 언터스코어(memberPoint -> member_point)
+    * 2. .(점) -> _(언더스코어)
+    * 3. 대문자 -> 소문자
+- [참고 링크 1](https://docs.spring.io/spring-boot/docs/2.1.3.RELEASE/reference/htmlsingle/#howto-configure-hibernate-naming-strategy)
+- [참고 링크 2](http://docs.jboss.org/hibernate/orm/5.4/userguide/html_single/Hibernate_User_Guide.html#naming)
+<br>
+
+### 양방향 맵핑에서는 연관관계 편의 메소드를 작성하는 것이 좋다.
+- 값을 2번 넣어야 하기 때문에 휴먼에러가 생길 가능성이 많다.
+- 따라서 연관관계 편의 메소드를 생성하는 것을 권장한다.
+- 메소드 설정을 하면 team.getMembers().add(member);로 역방향 값을 다시 넣을 필요가 없다.
+- 참고로 setter와 헷갈리지 않게 changeTeam()으로 함수명을 변경하는 것이 더 좋다.(개인적 취향)
+- 편의 메소드가 양쪽에 있으면 문제가 생길 가능성이 높으므로 한쪽의 기준을 정하는 것이 좋다.
+- 실습 코드의 양방향 맵핑이 있는 곳에 편의 메소드 추가
+```java
+@Entity
+@Table(name = "orders")
+@Getter @Setter
+public class Order {
+
+    @Id @GeneratedValue
+    @Column(name = "order_id")
+    private Long id;
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "member_id") // 맵핑을 member_id로 한다.
+    private Member member;
+
+    @OneToMany(mappedBy = "order", cascade = ALL)
+    private List<OrderItem> orderItems = new ArrayList<>();
+
+    @OneToOne(fetch = LAZY, cascade = ALL)
+    @JoinColumn(name = "delivery_id")
+    private Delivery delivery;
+
+    private LocalDateTime orderDate;
+
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status; // 주문상태 [ORDER, CANCEL]
+
+    // 연관관계 편의 메소드 추가
+    public void setMember(Member member) {
+        this.member = member;
+        member.getOrders().add(this);
+    }
+
+    public void addOrderItem(OrderItem orderItem) {
+        orderItems.add(orderItem);
+        orderItem.setOrder(this);
+    }
+
+    public void setDelivery(Delivery delivery) {
+        this.delivery = delivery;
+        delivery.setOrder(this);
+    }
+
+}
+```
+```java
+@Entity
+@Getter @Setter
+public class Category {
+
+    @Id @GeneratedValue
+    @Column(name = "category_id")
+    private Long id;
+
+    private String name;
+
+    @ManyToMany
+    @JoinTable(name = "category_item",
+            joinColumns = @JoinColumn(name = "category_id"),
+            inverseJoinColumns = @JoinColumn(name = "item_id"))
+    private List<Item> items = new ArrayList<>();
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "parent_id")
+    private Category parent;
+
+    @OneToMany(mappedBy = "parent")
+    private List<Category> child = new ArrayList<>();
+
+    // ==연관관계 편의 메소드==
+    public void addChildCategory(Category child) {
+        this.child.add(child);
+        child.setParent(this);
+    }
 
 }
 ```
