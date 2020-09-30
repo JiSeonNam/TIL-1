@@ -92,4 +92,212 @@
     * 1:1 단방향 관계이다.
     * Order.delivery를 ORDERS.DELIVERY_ID(FK)와 맵핑한다.
 <br>
- 
+
+## 엔티티 클래스 개발
+- Member 엔티티 생성
+```java
+@Entity
+@Getter @Setter
+public class Member {
+
+    @Id @GeneratedValue
+    @Column(name = "member_id") // PK 이름 지정
+    private Long id;
+
+    private String name;
+
+    @Embedded // 임베디드 타입 표시
+    private Address address;
+
+    @OneToMany(mappedBy = "member") // Member 입장에서 1:N 맵핑, 연관관계 주인 반대편이다.
+    private List<Order> orders = new ArrayList<>();
+}
+```
+- Address 클래스 생성
+    * 임베디드 타입
+    * 값 타입은 기본적으로 변경되면 안된다.(변경 불가능하게 설계해야 한다.)
+        - `@Setter`대신 생성자를 둬서 생성할 때만 값이 세팅되게 하는 것이 좋다. 
+    * reflection이나 프록시 기술을 쓸 수 있도록 기본 생성자를 만들어 준다.
+        - public으로 하면 많이 호출되어 JPA에서는 Protected까지 허용해준다.(안전)
+```java
+@Embeddable // 임베디드 타입 표시
+@Getter
+public class Address {
+
+    private String city;
+    private String street;
+    private String zipcode;
+}
+```
+- Order 엔티티 생성
+    * Member 엔티티와 N:1 맵핑
+    * OrderItem 엔티티와 1:N 맵핑
+    * 1:1 관계의 경우 FK를 엔티티에 둬도 된다.
+        - 여기서는 Order에 FK를 놓고 연관관계 주인을 Order로 정한다.
+```java
+@Entity
+@Table(name = "orders")
+@Getter @Setter
+public class Order {
+
+    @Id @GeneratedValue
+    @Column(name = "order_id")
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "member_id") // 맵핑을 member_id로 한다.
+    private Member member;
+
+    @OneToMany(mappedBy = "order")
+    private List<OrderItem> orderItems = new ArrayList<>();
+
+    @OneToOne
+    @JoinColumn(name = "delivery_id")
+    private Delivery delivery;
+
+    private LocalDateTime orderDate;
+
+    private OrderStatus status; // 주문상태 [ORDER, CANCEL]
+}
+```
+- OrderStatus Enum 생성
+```java
+public enum OrderStatus {
+    ORDER, CANCEL
+}
+```
+- OrderItem 엔티티 생성
+```java
+@Entity
+public class OrderItem {
+
+    @Id @GeneratedValue
+    @Column(name = "order_item_id")
+    private Long id;
+
+    private Item item;
+
+    @ManyToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
+
+    private int orderPirce; // 주문 가격
+    private int count; // 주문 수량
+}
+```
+- Item 엔티티 생성
+    * `@Inheritance(strategy = InheritanceType.SINGLE_TABLE)`
+        - 상속 관계 맵핑이기 때문에 상속 관계 전략을 부모 클래스에 설정
+        - SINGLE_TABLE 전략 선택
+    * `@DiscriminatorColumn(name = "dtype")`
+        - 타입을 구분하기 위한 dtype 컬럼
+```java
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "dtype")
+@Getter @Setter
+public abstract class Item {
+
+    @Id @GeneratedValue
+    @Column(name = "item_id")
+    private Long id;
+
+    private String name;
+    private int price;
+    private int stockQuantity;
+
+    @ManyToMany(mappedBy = "items")
+    private List<Category> categories = new ArrayList<>();
+
+}
+```
+- Item의 자손인 Book, Album, Movie 엔티티 생성
+    * `@DiscriminatorValue("B")`
+        - 타입 구분을 위한 애노테이션, 기본값은 클래스명
+```java
+@Entity
+@DiscriminatorValue("B")
+@Getter @Setter
+public class Book extends Item {
+
+    private String author;
+    private String isbn;
+}
+```
+```java
+@Entity
+@DiscriminatorValue("A")
+@Getter @Setter
+public class Album extends Item {
+
+    private String artist;
+    private String etc;
+}
+```
+```java
+@Entity
+@DiscriminatorValue("M")
+@Getter @Setter
+public class Movie extends Item {
+
+    private String director;
+    private String isbn;
+}
+```
+- Delivery 엔티티 생성
+    * `@Enumerated(EnumType.STRING)`
+        -  ORDINAL로 설정하면 Enum 순서로 숫자가 맵핑되는데, Enum 중간에 필드가 하나 추가 되어 순서가 꼬이게 되면 매우 위험하다.
+        - 반드시 EnumType.STRING으로 설정해야 한다.
+```java
+@Entity
+@Getter @Setter
+public class Delivery {
+
+    @Id @GeneratedValue
+    @Column(name = "delivery_id")
+    private Long id;
+
+    @OneToOne(mappedBy = "delivery")
+    private Order order;
+
+    @Embedded // 내장 타입이기 때문에 @Embedded 어노테이션 사용
+    private Address address;
+
+    @Enumerated(EnumType.STRING)
+    private DeliveryStatus status; // READY, COMP
+}
+```
+- DeliveryStatus enum 생성
+```java
+public enum DeliveryStatus {
+    READY, COMP
+}
+```
+- Category 엔티티 생성
+```java
+@Entity
+@Getter @Setter
+public class Category {
+
+    @Id @GeneratedValue
+    @Column(name = "category_id")
+    private Long id;
+
+    private String name;
+
+    @ManyToMany
+    @JoinTable(name = "category_item",
+            joinColumns = @JoinColumn(name = "category_id"),
+            inverseJoinColumns = @JoinColumn(name = "item_id"))
+    private List<Item> items = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "parent_id")
+    private Category parent;
+
+    @OneToMany(mappedBy = "parent")
+    private List<Category> child = new ArrayList<>();
+
+}
+```
+<br>
