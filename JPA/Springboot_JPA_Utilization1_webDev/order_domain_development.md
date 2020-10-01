@@ -120,4 +120,26 @@ public class OrderItem {
     }
 }
 ```
+<br>
+
+## 주문 Repository 개발
+- OrderRepository 생성
+```java
+@Repository
+@RequiredArgsConstructor
+public class OrderRepository {
+
+    private final EntityManager em;
+
+    public void save(Order order) {
+        em.persist(order);
+    }
+
+    public Order findOne(Long id) {
+        return em.find(Order.class, id);
+    }
+
+}
+```
+<br>
 
