@@ -1,4 +1,7 @@
 # 스프링 부트와 AWS로 혼자 구현하는 웹 서비스
+> [스프링 부트와 aws로 혼자 구현하는 웹 서비스](http://www.kyobobook.co.kr/product/detailViewKor.laf?ejkGb=KOR&mallGb=KOR&barcode=9788965402602&orderClick=LEa&Kc=)
+- [프로젝트](https://github.com/qlalzl9/aws-springboot2-webservice)
+<br>
 
 ### 목차
 - [1. 인텔리제이로 스프링 부트 시작하기](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/Springboot_AWS_Ch1.md)
