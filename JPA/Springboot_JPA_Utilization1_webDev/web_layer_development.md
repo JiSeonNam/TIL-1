@@ -315,5 +315,72 @@ public class MemberController {
 
 - 참고로 Member 엔티티를 직접 쓰지 않고 Form을 만들어서 쓰는 이유는 다음과 같다.
     * Controller에서 넘어올 때의 Validation과 실제 도메인이 원하는 Validation이 다를 수 있다.
-    * 엔티티가 지저분해진다.
+    * 엔티티가 화면 종속적인 기능이 계속 생겨 엔티티가 지저분해진다.
+        - 유지보수가 어렵다.
+        - 엔티티는 핵심 비즈니스 로직만 가지고 있어야 한다.
+<br>
+
+## 회원 목록 조회
+- MemberController에 회원 목록 조회 맵핑
+    * 목록을 조회해서 뿌릴 때 예제가 단순해서 엔티티를 사용했지만 실무적으로 복잡해지면 엔티티 보다는 DTO로 변환해서 화면에 꼭 필요한 데이터만 가지고 출력하는 것이 좋다.(권장)
+    * **API를 만들 때에는 이유불문 절대 엔티티를 넘겨서는 안된다.**
+        - API라는 것은 스펙이기 때문에 엔티티에 로직을 추가할 경우 API 스펙이 변해버린다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class MemberController {
+
+    ...
+
+    @GetMapping("/members")
+    public String list(Model model) {
+        List<Member> members = memberService.findMembers();
+        model.addAttribute("members", members);
+        return "members/memberList";
+    }
+}
+```
+- memberList.html 생성
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/header :: header" />
+<body>
+
+<div class="container">
+    <div th:replace="fragments/bodyHeader :: bodyHeader" />
+    <div>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>이름</th>
+                <th>도시</th>
+                <th>주소</th>
+                <th>우편번호</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- thymeleaf에서는 html 문법을 그대로 가져다 쓸 수 있다. -->
+            <tr th:each="member : ${members}">
+                <td th:text="${member.id}"></td>
+                <td th:text="${member.name}"></td>
+                <!-- thymeleaf에서 ?문법은 address가 null이면 뒤 코드를 더이상 진행하지 않는다. -->
+                <td th:text="${member.address?.city}"></td>
+                <td th:text="${member.address?.street}"></td>
+                <td th:text="${member.address?.zipcode}"></td> </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div th:replace="fragments/footer :: footer" />
+
+</div> <!-- /container -->
+
+</body>
+</html>
+```
+- 실행해서 회원 등록 후 회원 목록을 조회하면 다음과 같이 목록이 조회되는 것을 확인할 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_3.jpg"></p>
+
 <br>
