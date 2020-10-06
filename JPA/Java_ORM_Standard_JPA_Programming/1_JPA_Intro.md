@@ -62,7 +62,7 @@ UPDATE MEMBER SET ... TEL = ?
 - 만약 DB가 아니라 자바 컬렉션에 사용한다면? 매우 단순해 진다.
     * 저장할 때는 `list.add(album);`
     * 조회할 때는 `Album album = list.get(albumId);`
-    * 필요할다면 부모 타입으로 조회 후 다형성을 활용할 수있다.
+    * 필요하다면 부모 타입으로 조회 후 다형성을 활용할 수있다.
         - `Item item = list.get(albumId);`
 <br>
 
@@ -70,10 +70,10 @@ UPDATE MEMBER SET ... TEL = ?
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_Intro_2.jpg"></p>
 
 - 객체는 참조를 사용한다.
-    * 객체는 **단방향**으로 Member에서 Team으로 갈 수 있지만 Team에서 Member로 갈 수 없다.
+    * 객체는 **단방향**으로, Member에서 Team으로 갈 수 있지만 Team에서 Member로 갈 수 없다.
 - 테이블은 외래 키를 사용한다.
     * FK와 PK를 조인해서 조회한다.
-    * 테이블은 **양방향**으로 반대로 조인도 가능하다. 
+    * 테이블은 **양방향**으로, 반대로 조인도 가능하다. 
 <br>
 
 ##### 객체를 테이블에 맞춰 모델링할 경우
@@ -375,10 +375,10 @@ member1 == member2; //같다.
 <br>
 
 **1차 캐시와 동일성 보장**
-- 같은 트랜잭션 안에서는 같은 엔티티를 반환한다. - 약간의 조회 성능이 향상된다.
+- 같은 트랜잭션 안에서는 같은 엔티티를 반환한다. (약간의 조회 성능이 향상된다.)
     * 처음에는 SQL로 실행하고 2번째는 캐싱하고 있다가 1번째를 그대로 반환해준다.(굉장히 짧은 시간의 캐싱)
     * 결과적으로 SQL이 1번만 실행된다.
-    ```java
+    ```java 
     String memberId = "100";
     Member member1 = jpa.find(memberId); // SQL
     Member member2 = jpa.find(memberId); // 캐시
