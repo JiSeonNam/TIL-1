@@ -8,4 +8,4 @@
 - [3. 회원 도메인 개발](https://github.com/qlalzl9/TIL/blob/master/JPA/Springboot_JPA_Utilization1_webDev/member_domain_development.md)
 - [4. 상품 도메인 개발](https://github.com/qlalzl9/TIL/blob/master/JPA/Springboot_JPA_Utilization1_webDev/item_domain_development.md)
 - [5. 주문 도메인 개발](https://github.com/qlalzl9/TIL/blob/master/JPA/Springboot_JPA_Utilization1_webDev/order_domain_development.md)
-- [6. 웹 계층 개발]()
+- [6. 웹 계층 개발](https://github.com/qlalzl9/TIL/blob/master/JPA/Springboot_JPA_Utilization1_webDev/web_layer_development.md)
