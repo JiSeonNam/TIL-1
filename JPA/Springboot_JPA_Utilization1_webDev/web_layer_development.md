@@ -646,3 +646,110 @@ public class ItemController {
 ```
 - 실행해서 상품을 등록하고 수정하면 다음과 같이 수정 완료되어 상품 목록이 조회되는 것을 볼 수 있다.
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_6.jpg"></p>
+
+<br>
+
+## 변경 감지와 병합(merge)
+- 매우 중요하다.
+- 준영속 엔티티
+    * 영속성 컨텍스트가 더이상 관리하지 않는 엔티티를 말한다.
+    * 예제에서는 `itemService.saveItem(book)`에서 수정을 시도하는 `Book`객체이다.
+        - Book 객체는 이미 DB에 한번 저장되어서 식별자가 존재한다.
+        - 이렇게 임의로 만들어낸 엔티티도 기존 식별자를 가지고 있으면 준영속 엔티티로 볼 수 있다.
+- 준영속 엔티티를 수정하는 2가지 방법
+    * 변경 감지 기능 사용(dirty checking)
+    * 병합 사용(merge)
+<br>
+
+### 변경 감지 기능 사용
+- 영속성 컨텍스트에서 엔티티를 다시 조회한 후에 데이터를 수정하는 방법
+- 트랜잭션 안에서 엔티티를 다시 조회하고 변경하면 트랜잭션 커밋시점에 변경 감지(Dirty Checking)이 동작하여 DB에 UPDATE SQL이 실행된다.
+- 다음 코드에서 findItem은 영속 상태이기 때문에 save, persist, merge 같은 것들을 할 필요가 없다.
+- 보통 업데이트는 setter를 이용한 단발성 업데이트 보다 `change(price, name, stockQuantity)`, `addStock()`과 같은 의미있는 메서드를 생성해서 변경하는 것이 좋다.
+    * 이렇게 해야 변경 지점이 엔티티로 간다.
+    * setter를 사용하면 조금만 복잡해져도 어디서 변경되는지 알기 어렵다.(유지 보수 어려움)
+```java
+@Transactional
+    public void updateItem(Long itemId, String name, int price, int stockQuantity) {
+        Item findItem = itemRepository.findOne(itemId);
+        findItem.setName(name);
+        findItem.setPrice(price);
+        findItem.setStockQuantity(stockQuantity);
+    }
+```
+<br>
+
+### 병합 사용
+- 예제의 상품 수정에서 쓴 방법이 merge를 사용한 방법이다.
+    * `itemService.saveItem(book);`하면 itemRepository에 `save()`로 item을 넘기고 id가 있으므로 `em.merge()`가 실행된다.
+    * merge에 넘어온 item의 파라미터 값으로 모든 데이터값을 바꾼다.
+
+```java
+@PostMapping("/items/{itemId}/edit")
+    public String updateItem(@ModelAttribute("form") BookForm form) {
+        Book book = new Book();
+        book.setId(form.getId());
+        book.setName(form.getName());
+        book.setPrice(form.getPrice());
+        book.setStockQuantity(form.getStockQuantity());
+        book.setAuthor(form.getAuthor());
+        book.setIsbn(form.getIsbn());
+
+        itemService.saveItem(book);
+        return "redirect:/items";
+
+    }
+```
+<br>
+
+### 병합
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_6.jpg"></p>
+
+- 병합 동작 방식
+    * 1. `merge()`를 실행한다. 
+    * 2. 파라미터로 넘어온 준영속 엔티티의 식별자 값으로 1차 캐시에서 엔티티를 조회한다. 
+        - 만약 1차 캐시에 엔티티가 없으면 DB에서 엔티티를 조회하고, 1차 캐시에 저장한다. 
+    * 3. 조회한 영속 엔티티(mergeMember)에 member엔티티의 값을 채워넣는다. 
+        - member엔티티의 모든 값을 mergeMember에 밀어넣는다. 
+        - 이 때 mergeMember의 “회원1”이라는 이름이 “회원명변경”으로 바뀐다.
+    * 4. 영속 상태인 mergeMember를 반환한다.
+- 병합 동작 방식을 간단히 말하자면
+    * 준영속 엔티티의 식별자 값으로 영속 엔티티를 조회한다. 
+    * 영속 엔티티의 값을 준영속 엔티티의 값으로 모두 교체한다.(병합한다.) 
+    * 트랜잭션 커밋 시점에 변경 감지 기능이 동작해서 DB에 UPDATE SQL이 실행된다.
+- 병합 주의점
+    * 변경 감지 기능을 사용하면 원하는 속성만 선택해서 변경할수있지만, 병합을 사용하면 모든 속성이 변경된다. 
+    * 병합 시 값이 없으면 null로 업데이트할 위험도 있다.
+        - 병합은 모든 필드를 교체한다.
+<br>
+
+### 가장 좋은 해결 방법
+- **엔티티를 변경할 때는 항상 변경 감지를 사용하자**
+- 컨트롤러에서 어설프게 엔티티를 생성하지 말아야 한다.
+- 트랜잭션이 있는 서비스 계층에 식별자(id)와 변경할 데이터를 명확하게 전달한다.
+    * 파라미터
+    * Dto
+- 트랜잭션이 있는 서비스 계층에서 영속 상태의 엔티티를 조회하고, 엔티티의 데이터를 직접 변경한다.
+- 트랜잭션 커밋 시점에 변경 감지가 실행된다.
+```java
+@PostMapping("/items/{itemId}/edit")
+public String updateItem(@ModelAttribute("form") BookForm form) {
+    // Book book = new Book();
+    // book.setId(form.getId());
+    // book.setName(form.getName());
+    // book.setPrice(form.getPrice());
+    // book.setStockQuantity(form.getStockQuantity());
+    // book.setAuthor(form.getAuthor());
+    // book.setIsbn(form.getIsbn());
+    // itemService.saveItem(book);
+    // 이렇게 어설프게 엔티티를 생성하지 말아야 한다.
+
+    // 이렇게 식별자와 변경 데이터를 명확하게 전달하는 것이 유지보수성이 좋고 깔끔하다.
+    itemService.updateItem(itemId, form.getName(), form.getPrice(), form.getStockQuantity());
+
+    return "redirect:/items";
+
+}
+```
+- 만약 업데이트할 데이터가 많으면 service계층에 Dto를 생성해서 해결하는 것이 좋다.
+<br>
