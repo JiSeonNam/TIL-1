@@ -384,3 +384,96 @@ public class MemberController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_3.jpg"></p>
 
 <br>
+
+## 상품 등록
+- 상품 등록 폼 생성 : BookForm
+    * 예제의 단순화를 위해 Book만 한다.
+```java
+@Getter @Setter
+public class BookForm {
+
+    private Long id;
+
+    private String name;
+    private int price;
+    private int stockQuantity;
+
+    private String author;
+    private String isbn;
+
+}
+```
+- 상품 등록 컨트롤러 생성 : ItemController
+```java
+@Controller
+@RequiredArgsConstructor
+public class ItemController {
+
+    private final ItemService itemService;
+
+    @GetMapping("items/new")
+    public String createForm(Model model) {
+        model.addAttribute("form", new BookForm());
+        return "items/createItemForm";
+    }
+
+    @PostMapping("items/new")
+    public String create(BookForm form) {
+        // setter 보다는 따로 create 메소드를 작성하는 것이 좋긴 하다.
+        Book book = new Book();
+        book.setName(form.getName());
+        book.setPrice(form.getPrice());
+        book.setStockQuantity(form.getStockQuantity());
+        book.setAuthor(form.getAuthor());
+        book.setIsbn(form.getIsbn());
+
+        itemService.saveItem(book);
+
+        return "redirect:/items";
+    }
+}
+```
+- 상품 등록 뷰 생성 : items/createItemForm.html
+    * 상품 등록 폼에서 데이터를 입력하고 Submit 버튼을 클릭하면 /items/new를 POST 방식으로 요청한다.
+    * 상품 저장이 끝나면 상품 목록 화면(redirect:/items)으로 redirect한다.
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/header :: header" />
+<body>
+
+<div class="container">
+    <div th:replace="fragments/bodyHeader :: bodyHeader"/>
+
+    <form th:action="@{/items/new}" th:object="${form}" method="post"> <div class="form-group">
+        <label th:for="name">상품명</label>
+        <input type="text" th:field="*{name}" class="form-control" placeholder="이름을 입력하세요">
+    </div>
+        <div class="form-group">
+            <label th:for="price">가격</label>
+            <input type="number" th:field="*{price}" class="form-control" placeholder="가격을 입력하세요">
+        </div>
+        <div class="form-group">
+            <label th:for="stockQuantity">수량</label>
+            <input type="number" th:field="*{stockQuantity}" class="form-control" placeholder="수량을 입력하세요">
+        </div>
+        <div class="form-group">
+            <label th:for="author">저자</label>
+            <input type="text" th:field="*{author}" class="form-control" placeholder="저자를 입력하세요">
+        </div>
+        <div class="form-group">
+            <label th:for="isbn">ISBN</label>
+            <input type="text" th:field="*{isbn}" class="form-control" placeholder="ISBN을 입력하세요">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button> </form>
+    <br/>
+    <div th:replace="fragments/footer :: footer" />
+</div> <!-- /container -->
+
+</body>
+</html>
+```
+- 실행 후 다음과 같은 상품 등록 화면에서 상품 등록을 하면 DB에 잘 저장되는 것을 볼 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_4.jpg"></p>
+
+<br>
