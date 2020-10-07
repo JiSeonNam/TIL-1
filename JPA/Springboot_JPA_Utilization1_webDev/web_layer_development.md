@@ -703,16 +703,16 @@ public class ItemController {
 <br>
 
 ### 병합
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_6.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_7.jpg"></p>
 
 - 병합 동작 방식
-    * 1. `merge()`를 실행한다. 
-    * 2. 파라미터로 넘어온 준영속 엔티티의 식별자 값으로 1차 캐시에서 엔티티를 조회한다. 
+    1. `merge()`를 실행한다. 
+    2. 파라미터로 넘어온 준영속 엔티티의 식별자 값으로 1차 캐시에서 엔티티를 조회한다. 
         - 만약 1차 캐시에 엔티티가 없으면 DB에서 엔티티를 조회하고, 1차 캐시에 저장한다. 
-    * 3. 조회한 영속 엔티티(mergeMember)에 member엔티티의 값을 채워넣는다. 
+    3. 조회한 영속 엔티티(mergeMember)에 member엔티티의 값을 채워넣는다. 
         - member엔티티의 모든 값을 mergeMember에 밀어넣는다. 
         - 이 때 mergeMember의 “회원1”이라는 이름이 “회원명변경”으로 바뀐다.
-    * 4. 영속 상태인 mergeMember를 반환한다.
+    4. 영속 상태인 mergeMember를 반환한다.
 - 병합 동작 방식을 간단히 말하자면
     * 준영속 엔티티의 식별자 값으로 영속 엔티티를 조회한다. 
     * 영속 엔티티의 값을 준영속 엔티티의 값으로 모두 교체한다.(병합한다.) 
