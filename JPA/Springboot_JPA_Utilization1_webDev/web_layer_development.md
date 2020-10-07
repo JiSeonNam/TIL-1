@@ -753,3 +753,94 @@ public String updateItem(@ModelAttribute("form") BookForm form) {
 ```
 - 만약 업데이트할 데이터가 많으면 service계층에 Dto를 생성해서 해결하는 것이 좋다.
 <br>
+
+## 상품 주문
+- 상품 주문 컨트롤러 생성 : OrderController
+    * Member와 Item을 모두 선택할 수 있어야 한다.
+    * `createForm()`
+        - 상품 주문을 선택하면 /order를 GET 방식으로 호출한다.
+        - 주문 화면에는 주문할 Member정보와 Item 정보가 필요하므로 model 객체에 담아서 뷰에 넘겨준다.
+    * `order()`
+        - 주문할 회원과 상품, 수량을 선택해서 Submit 버튼을 누르면 /order URL을 POST 방식으로 호출한다.
+        - 회원 id, 상품 id, 수량 정보를 받아서 orderService에 주문을 요청한다.
+        - 주문이 끝나면 상품 주문 내역이 있는 /orders로 redirect한다.
+        - [@RequestParam](https://github.com/qlalzl9/TIL/blob/ff09a96af100ff09157f5b634e8c6c77c71739a8/Spring_SpringBoot/SpringMVCUtilization.md#%ED%95%B8%EB%93%A4%EB%9F%AC-%EB%A9%94%EC%86%8C%EB%93%9C-3-%EC%9A%94%EC%B2%AD-%EB%A7%A4%EA%B0%9C%EB%B3%80%EC%88%98)
+```java
+@Controller
+@RequiredArgsConstructor
+public class OrderController {
+
+    private final OrderService orderService;
+    private final MemberService memberService;
+    private final ItemService itemService;
+
+    @GetMapping("/order")
+    public String createForm(Model model) {
+
+        List<Member> members = memberService.findMembers();
+        List<Item> items = itemService.findItems();
+
+        model.addAttribute("members", members);
+        model.addAttribute("items", items);
+
+        return "order/orderForm";
+    }
+
+    @PostMapping("/order")
+    public String order(@RequestParam("memberId") Long memberId,
+                        @RequestParam("itemId") Long itemId,
+                        @RequestParam("count") int count) {
+        orderService.order(memberId, itemId, count);
+        return "redirect:/orders";
+    }
+}
+```
+- 상품 주문 폼 생성 : orderForm.html
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/header :: header"/>
+<body>
+
+<div class="container">
+    <div th:replace="fragments/bodyHeader :: bodyHeader"/>
+
+    <form role="form" action="/order" method="post">
+
+        <div class="form-group">
+            <label for="member">주문회원</label>
+            <select name="memberId" id="member" class="form-control">
+                <option value="">회원선택</option>
+                <option th:each="member : ${members}"
+                        th:value="${member.id}"
+                        th:text="${member.name}"/>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="item">상품명</label>
+            <select name="itemId" id="item" class="form-control">
+                <option value="">상품선택</option>
+                <option th:each="item : ${items}"
+                        th:value="${item.id}"
+                        th:text="${item.name}"/>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="count">주문수량</label>
+            <input type="number" name="count" class="form-control" id="count"
+                   placeholder="주문 수량을 입력하세요">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+    <br/>
+
+    <div th:replace="fragments/footer :: footer"/>
+
+</div> <!-- /container -->
+
+</body>
+</html>
+```
+<br>
