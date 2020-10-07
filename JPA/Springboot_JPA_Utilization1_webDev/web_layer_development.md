@@ -497,6 +497,7 @@ public class ItemController {
 }
 ```
 - 상품 목록 뷰 생성 : items/itemList.html
+    * model에 담아둔 상품 목록인 items를 꺼내서 상품 정보를 출력한다.
 ```html
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
@@ -542,3 +543,106 @@ public class ItemController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_5.jpg"></p>
 
 <br>
+
+## 상품 수정
+- 조회에 비해 수정은 복잡하다.
+- JPA에서는 merge(병합)와 변경 감지 2가지 방법이 있다.
+- 보통 merge를 많이 쓰지만 JPA에서 권장하는 방법은 변경 감지 방법이다.
+- ItemController에 상품 수정 코드 추가 : `updateItemForm()`, `updateItem()`
+    * `updateItemForm()`
+        - `@PathVariable`
+            * itemId는 변경될 수 있으므로 사용한다.
+            * [@PathVariable](https://github.com/qlalzl9/TIL/blob/ff09a96af100ff09157f5b634e8c6c77c71739a8/Spring_SpringBoot/SpringMVCUtilization.md#pathvariable)
+        - 수정 버튼을 선택하면 /items/{itemId}/edit url을 GET 방식으로 요청한다.
+        - `itemService.findOne(itemId);`
+            * 수정할 상품을 조회
+        - 조회 결과를 모델 객체에 담아서 뷰(items/updateItemForm)에 전달한다.
+    * `updateItem()`
+        - 상품 수정 폼에서 정보를 수정하고 Submit 버튼을 클릭하면 /items/{itemId}/edit url을 POST 방식으로 요청한다.
+        - 컨트롤러에 파라미터로 넘어온 item 엔티티 인스턴스는 준영속 상태로, 영속성 컨텍스트의 지원을 받을 수 없고 데이터를 수정해도 변경 감지 기능은 동작하지 않는다.
+        - `@ModelAttribute`
+            * 생략가능하다.
+            * [@ModelAttribute](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringMVCUtilization.md#%ED%95%B8%EB%93%A4%EB%9F%AC-%EB%A9%94%EC%86%8C%EB%93%9C-5-modelattribute)
+```java
+@Controller
+@RequiredArgsConstructor
+public class ItemController {
+
+    @GetMapping("items/{itemId}/edit")
+    public String updateItemForm(@PathVariable("itemId") Long itemId, Model model) {
+        // 반환 타입이 Item이지만 예제 단순화를 위해 Book으로 캐스팅해서 사용
+        Book item = (Book) itemService.findOne(itemId);
+
+        BookForm form = new BookForm();
+        form.setId(item.getId());
+        form.setName(item.getName());
+        form.setPrice(item.getPrice());
+        form.setStockQuantity(item.getStockQuantity());
+        form.setAuthor(item.getAuthor());
+        form.setIsbn(item.getIsbn());
+
+        model.addAttribute("form", form);
+        return "items/updateItemForm";
+    }
+
+    @PostMapping("/items/{itemId}/edit")
+    public String updateItem(@ModelAttribute("form") BookForm form) {
+        Book book = new Book();
+        book.setId(form.getId());
+        book.setName(form.getName());
+        book.setPrice(form.getPrice());
+        book.setStockQuantity(form.getStockQuantity());
+        book.setAuthor(form.getAuthor());
+        book.setIsbn(form.getIsbn());
+
+        itemService.saveItem(book);
+        return "redirect:items";
+
+    }
+}
+```
+- 상품 수정 폼 화면 생성 : updateItemForm.html
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/header :: header" />
+<body>
+
+<div class="container">
+    <div th:replace="fragments/bodyHeader :: bodyHeader"/>
+
+    <form th:object="${form}" method="post">
+        <!-- id -->
+        <input type="hidden" th:field="*{id}" />
+        <div class="form-group">
+            <label th:for="name">상품명</label>
+            <input type="text" th:field="*{name}" class="form-control" placeholder="이름을 입력하세요" />
+        </div>
+        <div class="form-group">
+            <label th:for="price">가격</label>
+            <input type="number" th:field="*{price}" class="form-control" placeholder="가격을 입력하세요" />
+        </div>
+        <div class="form-group">
+            <label th:for="stockQuantity">수량</label>
+            <input type="number" th:field="*{stockQuantity}" class="form-control" placeholder="수량을 입력하세요" />
+        </div>
+        <div class="form-group">
+            <label th:for="author">저자</label>
+            <input type="text" th:field="*{author}" class="form-control" placeholder="저자를 입력하세요" />
+        </div>
+        <div class="form-group">
+            <label th:for="isbn">ISBN</label>
+            <input type="text" th:field="*{isbn}" class="form-control" placeholder="ISBN을 입력하세요" />
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+    <div th:replace="fragments/footer :: footer" />
+
+</div> <!-- /container -->
+
+</body>
+</html>
+```
+- 실행해서 상품을 등록하고 수정하면 다음과 같이 수정 완료되어 상품 목록이 조회되는 것을 볼 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/web_layer_development_6.jpg"></p>
