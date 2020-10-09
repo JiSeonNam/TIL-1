@@ -11,7 +11,7 @@
 - api 패키지에 MemberApiController 생성
 - API 생성에는 2가지 방법이 있다.
     * 엔티티
-    * Dto
+    * DTO
 <br>
 
 ### 엔티티 사용 방법
@@ -57,12 +57,12 @@ public class MemberApiController {
     * 프레젠테이션 계층을 위한 검증 로직이 엔티티에 들어가 있으면 문제가 있다.
         - 어떤 API는 `@NotEmpty`가 필요하지만 어떤 API에서는 필요없을 경우 
     * 만약 엔티티의 name을 username으로 바꾼다면? API 스펙이 바뀌어 버린다. 
-- **따라서 결론적으로 API 스펙을 위한 Dto를 만들어야 한다.**
+- **따라서 결론적으로 API 스펙을 위한 DTO를 만들어야 한다.**
 - API를 만들 때는 항상 엔티티를 파라미터로 받지 않는 것이 좋다.
     * 엔티티를 외부에 노출하면 안된다.
 <br>
 
-### Dto 사용 방법
+### DTO 사용 방법
 ```java
 @RestController
 @RequiredArgsConstructor
@@ -89,12 +89,12 @@ public class MemberApiController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_dev_basic_4.jpg"></p>
 
 - 첫 번째 방법의 유일한 방법은 엔티티를 쓰기 때문에 클래스를 추가로 만들지 않아도 된다는 것이다.
-- Dto를 쓴다면 엔티티와 API 스펙이 명확하게 분리되어 엔티티가 변경되어도 API 스펙이 바뀌지 않는다.
+- DTO를 쓴다면 엔티티와 API 스펙이 명확하게 분리되어 엔티티가 변경되어도 API 스펙이 바뀌지 않는다.
     * 만약 Member엔티티의 name을 username으로 바꾼다면 컴파일 오류가 나서 알려준다.
     * `setName`을 `setUsername`으로만 바꿔주면 스펙 변화없이 끝이다.
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_dev_basic_5.jpg"></p>
 
-- **API를 만들 때는 엔티티를 절대 사용하지 말고 Dto를 생성해서 사용하자!**
+- **API를 만들 때는 엔티티를 절대 사용하지 말고 DTO를 생성해서 사용하자!**
 <br>
 
 ## 회원 수정 API
@@ -125,14 +125,13 @@ public class MemberApiController {
 
     @Data
     @AllArgsConstructor
-    class UpdateMemberResponse {
+    static class UpdateMemberResponse {
         private Long id;
         private String name;
     }
 }
 ```
 - MemberService에 회원 수정 코드 `update()` 추가
-    * `update()`에서 
 ```java
 @Service
 @Transactional(readOnly = true)
@@ -158,3 +157,65 @@ public class MemberService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_dev_basic_6.jpg"></p>
 
 <br>
+
+## 회원 조회 API
+- 단순 조회이므로 데이터나 테이블을 변경할 일이 없다. 따라서 application.yml에 jpa.ddl-auto를 none으로 설정한다.
+    * `ddl-auto: none`
+    * 반복적으로 기능을 개선할 때마다 데이터를 넣는 것이 번거러우므로 실습 진행을 위해서 none으로 한다.
+- 조회 API를 만드는 방법에는 2가지가 있다.
+<br>
+
+### 응답 값으로 엔티티를 직접 외부에 노출
+- 실행 후 조회하면 다음과 같이 회원 목록이 조회된다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_dev_basic_7.jpg"></p>
+
+- 그러나 이 방법에는 등록 때와 마찬가지로 여러가지 문제가 있다.
+    * 엔티티에 프레젠테이션 계층을 위한 로직이 추가된다.
+    * 엔티티를 직접 노출하게 되면 엔티티가 가진 정보들이 모두 외부에 노출된다.
+        - 그림에서도 원하지도 않았던 주문 정보가 출력된 것을 볼 수 있다.
+    * 엔티티에서 원하지 않는 정보들은 `@JsonIgnore`애노테이션을 붙여 제외할 수 있지만 다른 API에서는 필요하다면? 
+        - 실무에서는 같은 엔티티에 대해 API가 용도에 따라 다양하게 만들어지는데, 한 엔티티에 각각의 API를 위한 프레젠테이션 응답 로직을 담기는 어렵다.
+    * 엔티티가 변경되면 API 스펙이 변한다.
+    * 컬렉션을 직접 반환하면 항후 API 스펙을 변경하기 어렵다
+- **엔티티는 최대한 건드리지 말자!**
+- 따라서 등록 때와 마찬가지로 별도의 DTO를 사용하자.
+<br>
+
+### 응답 값으로 엔티티가 아닌 별도의 DTO 사용
+- 엔티티를 DTO로 변환해서 반환한다.
+- 엔티티가 변해도 API 스펙이 변경되지 않는다.
+- 추가로 Result 클래스로 컬렉션을 감싸서 향후 필요한 필드를 추가할 수 있다.
+```java
+@RestController
+@RequiredArgsConstructor
+public class MemberApiController {
+
+    private final MemberService memberService;
+
+    ...
+
+    // 회원 조회 API
+    @GetMapping("/api/v2/members")
+    public Result membersV2() {
+        List<Member> findMembers = memberService.findMembers();
+        //엔티티 -> DTO 변환
+        List<MemberDto> collect = findMembers.stream()
+                .map(m -> new MemberDto(m.getName()))
+                .collect(Collectors.toList());
+        return new Result(collect);
+    }
+
+    @Data
+    @AllArgsConstructor
+    static class Result<T> {
+        private T data;
+    }
+    @Data
+    @AllArgsConstructor
+    static class MemberDto {
+        private String name;
+    }
+}
+```
+- 실행 후 조회하면 다음과 같이 DTO가 감싸고 있고 name만 조회되었다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_dev_basic_8.jpg"></p>
