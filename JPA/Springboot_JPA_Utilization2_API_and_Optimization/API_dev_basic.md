@@ -9,7 +9,9 @@
 
 ## 회원 등록 API
 - api 패키지에 MemberApiController 생성
-- 2가지 방법이 있다.
+- API 생성에는 2가지 방법이 있다.
+    * 엔티티
+    * Dto
 <br>
 
 ### 엔티티 사용 방법
@@ -93,4 +95,66 @@ public class MemberApiController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_dev_basic_5.jpg"></p>
 
 - **API를 만들 때는 엔티티를 절대 사용하지 말고 Dto를 생성해서 사용하자!**
+<br>
+
+## 회원 수정 API
+- 참고) 수정은 REST API 디자인 가이드에 따라 PUT으로 한다.
+- MemberApiController에 회원 수정 API 코드 추가
+```java
+@RestController
+@RequiredArgsConstructor
+public class MemberApiController {
+
+    private final MemberService memberService;
+
+    ...
+
+    // 회원 수정 API
+    @PutMapping("/api/v2/members/{id}")
+    public UpdateMemberResponse updateMemberV2(@PathVariable("id") Long id,
+                                               @RequestBody @Valid UpdateMemberRequest request) {
+        memberService.update(id, request.getName());
+        Member findMember = memberService.findOne(id);
+        return new UpdateMemberResponse(findMember.getId(), findMember.getName());
+    }
+
+    @Data
+    static class UpdateMemberRequest {
+        private String name;
+    }
+
+    @Data
+    @AllArgsConstructor
+    class UpdateMemberResponse {
+        private Long id;
+        private String name;
+    }
+}
+```
+- MemberService에 회원 수정 코드 `update()` 추가
+    * `update()`에서 
+```java
+@Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+public class MemberService {
+
+    private final MemberRepository memberRepository;
+
+    ...
+
+    /**
+     * 회원 수정
+     */
+    @Transactional
+    public void update(Long id, String name) {
+        Member member = memberRepository.findOne(id);
+        member.setName(name);
+    }
+}
+```
+- 실행해서 Postman에 회원을 등록하고 수정하면 다음과 같이 수정된 결과를 확인할 수 있다.
+    * 쿼리도 UPDATE 쿼리가 나가서 수정됐다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_dev_basic_6.jpg"></p>
+
 <br>
