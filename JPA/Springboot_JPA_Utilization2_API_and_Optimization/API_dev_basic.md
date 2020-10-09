@@ -166,6 +166,22 @@ public class MemberService {
 <br>
 
 ### 응답 값으로 엔티티를 직접 외부에 노출
+```java
+@RestController
+@RequiredArgsConstructor
+public class MemberApiController {
+
+    private final MemberService memberService;
+
+    ...
+
+    // 권장되지 않는 조회 API
+    @GetMapping("/api/v1/members")
+    public List<Member> membersV1() {
+        return memberService.findMembers();
+    }
+}
+```
 - 실행 후 조회하면 다음과 같이 회원 목록이 조회된다.
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_dev_basic_7.jpg"></p>
 
