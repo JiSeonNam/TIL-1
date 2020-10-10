@@ -61,7 +61,6 @@ public class WebConfig{
 @Configuration
 @ComponentScan
 @EnableWebMvc
-public class WebConfig {
 public class WebConfig implements WebMvcConfigurer {
     /* 직접 구현하지 않아도 된다.
     @Bean
@@ -482,6 +481,7 @@ public class WebConfig implements WebMvcConfigurer{
 
 ## [ResourceHandler](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html#addResourceHandlers-org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry-)
 - 이미지, 자바스크립트, CSS 그리고 HTML 파일과 같은 정적인 리소스를 처리하는 핸들러이다.
+<br>
 
 ### Default Servlet
 - ResourceHandler는 Default Servlet을 이해해야 한다.
@@ -540,6 +540,7 @@ public class SampleControllerTest {
     * 문자열이 JSON인 경우 객체로 변환하거나
     * 문자열이 XML인 경우 객체로 변환하거나
     * 문자열로 받거나 할 수 있다.
+<br>
 
 ### 기본으로 등록해주는 HTTP 메시지 컨버터
 - 바이트 배열 컨버터
@@ -553,6 +554,7 @@ public class SampleControllerTest {
 - (Atom 컨버터)
 - (RSS 컨버터) 등등
 \* 괄호가 있는 컨버터는 classpath의 pom.xml파일에 해당 dependency가 있는 경우에만 등록된다.
+<br>
 
 ### 문자열 변환 실습
 ```java
@@ -585,6 +587,8 @@ public class SampleControllerTest {
     }
 }
 ```
+<br>
+
 ### 설정 방법
 - extendMessageConverters
     * 기본으로 등록해주는 컨버터에 새로운 컨버터 추가하기
@@ -655,6 +659,7 @@ public class SampleControllerTest {
     * JacksonXML
     * JAXB
 - JSON과 달리 스프링 부트에서 기본으로 XML 의존성을 추가해주지 않는다.
+<br>
 
 #### 사용방법
 - JAXB 의존성 추가
