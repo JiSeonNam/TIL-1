@@ -188,4 +188,86 @@ public class OrderSimpleApiController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_delayLoading_and_readOptimization_4.jpg"></p>
 
 - 실무에서 매우 자주 사용하는 기법으로 성능이 굉장히 좋다.
+- 그러나 연관되는 엔티티의 모든 컬럼을 가져온다는 단점이 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_delayLoading_and_readOptimization_5.jpg"></p>
+
 <br>
+
+## V4. JPA에서 DTO로 바로 조회
+- 일반적인 SQL을 사용할 때처럼 원하는 값을 선택해서 조회한다.
+- new 명령어를 사용해서 JPQL의 결과를 DTO로 즉시 변환
+- SELECT절에서 원하는 데이터를 직접 선택하므로 DB 애플리케이션 네트워크 용량 최적화가 된다.
+    * 생각보다는 미비하다.
+- 그렇다고 V3보다 V4가 무조건 좋은 것은 아니다.
+    * V3의 경우 재사용이 가능하지만 V4의 화면에는 최적화 됐지만 재사용성이 없다. (해당 Dto를 사용할 때만 사용할 수 있다.)
+    * API 스펙에 맞춘 코드가 Repository에 들어가는 단점도 있다.
+- 개인 스타일이지만 Repository는 가급적 순수한 엔티티를 조회할 때와 성능 최적화를 위해 페치 조인 정도를 사용하는 곳에 쓰고 V4처럼 특정 Dto 전용인 경우 패키지를 따로 생성하는 것이 권장된다.
+
+- OrderSimpleQueryRepository 조회 전용 리포지토리 생성
+```java
+@Repository
+@RequiredArgsConstructor
+public class OrderSimpleQueryRepository {
+
+    private final EntityManager em;
+
+    public List<OrderSimpleQueryDto> findOrderDtos() {
+        return em.createQuery(
+                "select new jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryDto(o.id, m.name, o.orderDate, o.status, d.address)" +
+                " from Order o" +
+                        " join o.member m" +
+                        " join o.delivery d", OrderSimpleQueryDto.class)
+                .getResultList();
+    }
+}
+```
+- OrderSimpleQueryDto 생성
+```java
+@Data
+public class OrderSimpleQueryDto {
+    private Long orderId;
+    private String name;
+    private LocalDateTime orderDate;
+    private OrderStatus orderStatus;
+    private Address address;
+
+    public OrderSimpleQueryDto(Long orderId, String name, LocalDateTime orderDate, OrderStatus orderStatus, Address address) {
+        this.orderId = orderId;
+        this.name = name;
+        this.orderDate = orderDate;
+        this.orderStatus = orderStatus;
+        this.address = address;
+    }
+}
+```
+- JPA에서 DTO로 바로 조회 맵핑
+```java
+@RestController
+@RequiredArgsConstructor
+public class OrderSimpleApiController {
+
+    private final OrderRepository orderRepository;
+    private final OrderSimpleQueryRepository orderSimpleQueryRepository;
+
+    ...
+
+    //  V4. JPA에서 DTO로 바로 조회
+    @GetMapping("/api/v4/simple-orders")
+    public List<OrderSimpleQueryDto> ordersV4() {
+        return orderSimpleQueryRepository.findOrderDtos();
+    }
+}
+```
+- 실행하고 조회하면 결과는 똑같지만 V3와 달리 원하는 컬럼만 SELECT 쿼리가 나가는 것을 볼 수 있다.
+    * 직접 쿼리를 다 짰기 때문이다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_delayLoading_and_readOptimization_6.jpg"></p>
+
+<br>
+
+## 정리 
+
+### 쿼리 방식 선택 권장 순서
+1. 우선 엔티티를 DTO로 변환하는 방법을 선택한다.
+2. 필요하면 페치 조인으로 성능을 최적화 한다. (대부분의 성능 이슈가 해결된다.)
+3. 그래도 안되면 DTO로 직접 조회하는 방법을 사용한다.
+4. 최후의 방법은 JPA가 제공하는 네이티브 SQL이나 스프링 JDBC Template을 사용해서 SQL을 직접 사용한다.
