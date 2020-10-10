@@ -136,3 +136,56 @@ public class OrderSimpleApiController {
         * 물론 즉시 로딩으로 바꾸면 안된다.
     * V3에서 나오는 페치 조인으로 해결해야 한다.
 <br>
+
+## V3. 엔티티를 DTO로 변환 - 페치 조인 최적화
+- [참고 : fetch join](https://github.com/qlalzl9/TIL/blob/b237d5631facf5deda0ec7c8fab01277be2206cc/JPA/Java_ORM_Standard_JPA_Programming/11_JPQL2.md#%ED%8E%98%EC%B9%98-%EC%A1%B0%EC%9D%B8fetch-join)
+- OrderRepository에 페치 조인을 위한 메서드 생성
+    * 페치 조인을 사용하면 지연 로딩을 하지 않고 연관된 실제 엔티티를 한번에 다 조회한다.
+```java
+@Repository
+@RequiredArgsConstructor
+public class OrderRepository {
+
+    private final EntityManager em;
+
+    ...
+
+    public List<Order> findAllWithMemberDelivery() {
+        return em.createQuery(
+                "select o from Order o" +
+                        " join fetch o.member m" +
+                        " join fetch o.delivery d", Order.class)
+                .getResultList();
+    }
+}
+```
+- V3 맵핑
+    * 페치 조인을 사용하는 것을 제외하고는 V2의 로직과 같다.
+```java
+@RestController
+@RequiredArgsConstructor
+public class OrderSimpleApiController {
+
+    private final OrderRepository orderRepository;
+
+    ...
+
+    // V3. 엔티티를 DTO로 변환 - 페치 조인 최적화
+    @GetMapping("/api/v3/simple-orders")
+    public List<SimpleOrderDto> ordersV3() {
+        List<Order> orders = orderRepository.findAllWithMemberDelivery();
+        List<SimpleOrderDto> result = orders.stream()
+                .map(o -> new SimpleOrderDto(o))
+                .collect(toList());
+        return result;
+    }
+}
+```
+- 실행하고 조회하면 다음과 같은 결과를 얻을 수 있다.
+    * V2와 결과는 같지만 쿼리 발생 수가 다르다. 
+        - V2 : 5번, V3 : 1번
+    * 페치 조인으로 order->member, order->delivery는 이미 조회된 상태이므로 지연로딩이 일어나지 않는다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_delayLoading_and_readOptimization_4.jpg"></p>
+
+- 실무에서 매우 자주 사용하는 기법으로 성능이 굉장히 좋다.
+<br>
