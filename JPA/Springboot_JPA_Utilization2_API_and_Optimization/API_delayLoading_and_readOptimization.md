@@ -76,7 +76,7 @@ public class OrderSimpleApiController {
     }
 }
 ```
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_delayLoading_and_readOptimization_1.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_delayLoading_and_readOptimization_2.jpg"></p>
 
 - 어떻게든 해결한다고 해도 엔티티를 노출시키는 것은 안좋은 방법이다.
     * API 스펙 변경 문제
@@ -85,4 +85,54 @@ public class OrderSimpleApiController {
     * 즉시 로딩 때문에 연관관계가 필요 없는 경우에도 데이터를 항상 조회해서 성능 문제가 발생할 수 있다. 
     * 즉시 로딩으로 설정하면 성능 튜닝이 매우 어려워 진다.
 - **항상 지연 로딩을 기본으로 하고, 성능 최적화가 필요한 경우에는 페치 조인(fetch join)을 사용하자.(V3)**
+<br>
+
+## V2. 엔티티를 DTO로 변환
+```java
+@RestController
+@RequiredArgsConstructor
+public class OrderSimpleApiController {
+
+    private final OrderRepository orderRepository;
+
+    ...
+
+    // V2. 엔티티를 DTO로 변환
+    @GetMapping("/api/v2/simple-orders")
+    public List<SimpleOrderDto> ordersV2() {
+        List<Order> orders = orderRepository.findAllByCriteria(new OrderSearch());
+
+        List<SimpleOrderDto> result = orders.stream()
+                .map(o -> new SimpleOrderDto(o))
+                .collect(toList());
+        return result;
+    }
+    @Data
+    static class SimpleOrderDto {
+        private Long orderId;
+        private String name;
+        private LocalDateTime orderDate;
+        private OrderStatus orderStatus;
+        private Address address;
+
+        public SimpleOrderDto(Order order) { // DTO에서 엔티티를 사용하는 것은 별 문제 없다.
+            orderId = order.getId();
+            name = order.getMember().getName();
+            orderDate = order.getOrderDate();
+            orderStatus = order.getStatus();
+            address = order.getDelivery().getAddress();
+        }
+    }
+}
+```
+- 실행 후 조회하면 다음과 같이 결과가 나온다.
+    * API 스펙에 최적화되어 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/API_delayLoading_and_readOptimization_3.jpg"></p>
+
+- 문제점
+    * V1과 마찬가지로 지연 로딩으로 인한 DB 쿼리가 너무 많이 호출된다.
+        * 쿼리가 최악의 경우 1 + N + N번 실행된다. (V1과 쿼리 수 동일)
+            - (order 조회 1번) + (order->member 지연로딩 조회 N번) + (order->delivery 지연로딩 조회 N번)
+        * 물론 즉시 로딩으로 바꾸면 안된다.
+    * V3에서 나오는 페치 조인으로 해결해야 한다.
 <br>
