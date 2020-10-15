@@ -4,7 +4,7 @@
 
 ### 목차
 - [1. API 개발 기본](https://github.com/qlalzl9/TIL/blob/master/JPA/Springboot_JPA_Utilization2_API_and_Optimization/API_dev_basic.md)
-- [2. API 개발 고급 - 준비]()
+- [2. API 개발 고급 - 준비](https://github.com/qlalzl9/TIL/blob/master/JPA/Springboot_JPA_Utilization2_API_and_Optimization/API_dev_Intro.md)
 - [3. API 개발 고급 - 지연 로딩과 조회 성능 최적화]()
 - [4. API 개발 고급 - 컬렉션 조회 최적화]()
 - [5. API 개발 고급 - 실무 필수 최적화]()
