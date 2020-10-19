@@ -59,7 +59,7 @@ UPDATE MEMBER SET ... TEL = ?
         - `INSERT INTO ITEM ...`, `INSERT INTO ALBUM ...`
 - Album을 조회하고 싶은 경우
     * 각각의 테이블에 따른 조인 SQL을 작성하고 각각의 객체 생성해서 필드에 넣어주고... 매우 복잡하다. 
-- 만약 DB가 아니라 자바 컬렉션에 사용한다면? 매우 단순해 진다.
+- 만약 DB가 아니라 자바 컬렉션을 사용한다면? 매우 단순해 진다.
     * 저장할 때는 `list.add(album);`
     * 조회할 때는 `Album album = list.get(albumId);`
     * 필요하다면 부모 타입으로 조회 후 다형성을 활용할 수있다.
@@ -77,7 +77,7 @@ UPDATE MEMBER SET ... TEL = ?
 <br>
 
 ##### 객체를 테이블에 맞춰 모델링할 경우
-- FK가 그대로 필드로 포함한다. 
+- FK가 그대로 필드로 포함된다.
 ```java
 class Member {
     String id;        //MEMBER_ID (PK)
@@ -139,7 +139,7 @@ public Member find(Strubg memberId) {
   return member;
 }
 ```
-- 객체 모델링을 자바 컬렌션에서 관리할 경우 매우 간단하다.
+- 객체 모델링을 자바 컬렉션에서 관리할 경우 매우 간단하다.
     * member를 저장하면, Team도 같이 저장된다. 
         - `list.add(member);`
     * member가 필요하면
@@ -229,7 +229,7 @@ member1 == member2; // 같다.
 - Java Persistence API의 약자로 자바 진영의 ORM 기술 표준이다.
 - ORM?
     * Object-relational mapping(객체 관계 매핑)
-    * 객체는 객체지향답게 설계하고 관계형 데이터베이스는 관계형 데이터베이스대답게 설계를 한 뒤, 중간에서 ORM 프레임워크가 중간에서 매핑 해준다. 
+    * 객체는 객체지향답게 설계하고 관계형 데이터베이스는 관계형 데이터베이스    답게 설계를 한 뒤, 중간에서 ORM 프레임워크가 중간에서 매핑 해준다. 
     * 대중적인 언어에는 대부분 ORM 기술이 존재한다.
 <br>
 
@@ -408,7 +408,7 @@ transction.commit(); // 트랜잭션 커밋
 
 **지연 로딩과 즉시 로딩**
 - JPA에 옵션이 있어서 간단하게 설정할 수 있다.
-- 지연 로딩 : 객체가 실제 사용될 떄 로딩
+- 지연 로딩 : 객체가 실제 사용될 때 로딩
 ```java
 Member member = memberDAO.find(memberId);  // SELECT * FROM MEMBER
 Team team = member.getTeam();
