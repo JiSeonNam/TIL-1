@@ -298,7 +298,7 @@ public class Locker {
     * 단점 : 프록시 기능의 한계로 지연 로딩으로 설정해도 항상 즉시 로딩된다. 
         - JPA 입장에서 일대일 관계의 주 테이블(Member)에 외래키를 저장하는 상황에서는, Member를 로딩할 때 LOCKER_ID가 있는지 없는지만 판단하면 된다.
         - 있으면 프록시 객체를 넣어주고, 없으면 null을 넣으면 된다.
-        - 그러나 문제는 대상 테이블에 외래키를 저장한다면, JPA가 Member의 locker를 조회하는 상황에서 DB의 MEMBER 테이블만 조회해서는 알 수
+        - 그러나 문제는 대상 테이블에 외래키를 저장한다면, JPA가 Member의 locker를 조회하는 상황에서 DB의 MEMBER 테이블만 조회해서는 알 수 없다.
         - 어차피 LOCKER 테이블을 찾아서 MEMBER_ID에 있는지 없는지 확인해야(쿼리를 날려야) 알 수 있다
         - 어차피 쿼리가 나갈거면 프록시를 만들 필요가 없다.
         - 따라서 하이버네이트 구현체 같은 경우는 지연 로딩으로 설정해도 항상 즉시 로딩 된다.
@@ -313,7 +313,7 @@ public class Locker {
 - 객체는 컬렉션을 사용해서 객체 2개로 다대다 관계가 가능하다.
     * ORM 입장에서는 객체는 되고 테이블은 안되는 것을 지원해줘야 한다.
     * 따라서, 아래의 그림에서와 같이 객체는 Member와 Product 서로의 list를 가질 수 있기 때문에
-    * 그림의 테이블처럼 일대다, 다대일 맵핑을 연길 테이블을 넣어서 맵핑해준다.
+    * 그림의 테이블처럼 일대다, 다대일 맵핑을 연결 테이블을 넣어서 맵핑해준다.
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_VariousRelationalMapping_11.jpg"></p>
 
 - `@ManyToMany` 어노테이션을 사용하고  `@JoinTable`로 연결 테이블을 지정해줄 수 있다.

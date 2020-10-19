@@ -266,7 +266,7 @@ transaction.commit();
 ```java
 em.persist(memberA);
 em.persist(memberB);
-em.persist(memberB);
+em.persist(memberC);
 // 이 때 까지 DB에 안날라간다.
 
 // 중간에 JPQL 실행

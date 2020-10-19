@@ -15,7 +15,7 @@
 ### 조인 전략
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_AdvancedMapping_2.jpg"></p>
 
-- ITEM, ALBUM, MOVIE, BOOK 테이블을 만들 고 필요할 경우 JOIN으로 데이터를 구성한다.
+- ITEM, ALBUM, MOVIE, BOOK 테이블을 만들고 필요할 경우 JOIN으로 데이터를 구성한다.
 - NAME, PRICE가 ITEM 테이블에만 저장되고, ALBUM, MOVIE, BOOK이 각자의 데이터만 저장한다.
     * INSERT 할때는 2번 INSERT한다.
     * 조회할 때는 PK, FK로 JOIN해서 데이터를 가져온다.
@@ -231,8 +231,9 @@ public class Team extends BaseEntity {
 - 상속광계 맵핑이 아니다.
 - `@MappedSuperclass`가 선언되어 있는 클래스는 엔티티가 아니므로 테이블과 맵핑도 안된다.
 - 부모 클래스를 상속 받는 자식 클래스에 맵핑 정보만 제공한다.
-- 조회, 검색이 불가능하다. 부모 타입으로 조회하는 것이 불가능하다는 이야기.(em.find(BaseEntity) 불가능)
-- 직접 생성해서 사용할 일이 없으므로 추상 클래스로 만드는 것을 권장된다.-
+- 조회, 검색이 불가능하다. 부모 타입으로 조회하는 것이 불가능하다는 이야기.
+    * `em.find(BaseEntity` 불가능
+- 직접 생성해서 사용할 일이 없으므로 추상 클래스로 만드는 것을 권장된다.
 - 테이블과 관계가 없고, 단순히 엔티티가 공통으로 사용하는 맵핑 정보를 모으는 역할을 한다.
 - 주로 등록일, 수정일, 등록자, 수정자 같은 전체 엔티티에서 공통으로 적용하는 정보를 모을 때 사용한다.
 - JPA에서 @Entity클래스는 `@Entity`나 `@MappedSuperclass`로 지정한 클래스만 상속할 수 있다.

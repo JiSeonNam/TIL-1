@@ -47,7 +47,7 @@
     * 운영에서는 사용하면 안되고, 개발단계이나 로컬에서 개발할 때 도움이 된다.
     * 사용하더라도 생성된 DDL을 적절히 다듬은 후에 사용해야 한다.
 - 이렇게 하면 테이블 만들어 놓고 객체를 개발하는게 아니라 객체를 만들고 객체 맵핑을 해놓으면 애플리케이션이 실행될 때 필요한 테이블을 만들어준다.
-    * 데이블 중심 -> 객체 중심
+    * 테이블 중심 -> 객체 중심
 - DB 방언을 활용해서 데이터베이스에 맞는 적절한 DDL문을 생성해준다.
 <br>
 
@@ -190,7 +190,7 @@ private LocalDateTime testLocalDateTime;
     * `@GenetratedValue(strategy = GenerationType.타입)`
 
 ### @GeneratedValue strategy
-- 기본값은 AUIO로 DB 방언에 따라 IDENTITY, SEQUENCE, TABLE 중 자동으로 선택된다.
+- 기본값은 AUTO로 DB 방언에 따라 IDENTITY, SEQUENCE, TABLE 중 자동으로 선택된다.
 <br>
 
 #### IDENTITY
@@ -207,8 +207,8 @@ private LocalDateTime testLocalDateTime;
 ```java
 @Entity
 public class Member {
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     
     // ...
 ```
@@ -258,7 +258,7 @@ public class Member {
 @TableGenerator(
     name = "MEMBER_SEQ_GENERATOR",
     table = "MY_SEQUENCES", // 테이블 이름
-    pkColumnValue = "MEMBER_SEQ", allocationsize = 1) // pkColumn 이름
+    pkColumnValue = "MEMBER_SEQ", allocationSize = 1) // pkColumn 이름
 public class Member {
     @Id
     @GenerateValue(strategy = GenerationType.TABLE, 
