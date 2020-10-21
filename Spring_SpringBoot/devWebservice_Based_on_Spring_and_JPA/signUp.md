@@ -345,6 +345,123 @@ class AccountControllerTest {
 }
 ```
 - 실행하면 다음과 같이 뷰가 잘 만들어진 것을 볼 수 있다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/signUp_2.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_2.jpg"></p>
 
+<br>
+
+## 회원가입 폼 서브밋 검증
+
+### 목표
+- JSR 303 애노테이션 검증
+    * 값의 길이, 필수값
+- 커스텀 검증
+    * 중복 이메일, 닉네임 여부 확인
+- 폼 에러 있을 시, 폼 다시 보여주기
+
+### 구현
+- **JSR 303 애노테이션 검증하기**
+- 폼 서브밋 요청에 대한 Post맵핑 추가
+```java
+@Controller
+public class AccountController {
+
+    ...
+
+    @PostMapping("/sign-up")
+    public String signUpSubmit(@Valid SignUpForm signUpForm, Errors errors) {
+        if(errors.hasErrors()) {
+            return "account/sign-up";
+        }
+        
+        // TODO 회원 가입 처리
+        return "redirect:/";
+
+    }
+}
+```
+- 폼 객체에 Validation 애노테이션 추가
+```java
+@Data
+public class SignUpForm {
+
+    @NotBlank
+    @Length(min = 3, max = 20)
+    @Pattern(regexp = "^[ㄱ-ㅎ가-힣a-z0-9_-]{3,20}$")
+    private String nickname;
+
+    @Email
+    @NotBlank
+    private String email;
+
+    @NotBlank
+    @Length(min = 8, max = 50)
+    private String password;
+
+}
+```
+- 실행하면 잘 되지만 다음과 같이 패턴에 어긋나는 값을 넣을 경우 경고 메세지가 나온다.
+    * 프론트에서 검증 코드를 넣었지만 뚤린다.
+        - 의미가 없진 않다.
+        - 서버에 오기 전에 걸러주면 리소스를 절약할 수 있고
+        - 사용자에게 빠르게 fail-fast해줄 수 있다.
+    * **프론트에서도 검증하고 백엔드에서도 검증을 해야하는 이유다.**
+- **커스텀 검증하기**
+- SignUpFormValidator 생성
+    * `@Component`
+        - AccountRepository을 주입받아 사용하려면 bean으로 등록되야 한다.
+```java
+@Component // AccountRepository을 주입받아 사용하려면 bean으로 등록되야 한다.
+@RequiredArgsConstructor
+public class SignUpFormValidator implements Validator {
+
+    private final AccountRepository accountRepository;
+
+    @Override
+    public boolean supports(Class<?> aClass) {
+        return aClass.isAssignableFrom(SignUpForm.class); // 검증할 인스턴스의 타입
+    }
+
+    @Override
+    public void validate(Object object, Errors errors) {
+        SignUpForm signUpForm = (SignUpForm)object;
+
+        if(accountRepository.existsByEmail(signUpForm.getEmail())) {
+            errors.rejectValue("email", "invalid.email", new Object[]{signUpForm.getEmail()}, "이미 사용중인 이메일입니다.");
+        }
+
+        if(accountRepository.existsByNickname(signUpForm.getNickname())) {
+            errors.rejectValue("nickname", "invalid.nickname", new Object[]{signUpForm.getNickname()}, "이미 사용중인 닉네임입니다.");
+        }
+    }
+}
+```
+- AccountRepository 생성
+```java
+@Transactional(readOnly = true) // 읽기전용으로 만들어 성능에 조금이라도 이점을 가져온다. 
+public interface AccountRepository extends JpaRepository<Account, Long> {
+    
+    boolean existsByEmail(String email);
+    boolean existsByNickname(String nickname);
+}
+```
+- 컨트롤러에 커스텀 검증 사용
+    * `@InitBinder("signUpForm)`
+        - signUpForm이라는 데이터를 받을 때 바인더를 설정한다.
+        - WebDataBinder라는 것을 파라미터로 받고 Validator를 추가할 수 있다.
+        - 추가하면 signUpForm을 받을 때 받은 파라미터의 camelCase에 맞춰 validator도 사용이 된다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    private final SignUpFormValidator signUpFormValidator;
+
+    @InitBinder("signUpForm")
+    public void initBinder(WebDataBinder webDataBinder) {
+        webDataBinder.addValidators(signUpFormValidator);
+    }
+
+    ...
+}
+```
 <br>
