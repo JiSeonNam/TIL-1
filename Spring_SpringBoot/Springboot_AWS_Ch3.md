@@ -31,6 +31,7 @@ dependencies {
     * `@Builder`
         - 해당 클래스의 빌더 패턴 클래스를 생성한다.
         - 생성자 상단에 선언 시 생성자에 포함된 필드만 빌더에 포함된다.
+        - 참고) [Builder Pattern](https://johngrib.github.io/wiki/builder-pattern/)
 ```java
 @Getter
 @NoArgsConstructor
