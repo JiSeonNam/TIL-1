@@ -93,7 +93,7 @@ public class AccountController {
 }
 ```
 - 실행하면 다음과 같이 login 화면이 나온다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_AdvancedMapping_2.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_1.jpg"></p>
 
 - 매번 localhost:8080에 접속할 때마다 login으로 redirect되기 때문에 Spring Security 설정 추가
     * config 패키지를 만들고 SecurityConfig 추가
