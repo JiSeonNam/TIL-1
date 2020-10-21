@@ -137,3 +137,214 @@ class AccountControllerTest {
 }
 ```
 <br>
+
+## 회원가입 뷰
+
+### 목표
+- Bootstrap
+    * 네이게이션 바 만들기
+    * 폼 만들기
+- Thymeleaf
+    * SignUpForm 타입 객체를 폼 객체로 설정하기
+- 웹(HTML, CSS, JavaScript)
+    * 제약 검증 기능 사용하기
+        - 닉네임 (3~20자, 필수 입력)
+        - 이메일 (이메일 형식, 필수 입력)
+        - 패스워드 (8~50자, 필수 입력)
+<br>
+
+### 구현
+- 회원가입 뷰 작성
+    * 참고로 뷰에서 사용하고 있는 icon 이미지 파일을 넣어줘야 한다.(templates/static/images)
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>StudyOlle</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    <style>
+        .container {
+            max-width: 100%;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+        <a class="navbar-brand" href="/" th:href="@{/}">
+            <img src="/images/logo_sm.png" width="30" height="30">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <form th:action="@{/search/study}" class="form-inline" method="get">
+                        <input class="form-control mr-sm-2" name="keyword" type="search" placeholder="스터디 찾기" aria-label="Search" />
+                    </form>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav justify-content-end">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" th:href="@{/login}">로그인</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" th:href="@{/signup}">가입</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>계정 만들기</h2>
+        </div>
+        <div class="row justify-content-center">
+            <form class="needs-validation col-sm-6" action="#"
+                  th:action="@{/signup}" th:object="${signUpForm}" method="post" novalidate>
+                <div class="form-group">
+                    <label for="nickname">닉네임</label>
+                    <input id="nickname" type="text" th:field="*{nickname}" class="form-control"
+                           placeholder="닉네임" aria-describedby="nicknameHelp" required minlength="3" maxlength="20">
+                    <small id="nicknameHelp" class="form-text text-muted">
+                        공백없이 문자와 숫자로만 3자 이상 20자 이내로 입력하세요. 가입후에 변경할 수 있습니다.
+                    </small>
+                    <small class="invalid-feedback">닉네임 형식이 올바르지 않습니다.</small>
+                    <small class="form-text text-danger" th:if="${#fields.hasErrors('nickname')}" th:errors="*{nickname}">Nickname Error</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">이메일</label>
+                    <input id="email" type="email" th:field="*{email}" class="form-control"
+                           placeholder="example@email.com" aria-describedby="emailHelp" required>
+                    <small id="emailHelp" class="form-text text-muted">
+                        스터디올래는 사용자의 이메일을 공개하지 않습니다.
+                    </small>
+                    <small class="invalid-feedback">이메일 형식이 올바르지 않습니다.</small>
+                    <small class="form-text text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email Error</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">패스워드</label>
+                    <input id="password" type="password" th:field="*{password}" class="form-control"
+                           aria-describedby="passwordHelp" required minlength="8" maxlength="50">
+                    <small id="passwordHelp" class="form-text text-muted">
+                        8자 이상 50자 이내로 입력하세요. 영문자, 숫자, 특수기호를 사용할 수 있으며 공백은 사용할 수 없습니다.
+                    </small>
+                    <small class="invalid-feedback">패스워드 형식이 올바르지 않습니다.</small>
+                    <small class="form-text text-danger" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password Error</small>
+                </div>
+
+                <div class="form-group">
+                    <button class="btn btn-primary btn-block" type="submit"
+                            aria-describedby="submitHelp">가입하기</button>
+                    <small id="submitHelp" class="form-text text-muted">
+                        <a href="#">약관</a>에 동의하시면 가입하기 버튼을 클릭하세요.
+                    </small>
+                </div>
+            </form>
+        </div>
+
+        <footer th:fragment="footer">
+            <div class="row justify-content-center">
+                <img class="mb-2" src="/images/logo_long_kr.png" alt="" width="100">
+                <small class="d-block mb-3 text-muted">&copy; 2020</small>
+            </div>
+        </footer>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous"></script>
+    <script type="application/javascript">
+        (function () {
+            'use strict';
+
+            window.addEventListener('load', function () {
+                // Fetch all the forms we want to apply custom Bootstrap validation styles to
+                var forms = document.getElementsByClassName('needs-validation');
+
+                // Loop over them and prevent submission
+                Array.prototype.filter.call(forms, function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+            }, false)
+        }())
+    </script>
+</body>
+</html>
+```
+- 회원가입 폼 추가
+```java
+@Data
+public class SignUpForm {
+
+    private String nickname;
+    private String email;
+    private String password;
+
+}
+```
+- 컨트롤러에 model 추가
+```java
+@Controller
+public class AccountController {
+
+    @GetMapping("/sign-up")
+    public String signUpForm(Model model) {
+        // model.addAttribute("signUpForm", new SignUpForm());
+        // 생략하면 클래스 이름의 CamelCase를 사용한다.
+        model.addAttribute("signUpForm", new SignUpForm());
+        return "account/sign-up";
+    }
+}
+```
+- 실행하면 이미지 파일들이 Spring Security에 걸려서 허용되지 않아 403 에러가 나온다.
+    * 따라서 static resource들은 인증하지 않고 제공하기 위해 설정한다.
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    ...
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring()
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations());
+    }
+}
+```
+- 테스트 코드 작성
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @DisplayName("회원 가입 화면이 보이는지 테스트")
+    @Test
+    void signUpForm() throws Exception {
+        mockMvc.perform(get("/sign-up"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("account/sign-up"))
+                .andExpect(model().attributeExists("signUpForm"));
+
+    }
+}
+```
+- 실행하면 다음과 같이 뷰가 잘 만들어진 것을 볼 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/signUp_2.jpg"></p>
+
+<br>
