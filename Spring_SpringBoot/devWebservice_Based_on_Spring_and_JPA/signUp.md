@@ -72,3 +72,68 @@ public class Account {
 }
 ```
 <br>
+
+## 회원가입 컨트롤러
+
+### 목표
+- GET “/sign-up” 요청을 받아서 account/sign-up.html 페이지 보여준다.
+- 회원 가입 폼에서 입력 받을 수 있는 정보를 “닉네임", “이메일", “패스워드" 폼 객체로 제공한다
+<br>
+
+### 구현
+- account 패키지 생성 후 AccountController 생성
+```java
+@Controller
+public class AccountController {
+
+    @GetMapping("/sign-up")
+    public String signUpForm(Model model) {
+        return "account/sign-up";
+    }
+}
+```
+- 실행하면 다음과 같이 login 화면이 나온다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/JPA/img/JPA_AdvancedMapping_2.jpg"></p>
+
+- 매번 localhost:8080에 접속할 때마다 login으로 redirect되기 때문에 Spring Security 설정 추가
+    * config 패키지를 만들고 SecurityConfig 추가
+    * `@EnableWebSecurity`
+        - Spring Security 설정을 직접 한다.
+    * 설정한 특정 요청은 Security 인증하지 않도록 설정하고 나머지는 로그인 해야만 하도록 설정
+    * profile은 GET만 허용
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                .mvcMatchers("/", "/login", "/sign-up", "/check-email", "check-email-token",
+                        "/email-login", "/check-email-login", "/login-link").permitAll()
+                .mvcMatchers(HttpMethod.GET, "profile/*").permitAll()
+                .anyRequest().authenticated();
+    }
+}
+```
+- 실행하면 로그인 화면(/login)으로 가지 않는 것을 확인할 수 있다.
+- 테스트 코드 작성
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @DisplayName("회원 가입 화면이 보이는지 테스트")
+    @Test
+    void signUpForm() throws Exception {
+        mockMvc.perform(get("/sign-up"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("account/sign-up"));
+    }
+
+}
+```
+<br>
