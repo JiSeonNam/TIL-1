@@ -465,3 +465,110 @@ public class AccountController {
 }
 ```
 <br>
+
+## 회원 가입 폼 서브밋 처리
+
+### 목표
+- 회원 가입 처리
+    * 회원 정보 저장
+    * 인증 이메일 발송
+    * 처리 후 첫 페이지로 리다이렉트([Post-Redirect-Get 패턴](https://en.wikipedia.org/wiki/Post/Redirect/Get))
+
+### 구현
+- 이메일은 MailSenderAutoConfiguration에 이미 정의 되어있고 MailSender를 주입받아 사용할 수 있지만  아직은 가짜 객체를 만들어서 콘솔에 출력하도록 한다.
+    * 실제 객체로는 나중에 구현
+```java
+@Profile("local")
+@Component
+@Slf4j
+public class ConsoleMailSender implements JavaMailSender {
+    @Override
+    public MimeMessage createMimeMessage() {
+        return null;
+    }
+
+    @Override
+    public MimeMessage createMimeMessage(InputStream inputStream) throws MailException {
+        return null;
+    }
+
+    @Override
+    public void send(MimeMessage mimeMessage) throws MailException {
+
+    }
+
+    @Override
+    public void send(MimeMessage... mimeMessages) throws MailException {
+
+    }
+
+    @Override
+    public void send(MimeMessagePreparator mimeMessagePreparator) throws MailException {
+
+    }
+
+    @Override
+    public void send(MimeMessagePreparator... mimeMessagePreparators) throws MailException {
+
+    }
+
+    @Override
+    public void send(SimpleMailMessage simpleMailMessage) throws MailException {
+        log.info(simpleMailMessage.getText());
+    }
+
+    @Override
+    public void send(SimpleMailMessage... simpleMailMessages) throws MailException {
+
+    }
+}
+```
+- Profile을 local로 설정
+    * application.properties
+```properties
+spring.profiles.active=local
+```
+- 회원 가입 처리
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    private final SignUpFormValidator signUpFormValidator;
+    private final AccountRepository accountRepository;
+    private final JavaMailSender javaMailSender;
+
+    ...
+
+    @PostMapping("/sign-up")
+    public String signUpSubmit(@Valid SignUpForm signUpForm, Errors errors) {
+        
+        ...
+
+        // 회원 가입 처리
+        Account account = Account.builder()
+                .email(signUpForm.getEmail())
+                .nickname(signUpForm.getNickname())
+                .password(signUpForm.getPassword()) // TODO encoding 해야한다.
+                .studyCreatedByWeb(true)
+                .studyEnrollmentResultByWeb(true)
+                .studyUpdatedByWeb(true)
+                .build();
+
+        Account newAccount = accountRepository.save(account);
+
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(newAccount.getEmail());
+        mailMessage.setSubject("스터디올래, 회원 가입 인증"); // 제목
+        mailMessage.setText("/check-email-token?token=" + newAccount.getEmailCheckToken() +
+                "&email=" + newAccount.getEmail()); // 본문
+        javaMailSender.send(mailMessage);
+
+        return "redirect:/";
+    }
+}
+```
+- 실행하면 다음과 같이 토큰이 log에 찍힌 것을 볼 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_3.jpg"></p>
+
+<br>
