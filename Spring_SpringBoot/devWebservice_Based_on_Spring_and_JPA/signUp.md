@@ -557,6 +557,7 @@ public class AccountController {
 
         Account newAccount = accountRepository.save(account);
 
+        newAccount.generateEmailCheckToken();
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setTo(newAccount.getEmail());
         mailMessage.setSubject("스터디올래, 회원 가입 인증"); // 제목
@@ -571,4 +572,196 @@ public class AccountController {
 - 실행하면 다음과 같이 토큰이 log에 찍힌 것을 볼 수 있다.
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_3.jpg"></p>
 
+<br>
+
+## 회원가입 리펙토링과 테스트
+- 리팩토링 하기전에 테스트 코드를 먼저 작성하자.
+    * 그래야 코드를 변경한 이후에 불안하지 않다.
+    * 변경한 코드가 무언가를 깨트리지 않았다는 것을 확인할 수 있다.
+<br>
+
+### 목표
+- 테스트
+    * 폼에 이상한 값이 들어간 경우에 다시 폼이 보여지는지
+    * 폼에 값이 정상적인 경우 
+        - 가입한 회원 데이터가 존재하는지
+        - 이메일이 보내지는지
+- 리팩토링
+    * 메소드의 길이
+    * 코드의 가독성
+        - 내가 작성한 코드를 내가 읽기 어렵다면 남들에겐 훨씬 더 어렵다.
+    * 코드가 적절한 위치
+        - 객체들 사이의 의존 관계
+        - 책임이 너무 많진 않은지
+<br>
+
+### 구현
+- **테스트**
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    ...
+
+    @DisplayName("회원 가입 처리 - 입력값 오류")
+    @Test
+    void signUpSubmit_with_wrong_input() throws Exception {
+        mockMvc.perform(post("/sign-up")
+        .param("nickname", "hayoung")
+        .param("email", "email..")
+        .param("password", "12345"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("account/sign-up"));
+    }
+}
+```
+- 실행해보면 403에러가 난다.
+- 이유 : csrf 토큰이 없기 때문
+    * Spring Security를 적용하면 기본적으로 csrf 설정이 활성화 되어있다.
+    * csrf 토큰이라는 기술을 자동으로 사용한다.
+    * 폼 데이터와 함께 토큰이 서버가 같이 전송되어 토큰을 보고 안전한 데이터인지를 판단한다.
+    * SecurityConfig에서 인증이 필요없도록 설정했지만 그렇다고 안전하지 않은 요청을 받아들이는 것은 아니다.
+    * 참고) [crsf](https://ko.wikipedia.org/wiki/%EC%82%AC%EC%9D%B4%ED%8A%B8_%EA%B0%84_%EC%9A%94%EC%B2%AD_%EC%9C%84%EC%A1%B0)
+- 따라서 다음과 같이 crsf 토큰을 추가해줘야 한다.
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    ...
+
+    @DisplayName("회원 가입 처리 - 입력값 오류")
+    @Test
+    void signUpSubmit_with_wrong_input() throws Exception {
+        mockMvc.perform(post("/sign-up")
+        .param("nickname", "hayoung")
+        .param("email", "email..")
+        .param("password", "12345")
+        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("account/sign-up"));
+    }
+}
+```
+- 옳은 값을 넣었을 경우 테스트(이메일까지)
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @MockBean
+    JavaMailSender javaMailSender;
+
+    ...
+
+    @DisplayName("회원 가입 처리 - 입력값 정상")
+    @Test
+    void signUpSubmit_with_correct_input() throws Exception {
+        mockMvc.perform(post("/sign-up")
+        .param("nickname", "hayoung")
+        .param("email", "hayoung@email.com")
+        .param("password", "12345789")
+        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/"));
+
+        assertTrue(accountRepository.existsByEmail("hayoung@email.com"));
+        // 이메일을 보내는지 테스트
+        then(javaMailSender).should().send(any(SimpleMailMessage.class));
+    }
+}
+```
+- **리펙토링**
+- AccountController
+    * Account 생성과 이메일 보내는 것을 빼서 Service로 만들기
+    * 전의 코드와 비교해서 보면 쉽다.
+```java
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+
+    private final AccountRepository accountRepository;
+    private final JavaMailSender javaMailSender;
+
+    // Account 생성
+    private Account saveNewAccount(@Valid SignUpForm signUpForm) {
+        Account account = Account.builder()
+                .email(signUpForm.getEmail())
+                .nickname(signUpForm.getNickname())
+                .password(signUpForm.getPassword()) // TODO encoding 해야한다.
+                .studyCreatedByWeb(true)
+                .studyEnrollmentResultByWeb(true)
+                .studyUpdatedByWeb(true)
+                .build();
+
+        return accountRepository.save(account);
+    }
+
+    // 이메일 보내기
+    private void sendSignUpConfirmEmail(Account newAccount) {
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(newAccount.getEmail());
+        mailMessage.setSubject("스터디 올래, 회원 가입 인증"); // 제목
+        mailMessage.setText("/check-email-token?token=" + newAccount.getEmailCheckToken() +
+                "&email=" + newAccount.getEmail()); // 본문
+        javaMailSender.send(mailMessage);
+    }
+
+    // 회원가입
+    public void processNewAccount(SignUpForm signUpForm) {
+        Account newAccount = saveNewAccount(signUpForm);
+        newAccount.generateEmailCheckToken();
+        sendSignUpConfirmEmail(newAccount);
+    }
+}
+```
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    private final SignUpFormValidator signUpFormValidator;
+    private final AccountService accountService;
+
+
+    // 커스텀 검증
+    @InitBinder("signUpForm")
+    public void initBinder(WebDataBinder webDataBinder) {
+        webDataBinder.addValidators(signUpFormValidator);
+    }
+
+    @GetMapping("/sign-up")
+    public String signUpForm(Model model) {
+        model.addAttribute(new SignUpForm());
+        return "account/sign-up";
+    }
+
+    @PostMapping("/sign-up")
+    public String signUpSubmit(@Valid SignUpForm signUpForm, Errors errors) {
+        // JSR 303 검증
+        if(errors.hasErrors()) {
+            return "account/sign-up";
+        }
+        // 회원 가입 처리
+        accountService.processNewAccount(signUpForm);
+
+        return "redirect:/";
+    }
+}
+```
+- 코드를 많이 고쳤음에도 이전에 작성한 테스트를 돌려보면 통과한다.
+    * 안전한 변경이었다.
 <br>
