@@ -1114,3 +1114,186 @@ public class AccountController {
 ```
 - 테스트 코드를 다시 실행해 확인하면 테스트 코드가 정상적으로 실행된다.
 <br>
+
+## 가입 완료 후 자동 로그인
+
+### 목표
+- 회원 가입 완료시 자동 로그인
+- 이메일 인증 완료시 자동 로그인
+<br>
+
+### 구현
+- AccountService에 `login()` 메소드 생성
+    * 원래는 폼에서 입력받는 username과 plain text인 password를 가지고 AuthenticationManager를 통해서 인증해야 한다.
+    * 그러나 인코딩한 password밖에 접근을 하지 못하기 때문에 다른 방법을 사용한다.
+```java
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+
+    ...
+
+    public void login(Account account) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                account.getNickname(),
+                account.getPassword(),
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(token);
+
+//        정석적인 방법
+//        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
+//        Authentication authentication = authenticationManager.authenticate(token);
+//        SecurityContext context = SecurityContextHolder.getContext();
+//        context.setAuthentication(authentication);
+
+    }
+}
+```
+- AccountController에 자동 로그인 코드 추가
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    ...
+
+    @PostMapping("/sign-up")
+    public String signUpSubmit(@Valid SignUpForm signUpForm, Errors errors) {
+        // JSR 303 검증
+        if (errors.hasErrors()) {
+            return "account/sign-up";
+        }
+        // 회원 가입 처리
+        Account account = accountService.processNewAccount(signUpForm);
+        accountService.login(account); // 회원 가입이 완료됐을 경우 자동으로 로그인
+
+        return "redirect:/";
+    }
+
+    @GetMapping("/check-email-token")
+    public String checkEmailToken(String token, String email, Model model) {
+        Account account = accountRepository.findByEmail(email);
+        String view = "account/checked-email";
+        
+        // account가 없을 경우
+        if (account == null) {
+            model.addAttribute("error", "wrong.email");
+            return view;
+        }
+        // 토큰이 일치하지 않을 경우
+        if (account.isValidToken(token)) {
+            model.addAttribute("error", "wrong.token");
+            return view;
+        }
+
+        account.completeSignUp();
+        accountService.login(account); // token 인증시에도 자동 로그인
+        model.addAttribute("numberOfUser", accountRepository.count());
+        model.addAttribute("nickname", account.getNickname());
+        return view;
+    }
+}
+```
+- 테스트
+    * 스프링부트와 스프링 시큐리티가 연동되어 있으면 MockMvc에 여러가지 기능을 추가로 사용할 수 있다.
+        - 스프링 시큐리티가 있는 MockMvc와 없는 MockMvc는 다르다.
+        - csrf가 그러한 기능 중 하나이다.
+        - 인증이 됐는지 안됐는지 판단하는 것도 기능에 있다.
+```java
+@Transactional
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @MockBean
+    JavaMailSender javaMailSender;
+
+    @DisplayName("인증 메일 확인 - 입력값 오류")
+    @Test
+    void checkEmailToken_with_wrong_input() throws Exception {
+        mockMvc.perform(get("/check-email-token")
+                .param("token", "jacoiuahnc")
+                .param("email", "email@email.com"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("error"))
+                .andExpect(view().name("account/checked-email"))
+                .andExpect(unauthenticated());
+
+    }
+
+    @DisplayName("인증 메일 확인 - 입력값 정상")
+    @Test
+    void checkEmailToken() throws Exception {
+        Account account = Account.builder()
+                .email("test@email.com")
+                .password("12345678")
+                .nickname("hayoung")
+                .build();
+        Account newAccount = accountRepository.save(account);
+        newAccount.generateEmailCheckToken();
+
+        mockMvc.perform(get("/check-email-token")
+                .param("token", newAccount.getEmailCheckToken())
+                .param("email", newAccount.getEmail()))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeDoesNotExist("error"))
+                .andExpect(model().attributeExists("nickname"))
+                .andExpect(model().attributeExists("numberOfUser"))
+                .andExpect(view().name("account/checked-email"))
+                .andExpect(authenticated().withUsername("hayoung"));
+    }
+
+    @DisplayName("회원 가입 화면이 보이는지 테스트")
+    @Test
+    void signUpForm() throws Exception {
+        mockMvc.perform(get("/sign-up"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("account/sign-up"))
+                .andExpect(model().attributeExists("signUpForm"))
+                .andExpect(unauthenticated());
+
+    }
+
+    @DisplayName("회원 가입 처리 - 입력값 오류")
+    @Test
+    void signUpSubmit_with_wrong_input() throws Exception {
+        mockMvc.perform(post("/sign-up")
+                .param("nickname", "hayoung")
+                .param("email", "email..")
+                .param("password", "12345")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("account/sign-up"))
+                .andExpect(unauthenticated());
+    }
+
+    @DisplayName("회원 가입 처리 - 입력값 정상")
+    @Test
+    void signUpSubmit_with_correct_input() throws Exception {
+        mockMvc.perform(post("/sign-up")
+                .param("nickname", "hayoung")
+                .param("email", "hayoung@email.com")
+                .param("password", "12345678")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/"))
+                .andExpect(authenticated().withUsername("hayoung"));
+
+        // 패스워드 인코딩 테스트
+        Account account = accountRepository.findByEmail("hayoung@email.com");
+        assertNotNull(account);
+        assertNotEquals(account.getPassword(), "12345678");
+        assertNotNull(account.getEmailCheckToken());
+        then(javaMailSender).should().send(any(SimpleMailMessage.class));
+    }
+}
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_6.jpg"></p>
+
+<br>
