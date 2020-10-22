@@ -867,5 +867,152 @@ class AccountControllerTest {
     }
 }
 ```
+<br>
 
+## 인증 메일 확인
 
+### 목표
+- GET “/check-email-token” token=${token} email=${email} 요청 처리
+    * 이메일이 정확하지 않은 경우에 대한 에러 처리
+    * 토큰이 정확하지 않은 경우에 대한 에러 처리
+    * 이메일과 토큰이 정확한 경우 가입 완료 처리
+        - 가입 일시 설정
+        - 이메일 인증 여부 true로 설정
+- 인증 확인 뷰
+    * 입력값에 오류가 있는 경우 적절한 메시지 출력.
+    * 인증이 완료된 경우, 환영 문구와 함께 몇번째 사용자인지 보여주기.
+<br>
+
+### 구현
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    private final SignUpFormValidator signUpFormValidator;
+    private final AccountService accountService;
+    private final AccountRepository accountRepository;
+
+    ...
+
+    @GetMapping("/check-email-token")
+    public String checkEmailToken(String token, String email, Model model) {
+        Account account = accountRepository.findByEmail(email);
+        String view = "account/checked-email";
+        
+        // account가 없을 경우
+        if (account == null) {
+            model.addAttribute("error", "wrong.email");
+            return view;
+        }
+        // 토큰이 일치하지 않을 경우
+        if (!account.getEmailCheckToken().equals(token)) {
+            model.addAttribute("error", "wrong.token");
+            return view;
+        }
+
+        account.setEmailVerified(true);
+        account.setJoinedAt(LocalDateTime.now());
+        model.addAttribute("numberOfUser", accountRepository.count()); // count()는 기본으로 제공하는 기능이다.
+        model.addAttribute("nickname", account.getNickname());
+        return view;
+    }
+}
+```
+- 인증 확인 뷰 작성
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>StudyOlle</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    <style>
+        .container {
+            max-width: 100%;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+        <a class="navbar-brand" href="/" th:href="@{/}">
+            <img src="/images/logo_sm.png" width="30" height="30">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <form th:action="@{/search/study}" class="form-inline" method="get">
+                        <input class="form-control mr-sm-2" name="keyword" type="search" placeholder="스터디 찾기" aria-label="Search" />
+                    </form>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav justify-content-end">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" th:href="@{/login}">로그인</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" th:href="@{/signup}">가입</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="py-5 text-center" th:if="${error}">
+        <p class="lead">스터디올래 이메일 확인</p>
+        <div class="alert alert-danger" role="alert">
+            이메일 확인 링크가 정확하지 않습니다.
+        </div>
+    </div>
+
+    <div class="py-5 text-center" th:if="${error == null}">
+        <p class="lead">스터디올래 이메일 확인</p>
+        <h2>
+            이메일을 확인했습니다. <span th:text="${numberOfUser}">10</span>번째 회원,
+            <span th:text="${nickname}">김하영</span>님 가입을 축하합니다.
+        </h2>
+        <small class="text-info">이제부터 가입할 때 사용한 이메일 또는 닉네임과 패스워드로 로그인 할 수 있습니다.</small>
+    </div>
+</body>
+</html>
+```
+- 실행해서 가입하고 이메일 인증을 하면 에러가 난다.
+    * account의 emailCheckToken이 null이다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_4.jpg"></p>
+
+- 트랜잭션이 없어서 발생하는 에러이다.
+    * AccountService에서 만든 newAccount객체는 detached객체이다.
+    * 따라서 DB에 동기화가 되지 않고 emailCheckToken값이 DB에 저장되지 않았다.
+    * `saveNewAccount()`에서 `save()`에 의해 저장되고 트랜잭션 안이지만 나오면 트랜잭션 범위를 벗어나 detached 상태이다.
+    * 따라서 `processNewAccount()`에 `@Transactional`을 붙여주면 persist상태가 되서 저장이 된다.
+    * 참고로 테스트를 작성할 때 emailCheckToken이 생성됐는지 확인했어야 놓쳤다.
+        - 테스트를 완벽히 신뢰할 수 없는 이유
+```java
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+
+    private final AccountRepository accountRepository;
+    private final JavaMailSender javaMailSender;
+    private final PasswordEncoder passwordEncoder;
+
+    ...
+
+    // 회원가입
+    @Transactional
+    public void processNewAccount(SignUpForm signUpForm) {
+        Account newAccount = saveNewAccount(signUpForm);
+        newAccount.generateEmailCheckToken();
+        sendSignUpConfirmEmail(newAccount);
+    }
+}
+```
+- 이제 다시 시도하면 다음과 같이 결과가 잘 나온다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_5.jpg"></p>
+
+<br>
