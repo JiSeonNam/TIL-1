@@ -1022,7 +1022,7 @@ public class AccountService {
 - 테스트
     * 입력값이 잘못 된 경우
         - error 프로퍼티가 model에 들어있는지 확인
-        - 뷰 이름이 account/checkd-email 인지 확인
+        - 뷰 이름이 account/checkd-email인지 확인
     * 입력값이 올바른 경우
         - 모델에 error가 없는지 확인
         - 모델에 numberOfUser가 있는지 확인
@@ -1033,3 +1033,84 @@ public class AccountService {
 <br>
 
 ### 구현
+- 테스트 코드 작성
+    * 테스트도 트랜잭션이 없기 때문에 `@Transactional`어노테이션을 붙여줘야 한다.
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    ...
+
+    @DisplayName("인증 메일 확인 - 입력값 오류")
+    @Test
+    void checkEmailToken_with_wrong_input() throws Exception {
+        mockMvc.perform(get("/check-email-token")
+                .param("token", "jacoiuahnc")
+                .param("email", "email@email.com"))
+                .andExpect(status().isOk()) // 상태는 isOk이지만
+                .andExpect(model().attributeExists("error")) // model에는 error가 있는지 확인
+                .andExpect(view().name("account/checked-email")); // view 이름이 account/checkd-email인지 확인
+    }
+
+    @DisplayName("인증 메일 확인 - 입력값 정상")
+    @Test
+    void checkEmailToken() throws Exception {
+        Account account = Account.builder()
+                .email("test@email.com")
+                .password("12345678")
+                .nickname("hayoung")
+                .build();
+        Account newAccount = accountRepository.save(account);
+        newAccount.generateEmailCheckToken();
+
+        mockMvc.perform(get("/check-email-token")
+                .param("token", newAccount.getEmailCheckToken())
+                .param("email", newAccount.getEmail()))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeDoesNotExist("error")) // model에 error가 없고
+                .andExpect(model().attributeExists("nickname")) // nickname과
+                .andExpect(model().attributeExists("numberOfUser")) // numberOfUser는 있고
+                .andExpect(view().name("account/checked-email")); // view 이름은 동일
+    }
+    
+    ...
+}
+```
+- 리팩토링
+    * AccountController에서 이메일 인증과 가입날짜 저장을 메소드로 분리
+```java
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Account {
+
+    ...
+
+    public void completeSignUp() {
+        this.emailVerified = true;
+        this.joinedAt = LocalDateTime.now();
+    }
+}
+```
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    ...
+
+    @GetMapping("/check-email-token")
+    public String checkEmailToken(String token, String email, Model model) {
+        
+        ...
+
+        // 메소드로 분리
+        account.completeSignUp();
+
+        ...
+    }
+}
+```
+- 테스트 코드를 다시 실행해 확인하면 테스트 코드가 정상적으로 실행된다.
+<br>
