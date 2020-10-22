@@ -765,3 +765,107 @@ public class AccountController {
 - 코드를 많이 고쳤음에도 이전에 작성한 테스트를 돌려보면 통과한다.
     * 안전한 변경이었다.
 <br>
+
+## 패스워드 인코더
+- 절대 입력받은 패스워드를 그대로 평문으로 저장해서는 안된다.
+    * Account 엔티티를 저장할 때 패스워드 인코딩을 해야한다.
+    * 보통 해싱을 한다.
+        - 해싱을 하고 로그인할 때 입력한 패스워드 평문이 해싱해서 일치하는지 확인
+        - 양방향으로 암호화-복호화를 할 필요없이 단방향
+- 해싱 알고리즘(bcrypt)과 솔트(salt)
+    * 해싱 알고리즘을 쓰는 이유
+        - 패스워드를 평문으로 저장하면 공격받았을 경우 DB가 털리면 매우 큰 문제가 발생한다.
+        - 따라서 패스워드를 해싱해서 DB에 저장해야 한다.
+    * 솔트를 쓰는 이유
+        - 해싱을 쓸때 해싱을 해서 DB에 저장하더라도 공격자가 이미 여러개의 문자열들을 해싱해서 그 결과를 비교(dictionary attack)해서 알아낼 수 있다.
+        - 따라서 솔트를 추가해서 해싱값이 전혀 다른 값이 나오도록 해서 일치하는 것을 찾는 것이 어렵다. (불가능에 가깝다.)
+        - 매번 동일한 salt값을 써야하는 것도 아니고 해싱을 할 때마다 랜덤하게 써도 동작한다.
+        - salt값은 인코딩할 때만 사용하고 패스워드로 입력받은 평문과 해싱된 값을 해싱하면 원래 해쉬 값이 나온다.
+- 스프링 시큐리티 권장 PasswordEncoder
+    * `PasswordEncoderFactories.createDelegatingPasswordEncoder()`
+        - 기본적으로 bcrypt를 쓰게 된다.
+    * 여러 해시 알고리즘을 지원하는 패스워드 인코더
+<br>
+
+### 구현
+- AppConfig 생성
+```java
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+}
+```
+- AccountService에서 패스워드 인코딩
+```java
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+
+    private final AccountRepository accountRepository;
+    private final JavaMailSender javaMailSender;
+    private final PasswordEncoder passwordEncoder;
+
+    // Account 생성
+    private Account saveNewAccount(@Valid SignUpForm signUpForm) {
+        Account account = Account.builder()
+                .email(signUpForm.getEmail())
+                .nickname(signUpForm.getNickname())
+                .password(passwordEncoder.encode(signUpForm.getPassword())) // 인코딩
+                .studyCreatedByWeb(true)
+                .studyEnrollmentResultByWeb(true)
+                .studyUpdatedByWeb(true)
+                .build();
+
+        return accountRepository.save(account);
+    }
+
+    ...
+}
+```
+- 테스트
+    * accountRepository에 `findByEmail()` 메소드 추가
+```java
+@Transactional(readOnly = true)
+public interface AccountRepository extends JpaRepository<Account, Long> {
+
+    boolean existsByEmail(String email);
+    boolean existsByNickname(String nickname);
+
+    // 이메일로 account 찾아서 반환
+    Account findByEmail(String email);
+}
+```
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    ...
+
+    @DisplayName("회원 가입 처리 - 입력값 정상")
+    @Test
+    void signUpSubmit_with_correct_input() throws Exception {
+        mockMvc.perform(post("/sign-up")
+        .param("nickname", "hayoungㅋ")
+        .param("email", "hayoung@email.com")
+        .param("password", "12345678")
+        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/"));
+
+        // 패스워드 인코딩 테스트
+        Account account = accountRepository.findByEmail("hayoung@email.com");
+        assertNotNull(account);
+        assertNotEquals(account.getPassword(), "12345678");
+
+        assertTrue(accountRepository.existsByEmail("hayoung@email.com"));
+        then(javaMailSender).should().send(any(SimpleMailMessage.class));
+    }
+}
+```
+
+
