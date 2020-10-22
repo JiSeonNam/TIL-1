@@ -303,7 +303,7 @@ public class AccountController {
     public String signUpForm(Model model) {
         // model.addAttribute("signUpForm", new SignUpForm());
         // 생략하면 클래스 이름의 CamelCase를 사용한다.
-        model.addAttribute("signUpForm", new SignUpForm());
+        model.addAttribute(new SignUpForm());
         return "account/sign-up";
     }
 }
