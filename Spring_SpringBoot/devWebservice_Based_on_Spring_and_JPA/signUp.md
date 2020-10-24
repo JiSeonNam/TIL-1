@@ -1405,6 +1405,6 @@ class AccountControllerTest {
 </body>
 </html>
 ```
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_6.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_7.jpg"></p>
 
 <br>
