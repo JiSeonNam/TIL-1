@@ -1556,3 +1556,99 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 ```
 - 위의 3가지 고려사항을 수정하고 실행하면 다음과 같이 프론트엔드 라이브러리 설정 변경 후에도 정상적으로 실행되는 것을 확인할 수 있다.
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_9.jpg"></p>
+
+<br>
+
+## 뷰 중복 코드 제거
+- 타임리프의 Fragment를 사용해서 뷰의 중복 코드를 제거한다.
+    * [참고](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html#including-template-fragments)
+    * Fragment 정의 : `th:fragment`
+    * Fragment 사용 : `th:insert`, `th:replace`
+- header, footer와 네이게이션바를 재사용
+    * fragments.html을 생성해서 fragment들을 작성하고 html 파일들에 적용한다.
+```html
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="head">
+    <meta charset="UTF-8">
+    <title>StudyOlle</title>
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        .container {
+            max-width: 100%;
+        }
+    </style>
+</head>
+
+<nav th:fragment="main-nav" class="navbar navbar-expand-sm navbar-dark bg-dark">
+    <a class="navbar-brand" href="/" th:href="@{/}">
+        <img src="/images/logo_sm.png" width="30" height="30">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <form th:action="@{/search/study}" class="form-inline" method="get">
+                    <input class="form-control mr-sm-2" name="keyword" type="search" placeholder="스터디 찾기" aria-label="Search" />
+                </form>
+            </li>
+        </ul>
+
+        <ul class="navbar-nav justify-content-end">
+            <li class="nav-item">
+                <a class="nav-link" href="#" th:href="@{/login}">로그인</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" th:href="@{/sign-up}">가입</a>
+            </li>
+            </li>
+            <li class="nav-item" sec:authorize="isAuthenticated()">
+                <a class="nav-link btn btn-outline-primary" th:href="@{/notifications}">스터디 개설</a>
+            </li>
+            <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false">
+                    프로필
+                </a>
+                <div class="dropdown-menu dropdown-menu-sm-right" aria-labelledby="userDropdown">
+                    <h6 class="dropdown-header">
+                        <span sec:authentication="name">Username</span>
+                    </h6>
+                    <a class="dropdown-item" th:href="@{'/profile/' + ${#authentication.name}}">프로필</a>
+                    <a class="dropdown-item" >스터디</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" th:href="@{'/settings/profile'}">설정</a>
+                    <form class="form-inline my-2 my-lg-0" action="#" th:action="@{/logout}" method="post">
+                        <button class="dropdown-item" type="submit">로그아웃</button>
+                    </form>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<footer th:fragment="footer">
+    <div class="row justify-content-center">
+        <img class="mb-2" src="/images/logo_long_kr.png" alt="" width="100">
+        <small class="d-block mb-3 text-muted">&copy; 2020</small>
+    </div>
+</footer>
+
+</html>
+```
+```html
+    ...
+<head th:replace="fragments.html :: head"></head>
+    ...
+<div th:replace="fragments.html :: main-nav"></div>
+    ...
+<div th:replace="fragments.html :: footer"></div>
+```
+- 실행해보면 정상적으로 실행된다.
+<br>
