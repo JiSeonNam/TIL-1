@@ -1408,3 +1408,151 @@ class AccountControllerTest {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_7.jpg"></p>
 
 <br>
+
+## 프론트엔드 라이브러리 설정
+- 프론트엔드 라이브러리를 cdn으로 받아오는 것도 나쁘지 않지만 프로젝트안에 패키지화 시킬 수도 있다.
+- 크게 2가지 방법이 있다. 
+    * WebJar vs NPM
+        - WebJar보다는 **NPM** 선호.
+        - WebJar는 라이브러리 업데이트가 느리고 제공하지 않는 라이브러리도 많다.
+    * 직접 다운로드 받아서 resources/static 아래에 모아놓을 수도 있지만 3rd-party 라이브러리 관리하는 방법으로는 적절하지 않다.
+        * 3rd-party 라이브러리는 업데이트 될 때마다 dependency을 쉽게 관리할 수 있어야 한다.
+        * 의존성 관리 툴에 지원을 받아서 사용하는 것이 좋다.
+<br>
+
+### 스프링부트와 NPM
+- src/main/resources/static 디렉토리 이하는 정적 리소스로 제공한다.
+- package.json에 프론트엔드 라이브러리를 제공한다.
+- 이 둘을 응용하면, 즉 static 디렉토리 아래에 package.json을 사용해서 라이브러리를 받아오면 정적 리소스로 프론트엔드 라이브러리를 사용할 수 있다.
+<br>
+
+### NPM 설치와 라이브러리 추가
+- [NPM 설치](https://www.npmjs.com/get-npm)
+- resources/static에 package.json을 만든다.
+    * `npm init`
+    * 설치하면 다음과 같이 resources/static에 package.json이 생긴 것을 볼 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_8.jpg"></p>
+
+- 라이브러리 설치
+    * `npm install bootstrap`
+    * `npm install jquery --save`
+    * 설치 후 package.json의 dependencies에 라이브러리가 만들어져 있다.
+    * 참고) package.lock.json은 라이브러리의 버전을 고정시키는 것이다.
+        - 의존성 트리에 대한 정보를 가지고 있으며 package-lock.json 파일이 작성된 시점의 의존성 트리가 다시 생성될 수 있도록 보장한다.
+<br>
+
+### 구현
+- 이제 프론트엔드 라이브러리를 cdn에서 받아오지 않아도 된다.
+```html
+<link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css" />
+
+    ...
+
+<script src="/node_modules/jquery/dist/jquery.min.js"></script>
+<script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+```
+<br>
+
+### 고려해야 할 점
+- 버전관리
+    * 자동으로 받아오는 라이브러리들을 ignore 시킨다.
+```gitignore
+
+...
+
+### NPM ###
+src/main/resources/static/node_modules
+src/main/resources/static/node
+```
+- 빌드
+    * 메이븐 pom.xml을 빌드할 때 static 디렉토리 아래에 있는 package.json도 빌드하도록 설정해야 한다.
+        - 프론트쪽 모듈도 빌드해야 한다.
+    * 빌드를 안하면 프론트엔드 라이브러리를 받아오지 않아서 뷰에서 필요한 참조가 끊어지고 화면이 제대로 보이지 않는다.
+    * 여러가지 maven 관련 플러그인 중 프론트엔드 모듈을 실행해주는 플러그인을 추가한다.
+    * 추가 후 `/mvnw test`로 테스트 해보면 정상적으로 동작한다.
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.3.4.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.studyolle</groupId>
+	<artifactId>studyolle</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>studyolle</name>
+	<description>Study management web service</description>
+
+	<properties>
+		<java.version>11</java.version>
+	</properties>
+
+	<dependencies>
+
+		...
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			
+            ... 
+            
+			<plugin>
+				<groupId>com.github.eirslett</groupId>
+				<artifactId>frontend-maven-plugin</artifactId>
+				<version>1.8.0</version>
+				<configuration>
+					<nodeVersion>v4.6.0</nodeVersion>
+					<workingDirectory>src/main/resources/static</workingDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>install node and npm</id>
+						<goals>
+							<goal>install-node-and-npm</goal>
+						</goals>
+						<phase>generate-resources</phase>
+					</execution>
+					<execution>
+						<id>npm install</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<arguments>install</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+	</build>
+</project>
+```
+- Spring Security 설정
+    * Spring Security를 사용하면 기본적으로 모든 요청에 보안을 적용하지만 SecurityConfig에 예외를 설정했었다.
+    * SecurityConfig클래스의 `configure()`에서 흔히 사용하는 위치에 스프링 시큐리티 필터를 사용하지 않도록 했었다.
+    * 프론트엔드 라이브러리에서 요청이 /node_modules로 시작하기 때문에 이것도 추가해줘야 한다. 
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    ...
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring()
+                .mvcMatchers("/node_modules/**") // 경로 추가
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations());
+    }
+}
+```
+- 위의 3가지 고려사항을 수정하고 실행하면 다음과 같이 프론트엔드 라이브러리 설정 변경 후에도 정상적으로 실행되는 것을 확인할 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_9.jpg"></p>
