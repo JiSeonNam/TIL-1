@@ -1350,11 +1350,11 @@ class AccountControllerTest {
         </ul>
 
         <ul class="navbar-nav justify-content-end">
-            <li class="nav-item">
-                <a class="nav-link" href="#" th:href="@{/login}">로그인</a>
+            <li class="nav-item" sec:authorize="!isAuthenticated()">
+                <a class="nav-link" th:href="@{/login}">로그인</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" th:href="@{/sign-up}">가입</a>
+            <li class="nav-item" sec:authorize="!isAuthenticated()">
+                <a class="nav-link" th:href="@{/sign-up}">가입</a>
             </li>
             </li>
             <li class="nav-item" sec:authorize="isAuthenticated()">
@@ -1601,11 +1601,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         </ul>
 
         <ul class="navbar-nav justify-content-end">
-            <li class="nav-item">
-                <a class="nav-link" href="#" th:href="@{/login}">로그인</a>
+            <li class="nav-item" sec:authorize="!isAuthenticated()">
+                <a class="nav-link" th:href="@{/login}">로그인</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" th:href="@{/sign-up}">가입</a>
+            <li class="nav-item" sec:authorize="!isAuthenticated()">
+                <a class="nav-link" th:href="@{/sign-up}">가입</a>
             </li>
             </li>
             <li class="nav-item" sec:authorize="isAuthenticated()">
@@ -1644,11 +1644,89 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 ```
 ```html
     ...
+
 <head th:replace="fragments.html :: head"></head>
+
     ...
+
 <div th:replace="fragments.html :: main-nav"></div>
+    
     ...
+
 <div th:replace="fragments.html :: footer"></div>
 ```
 - 실행해보면 정상적으로 실행된다.
 <br>
+
+## 첫 페이지 보완
+
+### 목표
+- 네비게이션 바에 [Fontawesome](https://fontawesome.com/)으로 아이콘 추가
+- 이메일 인증을 마치지 않은 사용자에게 메시지 보여주기
+- [jdenticon](https://jdenticon.com/)으로 프로필 기본 이미지 생성하기
+<br>
+
+### 구현
+- NPM으로 프론트엔트 라이브러리 설치
+    * `npm install font-awesome`
+        - 아이콘을 제공해주는 라이브러리
+    * `npm install jdenticon`
+        - 특정한 문자열에 해당하는 아바타를 만들어주는 라이브러리
+- fontawesome 아이콘 사용하기
+    * fragments.html에 fontawesome 추가
+    * 벨 모양 알림 아이콘 추가
+    * 스터디 개설에 \+ 모양 아이콘 추가
+    * 다른 아이콘을 찾고 싶으면 node_modules/font-awesome/README.md에 있는 사이트에서 검색하면 된다.
+```html
+    ...
+<link rel="stylesheet" href="/node_modules/font-awesome/css/font-awesome.min.css" />
+    
+    ...
+
+<li class="nav-item" sec:authorize="isAuthenticated()">
+    <a class="nav-link" th:href="@{/notifications}">
+        <i class="fa fa-bell-o" aria-hidden="true"></i>
+    </a>
+</li>
+<li class="nav-item" sec:authorize="isAuthenticated()">
+    <a class="nav-link btn btn-outline-primary" th:href="@{/notifications}">
+        <i class="fa fa-plus" aria-hidden="true"></i> 스터디 개설
+    </a>
+</li>
+
+    ...
+```
+- Jdenticon으로 프로필 기본 이미지 생성하기
+    * fragments.html에 Jdenticon추가
+    * 참고) bootstrap과 jquery는 대부분의 뷰에서 참조할 것이기 때문에 head에 넣어준다.
+```html
+    ...
+
+<script src="/node_modules/jquery/dist/jquery.min.js"></script>
+<script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/node_modules/jdenticon/dist/jdenticon.min.js"></script>
+
+    ...
+    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false">
+                    <svg data-jdenticon-value="user127" th:data-jdenticon-value="${#authentication.name}"
+                         width="24" height="24" class="rounded border bg-light"></svg>
+                </a>
+                
+                ...
+```
+- 이메일 인증을 마치지 않은 사용자에게 메시지 보여주기
+    * bootstrap 경고창
+    * fragments.html이 아닌 첫 페이지(index.html)에서만 보여주도록 설정한다.
+```html
+    ...
+
+<body class="bg-light">
+    <div th:replace="fragments.html :: main-nav"></div>
+    <div class="alert alert-warning" role="alert" th:if="${account != null && !account.emailVerified}">
+        스터디올래 가입을 완료하려면 <a href="#" th:href="@{/check-email}" class="alert-link">계정 인증 이메일을 확인</a>하세요.
+    </div>
+
+    ...
+```
