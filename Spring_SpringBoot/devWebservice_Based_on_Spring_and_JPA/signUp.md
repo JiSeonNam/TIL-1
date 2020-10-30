@@ -1730,3 +1730,71 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     ...
 ```
+<br>
+
+## 현재 인증된 사용자 정보 참조
+- `@AuthenticationPrincipal`
+    * Spring Security가 지원하는 스프링 웹 MVC 기능 중 하나로 인증된 사용자 정보를 참조하는 방법이다.
+    * 핸들러 매개변수로 현재 인증된 **Principal**을 참조할 수 있다.
+        - Principal은 인증할 때 Authentication에 들어있는 첫 번째 파라미터이다.
+        - AccountService의 `login()`에서 `account.getNickname()`
+    * SpEL을 사용해서 Principal 내부 정보에 접근할 수도 있다.
+        - `@AuthenticationPrincipal(expression = "#this == 'anonymousUser' ? null : account")`
+        - 익명 인증인 경우에는 null로 설정하고, 아닌 경우에는 account 프로퍼티를 조회해서 설정
+<br>
+
+### 구현
+- mainController 생성
+```java
+@Controller
+public class MainController {
+
+    @GetMapping("/")
+    public String home(@CurrentUser Account account, Model model) {
+        if (account != null) { // 인증을 한 사용자의 경우
+            model.addAttribute(account);
+        }
+
+        return "index";
+    }
+
+}
+```
+- CurrentUser 어노테이션 생성
+    * `@Retention`
+        - 이 어노테이션 정보를 언제까지 유지할 것인가 
+        - Runtime까지 유지하겠다는 뜻
+    * `@Target`
+        - 이 어노테이션을 파라미터에만 붙일 수 있도록 설정
+    * `@AuthenticationPrincipal`
+        - 익명 인증인 경우에는 null로 설정하고, 아닌 경우에는 account 프로퍼티를 조회해서 설정
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.PARAMETER)
+@AuthenticationPrincipal(expression = "#this == 'anonymousUser' ? null : account")
+public @interface CurrentUser {
+    
+}
+```
+- UserAccount 생성
+    * account라는 프로퍼티를 들고 있는 중간 역할을 해주는 객체
+    * Spring Security가 다루는 user정보와 도메인에서 다루는 user정보를 이어주는 역할
+```java
+@Getter
+public class UserAccount extends User {
+
+    private Account account;
+
+    public UserAccount(Account account) {
+        super(account.getNickname(), account.getPassword(), List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        this.account = account;
+    }
+}
+``` 
+- 실행하면 뷰에 전달된 account가 null이므로 경고창이 뜨지 않고 가입을 하면 경고창이 나온다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_10.jpg"></p>
+
+- 이미 구현한 이메일 인증을 하면 다음과 같이 이메일 인증이 되고 홈으로 돌아가도 인증을 하라는 경고창이 뜨지 않는다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_11.jpg"></p>
+
+<br>
