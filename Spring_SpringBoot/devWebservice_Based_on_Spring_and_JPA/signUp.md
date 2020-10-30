@@ -1798,3 +1798,121 @@ public class UserAccount extends User {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_11.jpg"></p>
 
 <br>
+
+## 가입 확인 이메일 재전송
+
+### 목표
+- 가입 확인 이메일을 재전송할 수 있는 기능 구현
+- 하지만, 너무 자주 이메일을 전송할 경우 리소스를 낭비할 수 있다는 문제가 있다.
+- 보완책으로, 1시간에 한 번만 인증 메일을 전송할 수 있도록 제한한다.
+<br>
+
+### 구현
+- 이메일 재전송 뷰 생성
+    * check-email.html
+        - 에러메세지가 있을 때 없을 떄 나눠서 보여준다.
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+
+<body class="bg-light">
+<nav th:replace="fragments.html :: main-nav"></nav>
+
+<div class="container">
+    <div class="py-5 text-center" th:if="${error != null}">
+        <p class="lead">스터디올래 가입</p>
+        <div  class="alert alert-danger" role="alert" th:text="${error}"></div>
+        <p class="lead" th:text="${email}">your@email.com</p>
+    </div>
+
+    <div class="py-5 text-center" th:if="${error == null}">
+        <p class="lead">스터디올래 가입</p>
+
+        <h2>스터디올래 서비스를 사용하려면 인증 이메일을 확인하세요.</h2>
+
+        <div>
+            <p class="lead" th:text="${email}">your@email.com</p>
+            <a class="btn btn-outline-info" th:href="@{/resend-confirm-email}">인증 이메일 다시 보내기</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+```
+- Account 엔티티에 이메일 인증 토큰 생성 시간 필드와 1시간이 지나서 보낼 수 있는지 확인하는 메서드 추가
+```java
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Account {
+
+    ...
+
+    private LocalDateTime emailCheckTokenGeneratedAt;
+
+    ...
+
+    public boolean canSendConfirmEmail() {
+        return this.emailCheckTokenGeneratedAt.isBefore(LocalDateTime.now().minusHours(1));
+    }
+}
+```
+- 이메일 인증을 할 수 있게 하기 위해 accountService에 `sendSignUpConfirmEmail()`을 public으로 수정
+```java
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+
+    ...
+
+    // public으로 수정
+    public void sendSignUpConfirmEmail(Account newAccount) {
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(newAccount.getEmail());
+        mailMessage.setSubject("스터디 올래, 회원 가입 인증"); // 제목
+        mailMessage.setText("/check-email-token?token=" + newAccount.getEmailCheckToken() +
+                "&email=" + newAccount.getEmail()); // 본문
+        javaMailSender.send(mailMessage);
+    }
+
+    ...
+}
+```
+- AccountController에 맵핑 추가
+    * `return "redirect:/";`
+        - redirect하지 않으면 화면을 refresh할 때마다 이메일을 보낸다. 따라서 홈 화면으로 redirect시킨다.
+        - 참고) 회원가입도 마찬가지였다.
+        - 요청을 처리했을 때 다시 요청되지 않도록 적절한 페이지로 redirect시키는 것을 고려해보면 좋다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    ...
+
+    @GetMapping("/check-email")
+    public String checkEmail(@CurrentUser Account account, Model model) {
+        model.addAttribute("email", account.getEmail());
+        return "account/check-email";
+    }
+
+    @GetMapping("/resend-confirm-email")
+    public String resendConfirmEmail(@CurrentUser Account account, Model model) {
+        if (!account.canSendConfirmEmail()) {
+            model.addAttribute("error", "인증 이메일은 1시간에 한번만 전송할 수 있습니다.");
+            model.addAttribute("email", account.getEmail());
+            return "account/check-email";
+        }
+
+        accountService.sendSignUpConfirmEmail(account);
+        return "redirect:/";
+    }
+}
+```
+- 실행하면 다음과 같이 이메일 인증 화면이 정상적으로 나오고 인증 이메일을 다시 보내면 1시간에 1번만 보낼 수 있다고 경고 메세지가 나온다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_12.jpg"></p>
+
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_13.jpg"></p>
+
+<br>
