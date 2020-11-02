@@ -1916,3 +1916,144 @@ public class AccountController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_13.jpg"></p>
 
 <br>
+
+## 로그인&로그아웃
+
+### 목표
+- Spring Security를 사용해 커스텀 로그인 페이지 만들기
+- 로그아웃 기능 구현하기
+<br>
+
+### 구현
+- SecurityConfig에 로그인, 로그아웃 설정 추가
+    * `http.formLogin()`
+        - formLogin 기능을 사용할 수 있다.
+        - `logPage()`를 사용해서 커스텀한 로그인 페이지를 사용할 수 있다. 
+        - 그냥 formLogin만 사용하면 Spring Security가 기본적으로 제공하는 로그인 페이지가 나온다.
+    * `http.logout()`
+        - 기본적으로 켜져있긴 하지만 로그아웃이 성공했을 때 특정한 작업을 수행하도록 할 수 있다.
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        
+        ...
+        
+        http.formLogin()
+                .loginPage("/login").permitAll();
+        http.logout()
+                .logoutSuccessUrl("/");
+    }
+
+    ...
+}
+```
+- 로그인 요청 맵핑 추가
+```java
+@Controller
+public class MainController {
+
+    ...
+
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
+}
+```
+- 로그인 페이지 뷰 생성
+```html
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+
+<body class="bg-light">
+    <div th:replace="fragments.html :: main-nav"></div>
+
+    <div class="container">
+        <div class="py-5 text-center">
+            <p class="lead">스터디올래</p>
+            <h2>로그인</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                <p>이메일(또는 닉네임)과 패스워드가 정확하지 않습니다.</p>
+                <p>또는 확인되지 않은 이메일을 사용했습니다. 이메일을 확인해 주세요.</p>
+                <p>
+                    확인 후 다시 입력하시거나, <a href="#" th:href="@{/find-passsword}">패스워드 찾기</a>를 이용하세요.
+                </p>
+            </div>
+
+            <form class="needs-validation col-sm-6" action="#" th:action="@{/login}" method="post" novalidate>
+                <div class="form-group">
+                    <label for="username">이메일 또는 닉네임</label>
+                    <input id="username" type="text" name="username" class="form-control"
+                           placeholder="your@email.com" aria-describedby="emailHelp" required>
+                    <small id="emailHelp" class="form-text text-muted">
+                        가입할 때 사용한 이메일 또는 닉네임을 입력하세요.
+                    </small>
+                    <small class="invalid-feedback">이메일을 입력하세요.</small>
+                </div>
+                <div class="form-group">
+                    <label for="password">패스워드</label>
+                    <input id="password" type="password" name="password" class="form-control"
+                           aria-describedby="passwordHelp" required>
+                    <small id="passwordHelp" class="form-text text-muted">
+                        패스워드가 기억나지 않는다면, <a href="#" th:href="@{/emaillogin}">패스워드 없이 로그인하기</a>
+                    </small>
+                    <small class="invalid-feedback">패스워드를 입력하세요.</small>
+                </div>
+
+                <div class="form-group">
+                    <button class="btn btn-success btn-block" type="submit"
+                            aria-describedby="submitHelp">로그인</button>
+                    <small id="submitHelp" class="form-text text-muted">
+                        스터디올래에 처음 오신거라면 <a href="#" th:href="@{/signup}">계정을 먼저 만드세요.</a>
+                    </small>
+                </div>
+            </form>
+        </div>
+
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: form-validation"></script>
+
+</body>
+</html>
+```
+- UserDetailsService 구현
+    * post로 가는 로그인 처리 핸들러를 만들 필요없다.
+        - 스프링 시큐리티는 알아서 들어오는 데이터로 처리한다.(로그아웃도 자동)
+    * 그러나 로그인을 처리할 때 DB에 있는 정보를 참조해서 인증을 해야한다.
+    * 따라서 DB에 있는 정보를 조회할 수 있는 UserDetailsService라는 것을 구현해야 한다.
+    * 자동으로 bean으로 등록되고 UserDetailsService가 하나만 있으면 Spring Security설정을 해줄 필요 없다.
+    * 로그인할 때 패스워드는 plain text지만 PasswordEncoder를 구현했으므로 굳이 명시적으로 설정해주지 않더라도 자동으로 encoding된다.
+        - 참고) passwordEncoder가 여러 개거나 UserDetailsService가 여러 개라면 설정해야 한다.
+```java
+@Service
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    @Override
+    public UserDetails loadUserByUsername(String emailOrNickname) throws UsernameNotFoundException {
+        Account account = accountRepository.findByEmail(emailOrNickname);
+        if(account == null) { // 만약 이메일로 조회해서 null이면
+            account = accountRepository.findByNickname(emailOrNickname); // 닉네임으로 조회
+        }
+        if(account == null) { // 닉네임으로 조회해도 null이면
+            throw new UsernameNotFoundException(emailOrNickname); // emailOrNickname에 해당하는 유저가 없다는 예외 발생
+        }
+        return new UserAccount(account); // 유저가 있으면 pricipal에 해당하는 유저를 넘겨준다.
+    }
+}
+```
+- 실행하면 다음과 같이 로그인 페이지가 잘 만들어졌고 로그인, 로그아웃 기능도 정상적으로 동작한다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_14.jpg"></p>
+
+<br>
