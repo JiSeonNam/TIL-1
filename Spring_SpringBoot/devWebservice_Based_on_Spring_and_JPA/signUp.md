@@ -2144,3 +2144,95 @@ class MainControllerTest {
 }
 ```
 <br>
+
+## 로그인 기억하기
+- 세션이 만료 되더라도 로그인을 유지하고 싶을 때 사용하는 방법
+    * 쿠키에 인증 정보를 남겨두고 세션이 만료 됐을 때에는 쿠키에 남아있는 정보로 인증한다.
+- 1. 해시 기반의 쿠키
+    * Username
+    * Password
+    * 만료 기간
+    * Key
+        - 애플리케이션 마다 다른 값을 줘야 한다.
+        - 참고) 스프링 시큐리티 설정에서 `http.rememberMe().key("key 값")`으로 키 값만 설정하면 된다. -> 안전하지 않아서 쓸 일이 없을 듯하다.
+    * 만약 쿠키를 탈취당하면? 계정을 뺏긴 것과 같다. 치명적인 단점이다.
+- 2. 조금 더 안전한 방법은?
+    * 쿠키안에 랜덤한 문자열(토큰)을 만들어 같이 저장하고 매번 인증할 때마다 바꾼다.
+    * 쿠키 구성 : Username, 토큰
+    * 그러나 이 방법도 취약하다. 
+        - 쿠키를 탈취 당하면, 해커가 쿠키로 인증을 할 수 있고, 희생자는 쿠키로 인증하지 못한다.
+- 3. 조금 더 개선한 방법
+    * [Improved Persistent Login Cookie Best Practice](https://www.programering.com/a/MDO0MzMwATA.html)
+    * 랜덤한 토큰 값을 쓰는 위의 방법에서 랜덤값이지만 고정된 시리즈라는 값을 사용한다.
+        - 쿠키 구성 : Username, 토큰(랜덤, 매번 바뀜), 시리즈(랜덤, 고정)
+        - 토큰은 매번 쿠키로 인증할 때마다 값이 바뀌고 시리즈는 바뀌지 않는다.
+    * 쿠키를 탈취 당한 경우, **희생자는 유효하지 않은 토큰과 유효한 시리즈와 Username으로 접속하게 된다.**
+    * 이 경우, 모든 토큰을 삭제하여 해커가 더이상 탈취한 쿠키를 사용하지 못하도록 방지할 수 있다.
+        - 따라서 해커와 희생자 모두 쿠키로 로그인하지 못하고 희생자는 form기반의 로그인창으로만 로그인할 수 있다.
+- Spring Security는 해싱 기반의 쿠키 방법과 가장 안전한 방법 2개를 제공한다.
+<br>
+
+### 구현
+- Spring Security 설정
+```java
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    private final AccountService accountService;
+    private final DataSource dataSource;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        
+        ...
+        
+        http.rememberMe()
+                // tokenRepository를 쓸 때는 userDetailsService도 같이 설정해줘야 한다. 이미 accountService에 구현했으므로 주입받아 사용한다.
+                .userDetailsService(accountService) 
+                .tokenRepository(tokenRepository()); // username, 토큰, 시리즈 3개의 정보가 필요하다.
+    }
+
+    @Bean
+    public PersistentTokenRepository tokenRepository() {
+        JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
+        jdbcTokenRepository.setDataSource(dataSource); // JDBC이므로 DataSource가 필요하고 JPA를 사용하기 때문에 기본적으로 bean으로 등록되어 있다.
+        return jdbcTokenRepository;
+    }
+
+    ...
+}
+```
+- JdbcTokenRepository가 사용하는 스키마가 있는데 이것에 맵핑이 되는 엔티티를 추가한다.
+```java
+@Table(name = "persistent_logins")
+@Entity
+@Getter @Setter
+public class PersistentLogins {
+
+    @Id
+    @Column(length = 64)
+    private String series;
+
+    @Column(nullable = false, length = 64)
+    private String username;
+
+    @Column(nullable = false, length = 64)
+    private String token;
+
+    @Column(name = "last_used", nullable = false, length = 64)
+    private LocalDateTime lastUsed;
+
+}
+```
+- 로그인 뷰에 로그인 유지 체크 박스 추가
+```html
+<div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" id="rememberMe" name="remember-me" checked>
+    <label class="form-check-label" for="rememberMe" aria-describedby="rememberMeHelp">로그인 유지</label>
+</div>
+```
+- 실행하고 로그인 유지 체크박스를 체크하면 사용할 수 있고 세션Id를 삭제해도 로그인이 풀리지 않는다.
+    * rememberMe가 있으므로 오히려 세션Id가 새로 생긴다.
+<br>
