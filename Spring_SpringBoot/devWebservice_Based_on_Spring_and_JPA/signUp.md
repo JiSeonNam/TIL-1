@@ -2057,3 +2057,90 @@ public class AccountService implements UserDetailsService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_14.jpg"></p>
 
 <br>
+
+## 로그인&로그아웃 테스트
+
+### 목표
+- 폼 서브밋 요청(post)은 반드시 `.with(csrf())`를 추가
+    * csrf 토큰도 같이 전송한다.
+- `.andExpect(authenticated())` 또는 `.andExpect(unauthenticated())`로 인증 여부 확인
+- `.andExpect(status().is3xxRedirection())`로 리다이렉트 응답 확인
+- `.andExpect(redirectedUrl())`로 리다이렉트 URL 확인
+- JUnit 5의 `@BeforeEach`와 `@AfterEach` 사용
+    * 사실 코드가 완전히 똑같은 테스트는 JUnit5가 제공하는 ParameterizedTest를 사용하는 것이 적절하다.
+- 임의로 로그인 된 사용자가 필요한 경우에는 `@WithMockUser` 사용
+<br>
+
+### 구현
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class MainControllerTest {
+
+	@Autowired MockMvc mockMvc;
+	@Autowired AccountService accountService;
+	@Autowired AccountRepository accountRepository;
+
+	@BeforeEach
+	void beforeEach() {
+		SignUpForm signUpForm = new SignUpForm();
+		signUpForm.setNickname("khy07181");
+		signUpForm.setEmail("khy07181@email.com");
+		signUpForm.setPassword("12345678");
+		accountService.processNewAccount(signUpForm);
+	}
+
+	@AfterEach
+	void afterEach() {
+		accountRepository.deleteAll(); // 테스트 마다 중복된 계정으로 signUpForm이 들어가므로 끝날 때마다 삭제
+	}
+
+	@DisplayName("이메일로 로그인 성공")
+	@Test
+	void login_with_email() throws Exception {
+		mockMvc.perform(post("/login")
+				.param("username", "khy07181@email.com")
+				.param("password", "12345678")
+				.with(csrf()))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/"))
+				.andExpect(authenticated().withUsername("khy07181"));
+	}
+
+	@DisplayName("이메일로 로그인 성공")
+	@Test
+	void login_with_nickname() throws Exception {
+		mockMvc.perform(post("/login")
+				.param("username", "khy07181")
+				.param("password", "12345678")
+				.with(csrf()))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/"))
+				.andExpect(authenticated().withUsername("khy07181"));
+	}
+
+	@DisplayName("로그인 실패")
+	@Test
+	void login_fail() throws Exception {
+		mockMvc.perform(post("/login")
+				.param("username", "111111")
+				.param("password", "000000000")
+				.with(csrf()))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/login?error"))
+				.andExpect(unauthenticated());
+	}
+
+	@WithMockUser
+	@DisplayName("로그아웃")
+	@Test
+	void logout() throws Exception {
+		mockMvc.perform(post("/logout")
+				.with(csrf()))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/"))
+				.andExpect(unauthenticated());
+	}
+}
+```
+<br>
