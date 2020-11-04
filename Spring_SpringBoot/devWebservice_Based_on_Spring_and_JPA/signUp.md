@@ -2236,3 +2236,124 @@ public class PersistentLogins {
 - 실행하고 로그인 유지 체크박스를 체크하면 사용할 수 있고 세션Id를 삭제해도 로그인이 풀리지 않는다.
     * rememberMe가 있으므로 오히려 세션Id가 새로 생긴다.
 <br>
+
+## 프로필 뷰
+
+### 목표
+- 정보의 유/무 여부에 따라 보여줄 메세지가 다르다.
+- 현재 유저가 프로필을 수정할 수 있는 권한이 있는지 판단해야 한다.
+<br>
+
+### 구현
+- 프로필 뷰 맵핑 추가
+    * 만약 nickname에 해당하는 account와 현재 조회를 하고 있는 @CurrentUser account가 일치하면 수정 권한이 있는 유저이다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    ...
+
+    @GetMapping("/profile/{nickname}")
+    public String viewProfile(@PathVariable String nickname, Model model, @CurrentUser Account account) {
+        Account byNickname = accountRepository.findByNickname(nickname);
+        if(nickname == null) {
+            throw new IllegalArgumentException(nickname + "에 해당하는 사용자가 없습니다.");
+        }
+
+        model.addAttribute(byNickname);
+        model.addAttribute("isOwner", byNickname.equals(account));
+        return "account/profile";
+
+    }
+}
+```
+- 프로필 뷰 생성
+    * account의 프로필 이미지가 비어있으면 기본 이미지로 설정
+```html
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+<div th:replace="fragments.html :: main-nav"></div>
+<div class="container">
+    <div class="row mt-5 justify-content-center">
+        <div class="col-2">
+            <!-- Avatar -->
+            <svg th:if="${#strings.isEmpty(account.profileImage)}" class="img-fluid float-left rounded img-thumbnail"
+                 th:data-jdenticon-value="${account.nickname}" width="125" height="125"></svg>
+            <img th:if="${!#strings.isEmpty(account.profileImage)}" class="img-fluid float-left rounded img-thumbnail"
+                 th:src="${account.profileImage}"
+                 width="125" height="125"/>
+        </div>
+        <div class="col-8">
+            <h1 class="display-4 " th:text="${account.nickname}">Whiteship</h1>
+            <p class="lead" th:if="${!#strings.isEmpty(account.bio)}" th:text="${account.bio}">bio</p>
+            <p class="lead" th:if="${#strings.isEmpty(account.bio) && isOwner}">
+                한 줄 소개를 추가하세요.
+            </p>
+        </div>
+    </div>
+
+    <div class="row mt-3 justify-content-center">
+        <div class="col-2">
+            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                <a class="nav-link active" id="v-pills-intro-tab" data-toggle="pill" href="#v-pills-profile"
+                   role="tab" aria-controls="v-pills-profile" aria-selected="true">소개</a>
+                <a class="nav-link" id="v-pills-study-tab" data-toggle="pill" href="#v-pills-study"
+                   role="tab" aria-controls="v-pills-study" aria-selected="false">스터디</a>
+            </div>
+        </div>
+        <div class="col-8">
+            <div class="tab-content" id="v-pills-tabContent">
+                <div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel" aria-labelledby="v-pills-home-tab">
+                    <p th:if="${!#strings.isEmpty(account.url)}">
+                            <span style="font-size: 20px;">
+                                <i class="fa fa-link col-1"></i>
+                            </span>
+                        <span th:text="${account.url}" class="col-11"></span>
+                    </p>
+                    <p th:if="${!#strings.isEmpty(account.occupation)}">
+                            <span style="font-size: 20px;">
+                                <i class="fa fa-briefcase col-1"></i>
+                            </span>
+                        <span th:text="${account.occupation}" class="col-9"></span>
+                    </p>
+                    <p th:if="${!#strings.isEmpty(account.location)}">
+                            <span style="font-size: 20px;">
+                                <i class="fa fa-location-arrow col-1"></i>
+                            </span>
+                        <span th:text="${account.location}" class="col-9"></span>
+                    </p>
+                    <p th:if="${isOwner}">
+                            <span style="font-size: 20px;">
+                                <i class="fa fa-envelope-o col-1"></i>
+                            </span>
+                        <span th:text="${account.email}" class="col-9"></span>
+                    </p>
+                    <p th:if="${isOwner || account.emailVerified}">
+                            <span style="font-size: 20px;">
+                                <i class="fa fa-calendar-o col-1"></i>
+                            </span>
+                        <span th:if="${isOwner && !account.emailVerified}" class="col-9">
+                                <a href="#" th:href="@{'/checkemail?email=' + ${account.email}}">가입을 완료하려면 이메일을 확인하세요.</a>
+                            </span>
+                        <span th:text="${#temporals.format(account.joinedAt, 'yyyy년 M월 가입')}" class="col-9"></span>
+                    </p>
+                    <div th:if="${isOwner}">
+                        <a class="btn btn-outline-primary" href="#" th:href="@{/settings/profile}">프로필 수정</a>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="v-pills-study" role="tabpanel" aria-labelledby="v-pills-profile-tab">
+                    Study
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+```
+- 실행 후 확인하면 이메일 인증을 해도 가입 날짜가 제대로 뜨지 않는 것을 확인할 수 있다. (에러)
+<br>
