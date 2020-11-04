@@ -2355,5 +2355,72 @@ public class AccountController {
 </body>
 </html>
 ```
-- 실행 후 확인하면 이메일 인증을 해도 가입 날짜가 제대로 뜨지 않는 것을 확인할 수 있다. (에러)
+- 실행 후 확인하면 이메일 인증을 해도 가입 날짜가 제대로 뜨지 않는다. (에러 발생)
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_15.jpg"></p>
+
+<br>
+
+## Open EntityManager (또는 Session) In View 필터
+- JPA EntityManager(영속성 컨텍스트)를 요청을 처리하는 전체 프로세스에 바인딩 시켜주는 필터이다.
+    * 기본적으로 스프링 부트 애플리케이션에서 활성화되어 있다.
+    * 뷰를 랜더링 할때까지 영속성 컨텍스트를 유지하기 때문에 필요한 데이터를 랜더링 하는 시점에 추가로 읽어올 수 있다. (Lazy Loading)
+    * 엔티티 객체 변경은 반드시 트랜잭션 안에서 해야 한다. 그래야 트랜잭션 종료 직전 또는 필요한 시점에 변경 사항을 DB에 반영한다.
+- 현재의 에러는 컨트롤러에서 데이터를 변경했지만 DB에 반영이 되지 않았다.
+    * **트랜잭션 범위 밖에서 일어난 일이기 때문**이다.
+    * 영속성 컨텍스트가 관리하지 못한다.
+- 따라서 스터디올래에서는 데이터 변경은 서비스 계층으로 위임해서 트랜잭션 안에서 처리한다.
+    * 데이터 조회는 리파지토리 또는 서비스를 사용한다.
+<br>
+
+### 해결
+- `completeSignUp()`과 `login()` 모두 accountService에 위임
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    ...
+
+    @GetMapping("/check-email-token")
+    public String checkEmailToken(String token, String email, Model model) {
+        Account account = accountRepository.findByEmail(email);
+        String view = "account/checked-email";
+        
+        if (account == null) {
+            model.addAttribute("error", "wrong.email");
+            return view;
+        }
+        if (!account.isValidToken(token)) {
+            model.addAttribute("error", "wrong.token");
+            return view;
+        }
+
+        accountService.completeSignUp(account); // accountService에서 모두 처리
+        model.addAttribute("numberOfUser", accountRepository.count());
+        model.addAttribute("nickname", account.getNickname());
+        return view;
+    }
+
+    ...
+}
+```
+- accountService에서 구현
+    * 데이터를 변경하지 않고 조회만 하는 `loadUserByUsername()`에는 `@Transactional(readOnly = true)`를 붙인다.
+```java
+@Service
+@Transactional // 트랜잭션 범위 안에서 관리
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public void completeSignUp(Account account) {
+        account.completeSignUp();
+        login(account);
+    }
+}
+```
+- 실행해서 확인하면 다음과 같이 가입 날짜가 잘 나오는 것을 확인할 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/signUp_16.jpg"></p>
+
 <br>
