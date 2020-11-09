@@ -6,7 +6,7 @@
 ### 목차
 - [1. 프로젝트 시작하기](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/project_start.md)
 - [2. 회원 가입](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/signUp.md)
-- [3. 계정 설정]()
+- [3. 계정 설정](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/account_settings.md)
 - [4. 관심 주제와 지역 정보]()
 - [5. DB와 이메일 설정]()
 - [6. 스터디]()
