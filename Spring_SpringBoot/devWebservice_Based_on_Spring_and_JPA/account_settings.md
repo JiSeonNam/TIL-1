@@ -200,7 +200,7 @@ public class AccountService implements UserDetailsService {
     * profile을 바인딩 받을 때 NullPointException이 발생한다.
         - Profile 객체에 기본 생성자가 없기 때문이다.
         - `@ModelAttribute`로 데이터를 받아오려고 할 때 인스턴스를 먼저 만든 다음 setter를 사용해 주입하려고 한다.
-        - 이 때 생성자가 1개 밖에 없기 때문에 account를 참조하려 하지만 acccount는 없다.
+        - 이 때 생성자가 1개 밖에 없기 때문에 account를 참조하려 하지만 account는 없다.
         - model에 전달해준 account를 쓸 수 있지 않다. 따라서 기본 생성자를 만들어줘야 한다.
     * DB에 업데이트가 되지 않는다.
         - accountService에서 `completeSignUp()`과 `updateProfile()` 모두 트랜잭션 안에서 처리하지만 객체의 상태가 다르다.
