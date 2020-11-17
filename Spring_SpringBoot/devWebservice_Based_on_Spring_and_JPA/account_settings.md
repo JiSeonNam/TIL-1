@@ -21,12 +21,16 @@ public class SettingsController {
 @Data
 public class Profile {
 
+    @Length(max = 35)
     private String bio;
 
+    @Length(max = 50)
     private String url;
 
+    @Length(max = 50)
     private String occupation;
 
+    @Length(max = 50)
     private String location;
 
     public Profile(Account account) {
@@ -231,7 +235,7 @@ public class AccountService implements UserDetailsService {
         account.setUrl(profile.getUrl());
         account.setOccupation(profile.getOccupation());
         account.setLocation(profile.getLocation());
-        accountRepository.save(account); // save로 DB에 반영(merge)
+        accountRepository.save(account); // save로 DB에 반영(merge) 
     }
 }
 ```
@@ -274,4 +278,121 @@ public class SettingsController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_2.jpg"></p>
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_3.jpg"></p>
 
+<br>
+
+## 프로필 수정 테스트
+- 지금까지의 테스트는 인증되지 않아도 사용할 수 있었지만 인증된 사용자의 정보를 수정하는 기능을 테스트할 것이다.
+- 인증된 사용자가 접근할 수 있는 기능 테스트하기
+    * 실제 DB에 저장되어 있는 정보에 대응하는 인증된 Authentication이 필요하다.
+    * `@WithMockUser`로는 처리할 수 없다.
+- 인증된 사용자를 제공할 커스텀 애노테이션 만들기
+    * `@WithAccount`
+    * security context를 설정할 수 있는 방법
+    * 
+    * [참고 자료](https://docs.spring.io/spring-security/site/docs/current/reference/html5/#test-method-withsecuritycontext)
+<br>
+
+### 테스트 코드 작성
+- 커스텀 애노테이션 생성
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@WithSecurityContext(factory = WithAccountSecurityContextFactory.class)
+public @interface WithAccount {
+
+    String value();
+
+}
+```
+- security context를 만들어줄 factory 생성
+    * bean으로 등록되기 때문에 다른 bean들을 주입받을 수 있다.
+```java
+@RequiredArgsConstructor
+public class WithAccountSecurityContextFactory implements WithSecurityContextFactory<WithAccount> {
+
+    private final AccountService accountService;
+
+    @Override
+    public SecurityContext createSecurityContext(WithAccount withAccount) {
+        String nickname = withAccount.value();
+
+        SignUpForm signUpForm = new SignUpForm();
+        signUpForm.setNickname(nickname);
+        signUpForm.setEmail(nickname + "@email.com");
+        signUpForm.setPassword("12345678");
+        accountService.processNewAccount(signUpForm);
+
+        // 받아온 value에 해당하는 데이터를 읽어서 SecurityContext에 넣어준다.
+        UserDetails principal = accountService.loadUserByUsername(nickname);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities());
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        return context;
+    }
+}
+```
+- 테스트 코드 작성
+    * `@AfterEach`
+        - WithAccountSecurityContextFactory에 의해 계정이 생성되므로 테스트 후 반드시 삭제해야 한다.
+    * `@WithAccount("hayoung")`
+        - 커스텀 애노테이션으로 hayoung이라는 계정 생성
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class SettingsControllerTest {
+
+    @Autowired MockMvc mockMvc;
+    @Autowired AccountRepository accountRepository;
+
+    @AfterEach
+    void afterEach() {
+        accountRepository.deleteAll();
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("프로필 수정 폼")
+    @Test
+    void updateProfileForm() throws Exception {
+        mockMvc.perform(get(SettingsController.SETTINGS_PROFILE_URL))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("profile"));
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("프로필 수정하기 - 입력값 정상")
+    @Test
+    void updateProfile() throws Exception {
+        String bio = "짧은 소개를 수정하는 경우";
+
+        mockMvc.perform(post(SettingsController.SETTINGS_PROFILE_URL)
+                .param("bio", bio)
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(SettingsController.SETTINGS_PROFILE_URL))
+                .andExpect(flash().attributeExists("message"));
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        assertEquals(bio, hayoung.getBio());
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("프로필 수정하기 - 입력값 에러")
+    @Test
+    void updateProfile_error() throws Exception {
+        String bio = "35자가 넘도록 길게 소개를 수정하는 경우, 35자가 넘도록 길게 소개를 수정하는 경우, 35자가 넘도록 길게 소개를 수정하는 경우";
+
+        mockMvc.perform(post(SettingsController.SETTINGS_PROFILE_URL)
+                .param("bio", bio)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name(SettingsController.SETTINGS_PROFILE_VIEW_NAME))
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("profile"))
+                .andExpect(model().hasErrors());
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        assertNull(hayoung.getBio());
+    }
+}
+```
 <br>
