@@ -288,7 +288,6 @@ public class SettingsController {
 - 인증된 사용자를 제공할 커스텀 애노테이션 만들기
     * `@WithAccount`
     * security context를 설정할 수 있는 방법
-    * 
     * [참고 자료](https://docs.spring.io/spring-security/site/docs/current/reference/html5/#test-method-withsecuritycontext)
 <br>
 
@@ -395,4 +394,208 @@ class SettingsControllerTest {
     }
 }
 ```
+<br>
+
+## 프로필 이미지 변경
+- Profile에 프로필 이미지 필드 추가
+```java
+@Data
+@NoArgsConstructor
+public class Profile {
+
+    ...
+
+    private String profileImage;
+
+    public Profile(Account account) {
+        ...
+        this.profileImage = account.getProfileImage();
+    }
+}
+
+```
+- `updateProfile()`에 프로필 이미지 추가
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public void updateProfile(Account account, Profile profile) {
+        ...
+        account.setProfileImage(profile.getProfileImage());
+        accountRepository.save(account);
+    }
+}
+```
+- 프로필 이미지 뷰 추가
+    * type을 hidden으로 설정해서 값을 사용자가 직접 입력하는 것이 아니라 [Cropper.js](https://fengyuanchen.github.io/cropperjs/)를 사용해 이미지 영역을 선택할 수 있도록 한다.
+    * Cropper 설치
+        - `npm install cropper`
+        - `npm install jquery-cropper`
+    * [DataURL](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs) 사용
+        - 이미지를 파일로 db에 저장하지 않고 페이지에 내장된 형태로 사용할 수 있다.
+```html
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+<div th:replace="fragments.html :: main-nav"></div>
+    <div class="container">
+        <div class="row mt-5 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: settings-menu(currentMenu='profile')"></div>
+            </div>
+            <div class="col-8">
+                <div th:if="${message}" class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+                    <span th:text="${message}">메시지</span>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="row">
+                    <h2 class="col-sm-12" th:text="${account.nickname}">whiteship</h2>
+                </div>
+                <div class="row mt-3">
+                    <form class="col-sm-6" action="#"
+                          th:action="@{/settings/profile}" th:object="${profile}" method="post" novalidate>
+
+                        ...
+
+                        <div class="form-group">
+                            <input id="profileImage" type="hidden" th:field="*{profileImage}" class="form-control" />
+                        </div>
+
+                        <div class="form-group">
+                            <button class="btn btn-primary btn-block" type="submit"
+                                    aria-describedby="submitHelp">수정하기</button>
+                        </div>
+                    </form>
+                    <div class="col-sm-6">
+                        <div class="card text-center">
+                            <div class="card-header">
+                                프로필 이미지
+                            </div>
+                            <div id="current-profile-image" class="mt-3">
+                                <svg th:if="${#strings.isEmpty(profile.profileImage)}" class="rounded"
+                                     th:data-jdenticon-value="${account.nickname}" width="125" height="125"></svg>
+                                <img th:if="${!#strings.isEmpty(profile.profileImage)}" class="rounded"
+                                     th:src="${profile.profileImage}"
+                                     width="125" height="125" alt="name" th:alt="${account.nickname}"/>
+                            </div>
+                            <div id="new-profile-image" class="mt-3"></div>
+                            <div class="card-body">
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="profile-image-file">
+                                    <label class="custom-file-label" for="profile-image-file">프로필 이미지 변경</label>
+                                </div>
+                                <div id="new-profile-image-control" class="mt-3">
+                                    <button class="btn btn-outline-primary btn-block" id="cut-button">자르기</button>
+                                    <button class="btn btn-outline-success btn-block" id="confirm-button">확인</button>
+                                    <button class="btn btn-outline-warning btn-block" id="reset-button">취소</button>
+                                </div>
+                                <div id="cropped-new-profile-image" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <link  href="/node_modules/cropper/dist/cropper.min.css" rel="stylesheet">
+    <script src="/node_modules/cropper/dist/cropper.min.js"></script>
+    <script src="/node_modules/jquery-cropper/dist/jquery-cropper.min.js"></script>
+    <script type="application/javascript">
+        $(function() {
+            cropper = '';
+            let $confirmBtn = $("#confirm-button");
+            let $resetBtn = $("#reset-button");
+            let $cutBtn = $("#cut-button");
+            let $newProfileImage = $("#new-profile-image");
+            let $currentProfileImage = $("#current-profile-image");
+            let $resultImage = $("#cropped-new-profile-image");
+            let $profileImage = $("#profileImage");
+
+            $newProfileImage.hide();
+            $cutBtn.hide();
+            $resetBtn.hide();
+            $confirmBtn.hide();
+
+            $("#profile-image-file").change(function(e) {
+                if (e.target.files.length === 1) {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        if (e.target.result) {
+                            let img = document.createElement("img");
+                            img.id = 'new-profile';
+                            img.src = e.target.result;
+                            img.width = 250;
+
+                            $newProfileImage.html(img);
+                            $newProfileImage.show();
+                            $currentProfileImage.hide();
+
+                            let $newImage = $(img);
+                            $newImage.cropper({aspectRatio: 1});
+                            cropper = $newImage.data('cropper');
+
+                            $cutBtn.show();
+                            $confirmBtn.hide();
+                            $resetBtn.show();
+                        }
+                    };
+
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            $resetBtn.click(function() {
+                $currentProfileImage.show();
+                $newProfileImage.hide();
+                $resultImage.hide();
+                $resetBtn.hide();
+                $cutBtn.hide();
+                $confirmBtn.hide();
+                $profileImage.val('');
+            });
+
+            $cutBtn.click(function () {
+                let dataUrl = cropper.getCroppedCanvas().toDataURL();
+                let newImage = document.createElement("img");
+                newImage.id = "cropped-new-profile-image";
+                newImage.src = dataUrl;
+                newImage.width = 125;
+                $resultImage.html(newImage);
+                $resultImage.show();
+                $confirmBtn.show();
+
+                $confirmBtn.click(function () {
+                    $newProfileImage.html(newImage);
+                    $cutBtn.hide();
+                    $confirmBtn.hide();
+                    $profileImage.val(dataUrl);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+```
+- 지금 상태는 프로필 이미지 수정을 해도 수정되지 않는다. 
+    * 네비게이션 바의 이미지도 계정이 가지고 있는 데이터로 반영해줘야 한다.
+    * account에 있는 프로필 이미지가 없으면 jdenticon으로 보여주고 있으면 account에 있는 프로필 이미지를 그대로 보여주도록 설정
+```html
+<svg th:if="${#strings.isEmpty(account?.profileImage)}" th:data-jdenticon-value="${#authentication.name}"
+    width="24" height="24" class="rounded border bg-light"></svg>
+<img th:if="${!#strings.isEmpty(account?.profileImage)}" th:src="${account.profileImage}"
+    width="24" height="24" class="rounded border"/>
+```
+- 실행하면 다음과 같이 프로필 이미지를 잘라서 수정할 수 있고 홈 화면에서도 네이게이션 메뉴에 프로필 이미지가 변경된 것을 확인할 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_4.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_5.jpg"></p>
+
 <br>
