@@ -599,3 +599,178 @@ public class AccountService implements UserDetailsService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_5.jpg"></p>
 
 <br>
+
+## 패스워드 수정
+
+### 목표
+- 패스워드 탭 활성화.
+- 새 패스워드와 새 패스워드 확인의 값이 일치해야 한다.
+- 패스워드 인코딩
+- 둘 다 최소 8자에서 최대 50자 사이.
+- 사용자 정보를 변경하는 작업.
+    * 서비스로 위임해서 트랜잭션 안에서 처리해야 한다.
+    * 또는 Detached 상태의 객체를 변경한 다음 Repositoiry의 save를 호출해서 상태 변경 내역을 적용해야 한다.(Merge)
+<br>
+
+### 구현
+- 패스워드 폼 생성
+```java
+@Data
+public class PasswordForm {
+
+    @Length(min = 8, max = 50)
+    private String newPassword;
+
+    @Length(min = 8, max = 50)
+    private String newPasswordConfirm;
+}
+```
+- 새로운 비밀번호를 2번 입력받은 두 값이 같은지 확인하는 Validator 생성
+    * 다른 bean을 사용할 일이 없으므로 굳이 bean으로 등록할 필요는 없다.
+```java
+public class PasswordFormValidator implements Validator {
+
+    @Override
+    public boolean supports(Class<?> aClass) {
+        return PasswordForm.class.isAssignableFrom(aClass); // 어떤 타입의 폼 객체를 검증할 것인가 - PasswordForm 타입에 할당가능한 타입이면 검증하겠다.
+    }
+
+    @Override
+    public void validate(Object target, Errors errors) {
+        PasswordForm passwordForm = (PasswordForm)target; // target 객체를 PasswordForm 타입으로 변경해서 검증
+        if (!passwordForm.getNewPassword().equals(passwordForm.getNewPasswordConfirm())) {
+            errors.rejectValue("newPassword", "wrong.value", "입력한 새 패스워드가 일치하지 않습니다.");
+        }
+    }
+}
+```
+- 패스워드 수정 맵핑
+    * `@InitBinder("passwordForm")`
+        - [회원가입 폼 서브밋 검증](https://github.com/qlalzl9/TIL/blob/a3359d29c14b45d0d57404d640d7597fa395166f/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/signUp.md#%ED%9A%8C%EC%9B%90%EA%B0%80%EC%9E%85-%ED%8F%BC-%EC%84%9C%EB%B8%8C%EB%B0%8B-%EA%B2%80%EC%A6%9D)에서와 같이 커스텀 검증을 수행한다.
+    * `@GetMapping(SETTINGS_PASSWORD_URL)`
+        - model에 account와 new PasswordForm()를 넘겨주고
+        - settings/profile 뷰로 return
+    * `@PostMapping(SETTINGS_PASSWORD_URL)`
+        - 에러가 있으면 model에 다시 account를 넣고 settings/password 뷰로 return
+        - 에러가 없으면 accountService의 `updatePassword()`로 패스워드 변경 후 메세지를 띄우고 /settings/password로 redirect
+```java
+@Controller
+@RequiredArgsConstructor
+public class SettingsController {
+
+    @InitBinder("passwordForm")
+    public void initBinder(WebDataBinder webDataBinder) {
+        webDataBinder.addValidators(new PasswordFormValidator());
+    }
+
+    ...
+
+    static final String SETTINGS_PASSWORD_VIEW_NAME = "settings/password";
+    static final String SETTINGS_PASSWORD_URL = "/settings/password";
+
+    private final AccountService accountService;
+
+    ...
+
+    @GetMapping(SETTINGS_PASSWORD_URL)
+    public String updatePasswordForm(@CurrentUser Account account, Model model) {
+        model.addAttribute(account);
+        model.addAttribute(new PasswordForm());
+        return SETTINGS_PASSWORD_VIEW_NAME;
+    }
+
+    @PostMapping(SETTINGS_PASSWORD_URL)
+    public String updatePassword(@CurrentUser Account account, @Valid PasswordForm passwordForm, Errors errors,
+                                 Model model, RedirectAttributes attributes) {
+        if (errors.hasErrors()) {
+            model.addAttribute(account);
+            return SETTINGS_PASSWORD_VIEW_NAME;
+        }
+
+        accountService.updatePassword(account, passwordForm.getNewPassword());
+        attributes.addFlashAttribute("message", "패스워드를 변경했습니다.");
+        return "redirect:" + SETTINGS_PASSWORD_URL;
+    }
+}
+```
+- accountService에 updatePassword() 기능 추가
+    * 객체의 상태가 detached 상태이므로 변경이력을 추적하지않는다.
+    * 따라서 merge해줘야 한다.
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public void updatePassword(Account account, String newPassword) {
+        account.setPassword(newPassword);
+        accountRepository.save(account);
+    }
+}
+```
+- 패스워드 변경 뷰 생성
+```html
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <div th:replace="fragments.html :: main-nav"></div>
+    <div class="container">
+        <div class="row mt-5 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: settings-menu(currentMenu='profile')"></div>
+            </div>
+            <div class="col-8">
+                <div th:if="${message}" class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+                    <span th:text="${message}">메시지</span>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="row">
+                    <h2 class="col-sm-12" >패스워드 변경</h2>
+                </div>
+                <div class="row mt-3">
+                    <form class="needs-validation col-12" action="#"
+                          th:action="@{/settings/password}" th:object="${passwordForm}" method="post" novalidate>
+                        <div class="form-group">
+                            <label for="newPassword">새 패스워드</label>
+                            <input id="newPassword" type="password" th:field="*{newPassword}" class="form-control"
+                                   aria-describedby="newPasswordHelp" required min="8" max="50">
+                            <small id="newPasswordHelp" class="form-text text-muted">
+                                새 패스워드를 입력하세요.(8자 이상 50자 이내)
+                            </small>
+                            <small class="invalid-feedback">패스워드를 입력하세요.</small>
+                            <small class="form-text text-danger" th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}">New Password Error</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPasswordConfirm">새 패스워드 확인</label>
+                            <input id="newPasswordConfirm" type="password" th:field="*{newPasswordConfirm}" class="form-control"
+                                   aria-describedby="newPasswordConfirmHelp" required min="8" max="50">
+                            <small id="newPasswordConfirmHelp" class="form-text text-muted">
+                                새 패스워드를 다시 한번 입력하세요.(8자 이상 50자 이내)
+                            </small>
+                            <small class="invalid-feedback">새 패스워드를 다시 입력하세요.</small>
+                            <small class="form-text text-danger" th:if="${#fields.hasErrors('newPasswordConfirm')}" th:errors="*{newPasswordConfirm}">New Password Confirm Error</small>
+                        </div>
+
+                        <div class="form-group">
+                            <button class="btn btn-outline-primary" type="submit" aria-describedby="submitHelp">패스워드 변경하기</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+<script th:replace="fragments.html :: form-validation"></script>
+</body>
+</html>
+```
+- 실행 후 패스워드를 수정하면 다음과 같이 성공적으로 변경되는 것을 확인할 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_6.jpg"></p>
+
+<br>
