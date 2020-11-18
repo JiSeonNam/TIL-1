@@ -1361,3 +1361,194 @@ class SettingsControllerTest {
 }
 ```
 <br>
+
+## 패스워드를 잃어버린 경우 - 패스워드 없이 로그인 하기(이메일 링크)
+
+### 목표
+- 패스워드를 잊은 경우에는 “로그인 할 수 있는 링크”를 이메일로 전송한다.
+- 이메일로 전송된 링크를 클릭하면 로그인한다.
+- 링크를 너무 자주 보내 악의적인 이용을 막기 위해 시간을 1시간으로 설정
+<br>
+
+### 구현
+- 맵핑
+    * `@GetMapping("/email-login")`
+        - 이메일을 입력할 수 있는 폼을 보여주고, 링크 전송 버튼을 제공한다.
+    * `@PostMapping("/email-login")`
+        - 입력받은 이메일에 해당하는 계정을 찾아보고, 있는 계정이면 로그인 가능한 링크를 이메일로 전송한다.
+        - 이메일 전송 후, 안내 메시지를 보여준다.
+    * `@GetMapping("/login-by-email")`
+        - 토큰과 이메일을 확인한 뒤 해당 계정으로 로그인한다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    ...
+
+    @GetMapping("/email-login")
+    public String emailLoginForm() {
+        return "account/email-login";
+    }
+
+    @PostMapping("/email-login")
+    public String sendEmailLoginLink(String email, Model model, RedirectAttributes attributes) {
+        Account account = accountRepository.findByEmail(email);
+        if (account == null) {
+            model.addAttribute("error", "유효한 이메일 주소가 아닙니다.");
+            return "account/email-login";
+        }
+
+        if (!account.canSendConfirmEmail()) {
+            model.addAttribute("error", "이메일 로그인은 1시간 뒤에 사용할 수 있습니다.");
+            return "account/email-login";
+        }
+
+        accountService.sendLoginLink(account);
+        attributes.addFlashAttribute("message", "이메일 인증 메일을 발송했습니다.");
+        return "redirect:/email-login";
+    }
+
+    @GetMapping("/login-by-email")
+    public String loginByEmail(String token, String email, Model model) {
+        Account account = accountRepository.findByEmail(email);
+        String view = "account/logged-in-by-email";
+        if (account == null || !account.isValidToken(token)) {
+            model.addAttribute("error", "로그인할 수 없습니다.");
+            return view;
+        }
+
+        accountService.login(account);
+        return view;
+    }
+}
+```
+- AccountService에 로그인 링크를 보내는 `sendLoginLink()` 생성
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public void sendLoginLink(Account account) {
+        account.generateEmailCheckToken();
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(account.getEmail());
+        mailMessage.setSubject("스터디 올래, 로그인 링크");
+        mailMessage.setText("/login-by-email?token=" + account.getEmailCheckToken() +
+                "&email=" + account.getEmail());
+        javaMailSender.send(mailMessage);
+    }
+}
+```
+- 패스워드 없이 로그인 관련 뷰 추가
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <div th:replace="fragments.html :: main-nav"></div>
+    <div class="container">
+        <div class="py-5 text-center">
+            <p class="lead">스터디올래</p>
+            <h2>패스워드 없이 로그인하기</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                <span th:text="${error}">완료</span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div th:if="${message}" class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+                <span th:text="${message}">완료</span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <form class="needs-validation col-sm-6" action="#" th:action="@{/email-login}" method="post" novalidate>
+                <div class="form-group">
+                    <label for="email">가입 할 때 사용한 이메일</label>
+                    <input id="email" type="email" name="email" class="form-control"
+                           placeholder="example@email.com" aria-describedby="emailHelp" required>
+                    <small id="emailHelp" class="form-text text-muted">
+                        가입할 때 사용한 이메일을 입력하세요.
+                    </small>
+                    <small class="invalid-feedback">이메일을 입력하세요.</small>
+                </div>
+
+                <div class="form-group">
+                    <button class="btn btn-success btn-block" type="submit"
+                            aria-describedby="submitHelp">로그인 링크 보내기</button>
+                    <small id="submitHelp" class="form-text text-muted">
+                        스터디올래에 처음 오신거라면 <a href="#" th:href="@{/sign-up}">계정을 먼저 만드세요.</a>
+                    </small>
+                </div>
+            </form>
+        </div>
+
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: form-validation"></script>
+</body>
+</html>
+```
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <nav th:replace="fragments.html :: main-nav"></nav>
+
+    <div class="container">
+        <div class="py-5 text-center" th:if="${error}">
+            <p class="lead">스터디올래 이메일 로그인</p>
+            <div  class="alert alert-danger" role="alert">
+                이메일이 정확하지 않거나 가입하지 않은 이메일 입니다.
+            </div>
+            <p class="lead" th:text="${email}">your@email.com</p>
+        </div>
+
+        <div class="py-5 text-center" th:if="${error == null}">
+            <p class="lead">스터디올래 이메일 로그인</p>
+
+            <h2>이메일을 확인하세요. 로그인 링크를 보냈습니다.</h2>
+            <p class="lead" th:text="${email}">your@email.com</p>
+            <small class="text-info">이메일을 확인해야 로그인 할 수 있습니다.</small>
+        </div>
+    </div>
+</body>
+</html>
+```
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <nav th:replace="fragments.html :: main-nav"></nav>
+
+    <div class="container">
+        <div class="py-5 text-center" th:if="${error}">
+            <p class="lead">스터디올래 이메일 로그인</p>
+            <div  class="alert alert-danger" role="alert" th:text="${error}">
+                로그인 할 수 없습니다.
+            </div>
+        </div>
+
+        <div class="py-5 text-center" th:if="${error == null}">
+            <p class="lead">스터디올래 이메일 로그인</p>
+            <h2>이메일로 로그인 했습니다. <a th:href="@{/settings/password}">패스워드를 변경</a>하세요.</h2>
+        </div>
+    </div>
+</body>
+</html>
+```
+- 실행해서 패스워드 없이 로그인을 하면 다음과 같이 성공적으로 동작한다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_9.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_10.jpg"></p>
+
+<br>
