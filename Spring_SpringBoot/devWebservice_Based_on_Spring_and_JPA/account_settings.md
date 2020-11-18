@@ -705,7 +705,7 @@ public class AccountService implements UserDetailsService {
     ...
 
     public void updatePassword(Account account, String newPassword) {
-        account.setPassword(newPassword);
+        account.setPassword(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
     }
 }
@@ -829,4 +829,180 @@ class SettingsControllerTest {
     }
 }
 ```
+<br>
+
+## 알림 설정
+
+### 목표
+- 특정 웹 서비스 이벤트(스터디 생성, 참가 신청 결과, 참여중인 스터디)에 대한 정보를 이메일로 받을지, 웹 알림 메시지로 받을지 선택하는 기능. 
+    * 물론 둘 다 받을 수도 있다.
+<br>
+
+### 구현
+- 알림을 받을지 설정할 폼 객체 생성
+    * profile의 경우와 마찬가지로 기본 생성자가 없으면 바인딩 받을 때 NullPointException이 발생하므로 `@NoArgsConstructor` 추가한다.
+        - [참고 링크](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/account_settings.md#%ED%94%84%EB%A1%9C%ED%95%84-%EC%88%98%EC%A0%95-%EC%B2%98%EB%A6%AC)
+```java
+@Data
+@NoArgsConstructor
+public class Notifications {
+
+    private boolean studyCreatedByEmail;
+
+    private boolean studyCreatedByWeb;
+
+    private boolean studyEnrollmentResultByEmail;
+
+    private boolean studyEnrollmentResultByWeb;
+
+    private boolean studyUpdatedByEmail;
+
+    private boolean studyUpdatedByWeb;
+
+    public Notifications(Account account) {
+        this.studyCreatedByEmail = account.isStudyCreatedByEmail();
+        this.studyCreatedByWeb = account.isStudyCreatedByWeb();
+        this.studyEnrollmentResultByEmail = account.isStudyEnrollmentResultByEmail();
+        this.studyEnrollmentResultByWeb = account.isStudyUpdatedByWeb();
+        this.studyUpdatedByEmail = account.isStudyUpdatedByEmail();
+        this.studyUpdatedByWeb = account.isStudyUpdatedByWeb();
+    }
+}
+```
+- 알림 설정 메서드 `updateNotifications()` 생성
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public void updateNotifications(Account account, Notifications notifications) {
+        account.setStudyCreatedByWeb(notifications.isStudyCreatedByWeb());
+        account.setStudyCreatedByEmail(notifications.isStudyCreatedByEmail());
+        account.setStudyUpdatedByWeb(notifications.isStudyUpdatedByWeb());
+        account.setStudyUpdatedByEmail(notifications.isStudyUpdatedByEmail());
+        account.setStudyEnrollmentResultByEmail(notifications.isStudyEnrollmentResultByEmail());
+        account.setStudyEnrollmentResultByWeb(notifications.isStudyEnrollmentResultByWeb());
+        accountRepository.save(account);
+    }
+}
+```
+- 알림 설정 맵핑
+```java
+@Controller
+@RequiredArgsConstructor
+public class SettingsController {
+
+    ...
+
+    static final String SETTINGS_NOTIFICATIONS_VIEW_NAME = "settings/notifications";
+    static final String SETTINGS_NOTIFICATIONS_URL = "/settings/notifications";
+
+    private final AccountService accountService;
+
+    ...
+
+    @GetMapping(SETTINGS_NOTIFICATIONS_URL)
+    public String updateNotificationsForm(@CurrentUser Account account, Model model) {
+        model.addAttribute(account);
+        model.addAttribute(new Notifications(account));
+        return SETTINGS_NOTIFICATIONS_VIEW_NAME;
+    }
+
+    @PostMapping(SETTINGS_NOTIFICATIONS_URL)
+    public String updateNotifications(@CurrentUser Account account, @Valid Notifications notifications, Errors errors,
+                                      Model model, RedirectAttributes attributes) {
+        if (errors.hasErrors()) {
+            model.addAttribute(account);
+            return SETTINGS_NOTIFICATIONS_VIEW_NAME;
+        }
+
+        accountService.updateNotifications(account, notifications);
+        attributes.addFlashAttribute("message", "알림 설정을 변경했습니다.");
+        return "redirect:" + SETTINGS_NOTIFICATIONS_URL;
+    }
+}
+```
+- 알림 설정 뷰 생성
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div class="container">
+        <div class="row mt-5 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: settings-menu(currentMenu='notifications')"></div>
+            </div>
+            <div class="col-8">
+                <div th:if="${message}" class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+                    <span th:text="${message}">완료</span>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="row">
+                    <h2 class="col-12">알림 설정</h2>
+                </div>
+                <div class="row mt-3" th:fragment="profile-form">
+                    <form class="col-12" action="#" th:action="@{/settings/notifications}" th:object="${notifications}" method="post" novalidate>
+                        <div class="alert alert-light" role="alert">
+                            <strong><a href="#" th:href="@{/settings/locations}">주요 활동 지역</a>에
+                                <a href="#" th:href="@{/settings/keywords}">관심있는 주제</a>의 스터디가 만들어졌을 때</strong> 알림을 받을 방법을 설정하세요.
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-switch custom-control-inline">
+                                <input type="checkbox" th:field="*{studyCreatedByEmail}" class="custom-control-input" id="studyCreatedByEmail">
+                                <label class="custom-control-label" for="studyCreatedByEmail">이메일로 받기</label>
+                            </div>
+                            <div class="custom-control custom-switch custom-control-inline">
+                                <input type="checkbox" th:field="*{studyCreatedByWeb}" class="custom-control-input" id="studyCreatedByWeb">
+                                <label class="custom-control-label" for="studyCreatedByWeb">웹으로 받기</label>
+                            </div>
+                        </div>
+                        <div class="alert alert-light" role="alert">
+                            <strong>스터디 모임 참가 신청</strong> 결과 알림을 받을 방법을 설정하세요.
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-switch custom-control-inline">
+                                <input type="checkbox" th:field="*{studyEnrollmentResultByEmail}" class="custom-control-input" id="studyEnrollmentResultByEmil">
+                                <label class="custom-control-label" for="studyEnrollmentResultByEmil">이메일로 받기</label>
+                            </div>
+                            <div class="custom-control custom-switch custom-control-inline">
+                                <input type="checkbox" th:field="*{studyEnrollmentResultByWeb}" class="custom-control-input" id="studyEnrollmentResultByWeb">
+                                <label class="custom-control-label" for="studyEnrollmentResultByWeb">웹으로 받기</label>
+                            </div>
+                        </div>
+                        <div class="alert alert-light" role="alert">
+                            <strong>참여중인 스터디</strong>에 대한 알림을 받을 방법을 설정하세요.
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-switch custom-control-inline">
+                                <input type="checkbox" th:field="*{studyUpdatedByEmail}" class="custom-control-input" id="studyWatchByEmail">
+                                <label class="custom-control-label" for="studyWatchByEmail">이메일로 받기</label>
+                            </div>
+                            <div class="custom-control custom-switch custom-control-inline">
+                                <input type="checkbox" th:field="*{studyUpdatedByWeb}" class="custom-control-input" id="studyWatchByWeb">
+                                <label class="custom-control-label" for="studyWatchByWeb">웹으로 받기</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-primary" type="submit" aria-describedby="submitHelp">저장하기</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+</body>
+</html>
+```
+- 실행하면 다음과 같이 알림 설정을 기능을 사용할 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_7.jpg"></p>
+
 <br>
