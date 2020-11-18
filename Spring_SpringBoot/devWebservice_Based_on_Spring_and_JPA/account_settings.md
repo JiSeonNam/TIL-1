@@ -1006,3 +1006,141 @@ public class SettingsController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_7.jpg"></p>
 
 <br>
+
+## ModelMapper 적용
+- [ModelMapper](http://modelmapper.org/)
+    * 객체의 프로퍼티를 다른 객체의 프로퍼티로 맵핑해주는 유틸리티
+<br>
+
+### 구현
+- ModelMapper 의존성 추가
+```xml
+<dependency>
+	<groupId>org.modelmapper</groupId>
+	<artifactId>modelmapper</artifactId>
+	<version>2.3.8</version>
+</dependency>
+```
+- Tokenizer 설정 및 Bean 등록
+    * ModelMapper를 매번 만들어서 사용할 필요가 없기 때문에 Bean으로 등록해서 사용한다.
+    * 데이터를 맵핑할 때 nested한 객체들도 지원하기 때문에 Tokenizer 설정을 추가로 해줘야 한다.
+        - 기본 설정은 모든 Tokenizer와 naming pattern이 다 적용된다.
+        - Notifications의 경우 camelCase로 되어 있어 nested한 프로퍼티 이름과 비슷하기 때문에 ModelMapper가 이해를 못할 수도 있다.
+```java
+@Configuration
+public class AppConfig {
+
+    ...
+
+    @Bean
+    public ModelMapper modelMapper() {
+        ModelMapper modelMapper = new ModelMapper();
+        modelMapper.getConfiguration()
+                .setDestinationNameTokenizer(NameTokenizers.UNDERSCORE)
+                .setSourceNameTokenizer(NameTokenizers.UNDERSCORE); // UNDERSCORE만 구별하도록 설정
+        return modelMapper();
+    }
+}
+```
+- AccountService에 주입받아서 사용
+    * ModelMapper에는 `map()` 있는데 source에 있는 데이터를 destination으로 복사해주는 역할을 한다.
+        - map(source, destination)
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    private final AccountRepository accountRepository;
+    private final JavaMailSender javaMailSender;
+    private final PasswordEncoder passwordEncoder;
+    private final ModelMapper modelMapper; // ModelMapper 주입
+
+    ...
+
+    public void updateProfile(Account account, Profile profile) {
+        modelMapper.map(profile, account); // account에 있는 데이터가 profile에 있는 데이터로 바뀐다.
+        accountRepository.save(account); 
+    }
+
+    ...
+
+    public void updateNotifications(Account account, Notifications notifications) {
+        modelMapper.map(notifications, account); // account에 있는 데이터가 notifications에 있는 데이터로 바뀐다.
+        accountRepository.save(account);
+    }
+}
+```
+- Profile과 Notifications에 ModelMapper 적용
+    * Bean이 아니라 new를 호출해서 만드는 객체이기 때문에 ModelMapper를 주입받지 못한다.
+    * ModelMapper를 직접 만들어 사용할 수도 있지만 Controller에서 처리한다.
+        - 안에서 만들지 않기 때문에 기본 생성자는 알아서 생긴다. (`@NoArgsConstructor` 제거)
+    * 따라서 Profile과 Notifications에 account를 받아서 세팅하는 코드를 지운다.
+```java
+@Data
+public class Profile {
+
+    @Length(max = 35)
+    private String bio;
+
+    @Length(max = 50)
+    private String url;
+
+    @Length(max = 50)
+    private String occupation;
+
+    @Length(max = 50)
+    private String location;
+
+    private String profileImage;
+}
+```
+```java
+@Data
+public class Notifications {
+
+    private boolean studyCreatedByEmail;
+
+    private boolean studyCreatedByWeb;
+
+    private boolean studyEnrollmentResultByEmail;
+
+    private boolean studyEnrollmentResultByWeb;
+
+    private boolean studyUpdatedByEmail;
+
+    private boolean studyUpdatedByWeb;
+}
+```
+```java
+@Controller
+@RequiredArgsConstructor
+public class SettingsController {
+
+    ...
+
+    private final ModelMapper modelMapper;
+
+    ...
+
+    @GetMapping(SETTINGS_PROFILE_URL)
+    public String updateProfileForm(@CurrentUser Account account, Model model) {
+        model.addAttribute(account);
+        model.addAttribute(modelMapper.map(account, Profile.class)); // Profile 타입의 인스턴스가 만들어지고 account에 들어있는 데이터로 채워준다.
+        return SETTINGS_PROFILE_VIEW_NAME;
+    }
+
+    ...
+
+    @GetMapping(SETTINGS_NOTIFICATIONS_URL)
+    public String updateNotificationsForm(@CurrentUser Account account, Model model) {
+        model.addAttribute(account);
+        model.addAttribute(modelMapper.map(account,Notifications.class)); // Notifications 타입의 인스턴스가 만들어지고 account에 들어있는 데이터로 채워준다.
+        return SETTINGS_NOTIFICATIONS_VIEW_NAME;
+    }
+
+    ...
+
+}
+```
+<br>
