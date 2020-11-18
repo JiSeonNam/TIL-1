@@ -1140,7 +1140,224 @@ public class SettingsController {
     }
 
     ...
+}
+```
+<br>
 
+## 닉네임 수정
+
+### 목표
+- 닉네임은 특정 패턴("^[ㄱ-ㅎ가-힣a-z0-9_-]{3,20}$")의 문자열만 지원
+- 중복 닉네임 확인.
+<br>
+
+### 구현
+- NicknameForm 객체 생성
+```java
+@Data
+public class NicknameForm {
+
+    @NotBlank
+    @Length(min = 3, max = 20)
+    @Pattern(regexp = "^[ㄱ-ㅎ가-힣a-z0-9_-]{3,20}$")
+    private String nickname;
+}
+```
+- NicknameForm 객체를 validation할 validator 생성
+```java
+@Component
+@RequiredArgsConstructor
+public class NicknameValidator implements Validator {
+
+    private final AccountRepository accountRepository;
+
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return NicknameForm.class.isAssignableFrom(clazz);
+    }
+
+    @Override
+    public void validate(Object target, Errors errors) {
+        NicknameForm nicknameForm = (NicknameForm) target;
+        Account byNickname = accountRepository.findByNickname(nicknameForm.getNickname());
+        if (byNickname != null) {
+            errors.rejectValue("nickname", "wrong.value", "입력하신 닉네임을 사용할 수 없습니다.");
+        }
+    }
+}
+```
+- 닉네임 수정 맵핑
+```java
+@Controller
+@RequiredArgsConstructor
+public class SettingsController {
+
+    ...
+    static final String SETTINGS_ACCOUNT_VIEW_NAME = "settings/account";
+    static final String SETTINGS_ACCOUNT_URL = "/" + SETTINGS_ACCOUNT_VIEW_NAME;
+
+    ...
+    private final NicknameValidator nicknameValidator;
+
+    ...
+
+    @InitBinder("nicknameForm") // 커스텀 validator 사용
+    public void nicknameFormFormInitBinder(WebDataBinder webDataBinder) {
+        webDataBinder.addValidators(nicknameValidator);
+    }
+
+    ...
+
+    @GetMapping(SETTINGS_ACCOUNT_URL)
+    public String updateAccountForm(@CurrentUser Account account, Model model) {
+        model.addAttribute(account);
+        model.addAttribute(modelMapper.map(account, NicknameForm.class));
+        return SETTINGS_ACCOUNT_VIEW_NAME;
+    }
+
+    @PostMapping(SETTINGS_ACCOUNT_URL)
+    public String updateAccount(@CurrentUser Account account, @Valid NicknameForm nicknameForm, Errors errors,
+                                Model model, RedirectAttributes attributes) {
+        if (errors.hasErrors()) {
+            model.addAttribute(account);
+            return SETTINGS_ACCOUNT_VIEW_NAME;
+        }
+
+        accountService.updateNickname(account, nicknameForm.getNickname());
+        attributes.addFlashAttribute("message", "닉네임을 수정했습니다.");
+        return "redirect:" + SETTINGS_ACCOUNT_URL;
+    }
+}
+```
+- AccountService에 닉네임 수정 메서드 `updateNickname()` 생성
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public void updateNickname(Account account, String nickname) {
+        account.setNickname(nickname);
+        accountRepository.save(account);
+        login(account);
+    }
+}
+```
+- 닉네임 수정 뷰 생성
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div class="container">
+        <div class="row mt-5 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: settings-menu(currentMenu='account')"></div>
+            </div>
+            <div class="col-8">
+                <div th:if="${message}" class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+                    <span th:text="${message}">완료</span>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="row">
+                    <h2 class="col-12">닉네임 변경</h2>
+                </div>
+                <div class="row">
+                    <form class="needs-validation col-12" th:object="${nicknameForm}" th:action="@{/settings/account}" method="post" novalidate>
+                        <div class="alert alert-warning" role="alert">
+                            닉네임을 변경하면 프로필 페이지 링크도 바뀝니다!
+                        </div>
+                        <div class="form-group">
+                            <input id="nickname" type="text" th:field="*{nickname}" class="form-control" aria-describedby="nicknameHelp" required>
+                            <small id="nicknameHelp" class="form-text text-muted">
+                                공백없이 문자와 숫자로만 3자 이상 20자 이내로 입력하세요. 가입후에 변경할 수 있습니다.
+                            </small>
+                            <small class="invalid-feedback">닉네임을 입력하세요.</small>
+                            <small class="form-text text-danger" th:if="${#fields.hasErrors('nickname')}" th:errors="*{nickname}">nickname Error</small>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-primary" type="submit" aria-describedby="submitHelp">변경하기</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h2 class="text-danger">계정 삭제</h2>
+                        <div class="alert alert-danger" role="alert">
+                            이 계정은 삭제할 수 없습니다.
+                        </div>
+                        <button class="btn btn-outline-danger disabled">계정 삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: form-validation"></script>
+</body>
+</html>
+```
+- 실행해서 닉네임을 수정하면 다음과 같이 성공적으로 변경되는 것을 확인할 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/account_settings_8.jpg"></p>
+
+<br>
+
+### 테스트 코드 작성
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class SettingsControllerTest {
+
+    ...
+
+    @WithAccount("hayoung")
+    @DisplayName("닉네임 수정 폼")
+    @Test
+    void updateAccountForm() throws Exception {
+        mockMvc.perform(get(SettingsController.SETTINGS_ACCOUNT_URL))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("nicknameForm"));
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("닉네임 수정하기 - 입력값 정상")
+    @Test
+    void updateAccount_success() throws Exception {
+        String newNickname = "kimhayoung";
+        mockMvc.perform(post(SettingsController.SETTINGS_ACCOUNT_URL)
+                .param("nickname", newNickname)
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(SettingsController.SETTINGS_ACCOUNT_URL))
+                .andExpect(flash().attributeExists("message"));
+
+        assertNotNull(accountRepository.findByNickname("kimhayoung"));
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("닉네임 수정하기 - 입력값 에러")
+    @Test
+    void updateAccount_failure() throws Exception {
+        String newNickname = "¯\\_(ツ)_/¯";
+        mockMvc.perform(post(SettingsController.SETTINGS_ACCOUNT_URL)
+                .param("nickname", newNickname)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name(SettingsController.SETTINGS_ACCOUNT_VIEW_NAME))
+                .andExpect(model().hasErrors())
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("nicknameForm"));
+    }
+
+    ...
 }
 ```
 <br>
