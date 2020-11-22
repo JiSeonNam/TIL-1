@@ -42,6 +42,7 @@
     * 2단계 : `@EnableAutoConfiguration`
         * Maven: org.springframework.boot:spring-boot-autoconfigure:버전.RELEASE의 스프링 메타 파일 spring.factories라는 파일에 key값(EnableAutoConfiguration) 밑에 설정되어 있는 클래스들은 AutoConfiguration 적용 대상이다. 
         * 다 빈으로 등록되는건 아니고 @Conditional~로 시작하는 애노테이션 조건에 맞는 빈을 등록한다. 
+<br>
 
 ## 자동 설정 만들기
 - XXX-Spring-Boot-Autoconfigure 모듈: 자동 설정
@@ -177,7 +178,7 @@ public class HolonameConfiguration {
 
 - properties를 써서 변경할 수 있게 하려면 properties에 해당하는 것을 정의해줘야한다. 
 ```java
-@ConfigurationProperties("holoman")// IDE에서 오류가 뜨면서 자동완성을 지원하려면 의존성 추가하려고 뜬다. 추가하면 된다. 
+@ConfigurationProperties("holoman")// IDE에서 오류가 뜨면서 자동완성을 지원하려면 의존성 추가하라고 뜬다. 추가하면 된다. 
 public class HolomanProperties {
 
     private String name;
@@ -218,6 +219,7 @@ public class HolomanConfiguration {
     }
 }
 ```
+<br>
 
 ## 내장 웹 서버 이해
 - 스프링 부트는 웹 서버가 아니다.
