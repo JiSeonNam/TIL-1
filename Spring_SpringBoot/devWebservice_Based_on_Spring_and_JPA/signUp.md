@@ -445,7 +445,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 }
 ```
 - 컨트롤러에 커스텀 검증 사용
-    * `@InitBinder("signUpForm)`
+    * `@InitBinder("signUpForm")`
         - signUpForm이라는 데이터를 받을 때 바인더를 설정한다.
         - WebDataBinder라는 것을 파라미터로 받고 Validator를 추가할 수 있다.
         - 추가하면 signUpForm을 받을 때 받은 파라미터의 camelCase에 맞춰 validator도 사용이 된다.
