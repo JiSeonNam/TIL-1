@@ -240,3 +240,52 @@ public class AccountService implements UserDetailsService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/tag_zone_2.jpg"></p>
 
 <br>
+
+## 관심 주제 조회
+- 현재는 태그를 입력할 수 있는 Form을 보여줄 때 account 정보만 넘긴다.
+- 실제로 뷰에는 등록했던 태그 정보들을 조회할 수 있어야 한다.
+<br>
+
+### 구현
+- 태그 등록화면에서 등록했던 태그 정보들을 조회
+```java
+@Controller
+@RequiredArgsConstructor
+public class SettingsController {
+
+    ...
+
+    @GetMapping(SETTINGS_TAGS_URL)
+    public String updateTags(@CurrentUser Account account, Model model) {
+        model.addAttribute(account);
+        Set<Tag> tags = accountService.getTags(account);
+        // Tag 엔티티 타입이 아니라 문자열 형태로 전송
+        model.addAttribute("tags", tags.stream().map(Tag::getTitle).collect(Collectors.toList()));
+
+        return SETTINGS_TAGS_VIEW_NAME;
+    }
+
+    ...
+}
+```
+- accountService의 `getTags()` 메서드 생성
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public Set<Tag> getTags(Account account) {
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        return byId.orElseThrow().getTags(); // 없으면 에러를 던지고 있으면 태그 정보를 리턴
+    }
+}
+```
+- 뷰에서 thymeleaf가 제공하는 유틸리티를 사용해서 Join한다.
+    * [참고 - 그 밖의 다양한 유틸리티](https://www.thymeleaf.org/doc/tutorials/2.1/usingthymeleaf.html#expression-utility-objects)
+```html
+<input id="tags" type="text" name="tags" th:value="${#strings.listJoin(tags, ',')}" class="tagify-outside" aria-describedby="tagHelp"/>
+```
+<br>
