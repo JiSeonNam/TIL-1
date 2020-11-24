@@ -289,3 +289,50 @@ public class AccountService implements UserDetailsService {
 <input id="tags" type="text" name="tags" th:value="${#strings.listJoin(tags, ',')}" class="tagify-outside" aria-describedby="tagHelp"/>
 ```
 <br>
+
+## 관심 주제 삭제
+- 화면에서 이미 삭제 요청은 하고 있으므로 Ajax 요청을 처리하는 핸들러만 구현하면 된다.
+- DB에 없는 태그라면, Bad Request로 응답하고
+- DB에 있는 태그라면  Account에서 삭제 (DB에서 태그 정보를 삭제하는 것이 아니라 연관 관계만 삭제)
+<br>
+
+### 구현
+- 핸들러 작성
+```java
+@Controller
+@RequiredArgsConstructor
+public class SettingsController {
+
+    ...
+
+    @PostMapping(SETTINGS_TAGS_URL + "/remove")
+    @ResponseBody
+    public ResponseEntity removeTag(@CurrentUser Account account, @RequestBody TagForm tagForm) {
+        String title = tagForm.getTagTitle();
+
+        Tag tag = tagRepository.findByTitle(title);
+        if (tag == null) { // 삭제의 경우 없으면 badRequest 응답을 보낸다.
+            return ResponseEntity.badRequest().build();
+        }
+
+        accountService.removeTag(account, tag); // 정상적인 경우 태그 삭제
+        return ResponseEntity.ok().build();
+    }
+}
+```
+- accountService에 `removeTag()` 메서드 구현
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public void removeTag(Account account, Tag tag) {
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        byId.ifPresent(a -> a.getTags().remove(tag));
+    }
+}
+```
+<br>
