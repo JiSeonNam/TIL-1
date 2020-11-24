@@ -336,3 +336,60 @@ public class AccountService implements UserDetailsService {
 }
 ```
 <br>
+
+## 관심 주제 자동완성
+- 태그를 새롭게 등록할 수도 있지만 기존의 있던 태그 목록 중에 선택할 수 있도록 편의 기능 구현
+- Tagify의 whitelist를 사용한다.
+- [참고 링크](https://yaireo.github.io/tagify/#section-manual-suggestions)
+<br>
+
+### 구현
+- 컨트롤러에서 뷰를 보여줄 때 태그 목록을 whitelist로 제공
+    * list를 json 문자열로 변환하려면 ObjectMapper를 사용하면 된다.
+        - Spring boot는 기본적으로 fasterxml이 제공하는 ObjectMapper가 의존성으로 들어와 있고 Bean으로 등록되어 있다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class SettingsController {
+
+    ...
+    private final ObjectMapper objectMapper;
+
+    ...
+
+    @GetMapping(SETTINGS_TAGS_URL)
+    public String updateTags(@CurrentUser Account account, Model model)  throws JsonProcessingException {
+        model.addAttribute(account);
+        Set<Tag> tags = accountService.getTags(account);
+        model.addAttribute("tags", tags.stream().map(Tag::getTitle).collect(Collectors.toList()));
+
+        // 태그들을 모두 가져와서 stream으로 맵핑(타입이 Tag지만 String(태그 이름) 타입으로 변환) 그 다음 list로 변환
+        List<String> allTags = tagRepository.findAll().stream().map(Tag::getTitle).collect(Collectors.toList());
+        model.addAttribute("whitelist", objectMapper.writeValueAsString(allTags)); // list<String> to JSON
+
+        return SETTINGS_TAGS_VIEW_NAME;
+    }
+
+    ...
+}
+```
+- 뷰에서 참조
+    * html에서 값을 받고 숨겨둔 다음 id로 js에서 값을 참조한다.
+```html
+<div id="whitelist" th:text="${whitelist}" hidden></div>
+
+...
+
+var tagify = new Tagify(tagInput, {
+                pattern: /^.{0,20}$/,
+                whitelist: JSON.parse(document.querySelector("#whitelist").textContent),
+                dropdown : {
+                    enabled: 1, // suggest tags after a single character input
+                } // map tags
+            });
+```
+- 실행해서 확인하면 다음과 같이 이미 등록한 태그들은 다음에, 또는 다른 유저가 등록할 경우 whitelist로 자동완성을 제공한다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/tag_zone_3.jpg"></p>
+
+<br>
+    
