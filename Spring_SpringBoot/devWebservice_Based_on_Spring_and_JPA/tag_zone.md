@@ -89,8 +89,9 @@ public class SettingsController {
 ```
 - Tag 뷰 생성
     * [Tagify](https://github.com/yairEO/tagify)를 사용해 tag기능 구현
-    * npm install @yaireo/tagify
+    * `npm install @yaireo/tagify`
     * [예제](https://yaireo.github.io/tagify/)
+    * 모든 POST 요청 뿐 아니라 Ajax요청도 csrf토큰을 전송해야 한다.
 ```html
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
@@ -176,5 +177,66 @@ public class SettingsController {
 </html>
 ```
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/tag_zone_1.jpg"></p>
+
+<br>
+
+## 관심 주제 등록 기능
+- 요청 본문에 들어오는 데이터를 받아줄 Form 생성
+```java
+@Data
+public class TagForm {
+
+    private String tagTitle;
+}
+```
+- tagRepository 생성
+```java
+@Transactional(readOnly = true)
+public interface TagRepository extends JpaRepository<Tag, Long>{
+
+    Tag findByTitle(String title);
+}
+```
+- PostMapping
+```java
+@Controller
+@RequiredArgsConstructor
+public class SettingsController {
+
+    ...
+
+    @PostMapping("/settings/tags/add")
+    @ResponseBody // Ajax 요청이므로 응답이 ResponseBody
+    public ResponseEntity addTag(@CurrentUser Account account, @RequestBody TagForm tagForm) {
+        String title = tagForm.getTagTitle();
+
+        Tag tag = tagRepository.findByTitle(title); // title에 해당하는 태그가 있는지 없는지 조회해서 없으면 새로 DB에 저장 후 account에 추가
+        if (tag == null) {
+            tag = tagRepository.save(Tag.builder().title(tagForm.getTagTitle()).build());
+        }
+
+        accountService.addTag(account, tag);
+        return ResponseEntity.ok().build();
+    }
+}
+```
+- accountService에 `addTag()` 추가
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public void addTag(Account account, Tag tag) {
+        Optional<Account> byId = accountRepository.findById(account.getId()); // account가 detached 상태이므로 읽어와야 한다.
+        byId.ifPresent(a -> a.getTags().add(tag)); // 있으면 태그 추가
+
+    }
+}
+```
+- 실행해서 관심 주제를 추가하면 다음과 같이 성공적으로 추가된다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/tag_zone_2.jpg"></p>
 
 <br>
