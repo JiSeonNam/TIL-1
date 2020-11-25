@@ -712,33 +712,33 @@ public class AccountService implements UserDetailsService {
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="fragments.html :: head"></head>
 <body class="bg-light">
-<div th:replace="fragments.html :: main-nav"></div>
-<div class="container">
-    <div class="row mt-5 justify-content-center">
-        <div class="col-2">
-            <div th:replace="fragments.html :: settings-menu(currentMenu='zones')"></div>
-        </div>
-        <div class="col-8">
-            <div class="row">
-                <h2 class="col-12">주요 활동 지역</h2>
+    <div th:replace="fragments.html :: main-nav"></div>
+    <div class="container">
+        <div class="row mt-5 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: settings-menu(currentMenu='zones')"></div>
             </div>
-            <div class="row">
-                <div class="col-12">
-                    <div class="alert alert-info" role="alert">
-                        주로 스터디를 다닐 수 있는 지역을 등록하세요. 해당 지역에 스터디가 생기면 알림을 받을 수 있습니다.<br/>
-                        시스템에 등록된 지역만 선택할 수 있습니다.
+            <div class="col-8">
+                <div class="row">
+                    <h2 class="col-12">주요 활동 지역</h2>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info" role="alert">
+                            주로 스터디를 다닐 수 있는 지역을 등록하세요.<br> 해당 지역에 스터디가 생기면 알림을 받을 수 있습니다.<br/>
+                            시스템에 등록된 지역만 선택할 수 있습니다.
+                        </div>
+                        <div id="whitelist" th:text="${whitelist}" hidden></div>
+                        <input id="tags" type="text" name="tags" th:value="${#strings.listJoin(zones, ',')}"
+                               class="tagify-outside" aria-describedby="tagHelp"/>
                     </div>
-                    <div id="whitelist" th:text="${whitelist}" hidden></div>
-                    <input id="tags" type="text" name="tags" th:value="${#strings.listJoin(zones, ',')}"
-                           class="tagify-outside" aria-describedby="tagHelp"/>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<script th:replace="fragments.html :: ajax-csrf-header"></script>
-<script src="/node_modules/@yaireo/tagify/dist/tagify.min.js"></script>
-<script type="application/javascript">
+    <script th:replace="fragments.html :: ajax-csrf-header"></script>
+    <script src="/node_modules/@yaireo/tagify/dist/tagify.min.js"></script>
+    <script type="application/javascript">
         $(function () {
             function tagRequest(url, zoneName) {
                 $.ajax({
@@ -790,3 +790,85 @@ public class AccountService implements UserDetailsService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/tag_zone_4.jpg"></p>
 
 <br>
+
+## 지역 정보 테스트
+
+### 구현
+- 테스트용 지역정보를 만들어서 테스트 종료 시에 삭제한다.
+```java
+@Transactional
+@SpringBootTest
+@AutoConfigureMockMvc
+class SettingsControllerTest {
+
+    ...
+    @Autowired ZoneRepository zoneRepository;
+
+    private Zone testZone = Zone.builder().city("test").localNameOfCity("테스트시").province("테스트주").build();
+
+    @BeforeEach
+    void beforeEach() {
+        zoneRepository.save(testZone);
+    }
+
+    @AfterEach
+    void afterEach() {
+        ...
+        zoneRepository.deleteAll();
+    }
+
+    ...
+
+    @WithAccount("hayoung")
+    @DisplayName("계정의 지역 정보 수정 폼")
+    @Test
+    void updateZonesForm() throws Exception {
+        mockMvc.perform(get(ROOT + SETTINGS + ZONES))
+                .andExpect(view().name(SETTINGS + ZONES))
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("whitelist"))
+                .andExpect(model().attributeExists("zones"));
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("계정의 지역 정보 추가")
+    @Test
+    void addZone() throws Exception {
+        // 폼으로 입력받을 객체 생성
+        ZoneForm zoneForm = new ZoneForm();
+        zoneForm.setZoneName(testZone.toString());
+
+        mockMvc.perform(post(ROOT + SETTINGS + ZONES + "/add")
+                .contentType(MediaType.APPLICATION_JSON) // JSON으로 넣어준다.
+                .content(objectMapper.writeValueAsString(zoneForm))
+                .with(csrf()))
+                .andExpect(status().isOk());
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        Zone zone = zoneRepository.findByCityAndProvince(testZone.getCity(), testZone.getProvince());
+        assertTrue(hayoung.getZones().contains(zone));
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("계정의 지역 정보 추가")
+    @Test
+    void removeZone() throws Exception {
+        // 미리 hayoung 계정에 testZone을 넣고
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        Zone zone = zoneRepository.findByCityAndProvince(testZone.getCity(), testZone.getProvince());
+        accountService.addZone(hayoung, zone);
+
+        ZoneForm zoneForm = new ZoneForm();
+        zoneForm.setZoneName(testZone.toString());
+
+        mockMvc.perform(post(ROOT + SETTINGS + ZONES + "/remove")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(zoneForm))
+                .with(csrf()))
+                .andExpect(status().isOk());
+
+        // zone이 삭제됐는지 확인
+        assertFalse(hayoung.getZones().contains(zone));
+    }
+}
+```
