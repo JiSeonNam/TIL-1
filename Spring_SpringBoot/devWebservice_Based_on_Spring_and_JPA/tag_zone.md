@@ -392,4 +392,114 @@ var tagify = new Tagify(tagInput, {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/tag_zone_3.jpg"></p>
 
 <br>
-    
+
+## 관심 주제 테스트
+
+### Refactoring
+- accountService에서 Account 객체 생성 시 builder를 사용하지 않고 modelMapper 사용
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    // Account 생성
+    private Account saveNewAccount(@Valid SignUpForm signUpForm) {
+        signUpForm.setPassword(passwordEncoder.encode(signUpForm.getPassword()));
+        Account account = modelMapper.map(signUpForm, Account.class);
+        account.generateEmailCheckToken();
+        
+        return accountRepository.save(account);
+    }
+
+    ...
+}
+```
+- Account 엔티티에서 tags를 비어있는 값으로 설정
+```java
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Account {
+
+    ...
+
+    @ManyToMany
+    private Set<Tag> tags = new HashSet<>();
+```
+<br>
+
+### 테스트 코드 작성
+```java
+@Transactional
+@SpringBootTest
+@AutoConfigureMockMvc
+class SettingsControllerTest {
+
+    ...
+    @Autowired ObjectMapper objectMapper;
+    @Autowired TagRepository tagRepository;
+    @Autowired AccountService accountService;
+
+    ...
+
+    @WithAccount("hayoung")
+    @DisplayName("태그 수정 폼")
+    @Test
+    void updateTagsForm() throws Exception {
+        mockMvc.perform(get(SettingsController.SETTINGS_TAGS_URL))
+                .andExpect(view().name(SettingsController.SETTINGS_TAGS_VIEW_NAME))
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("whitelist"))
+                .andExpect(model().attributeExists("tags"));
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("계정에 태그 추가")
+    @Test
+    void addTag() throws Exception {
+        TagForm tagForm = new TagForm();
+        tagForm.setTagTitle("newTag");
+
+        mockMvc.perform(post(SettingsController.SETTINGS_TAGS_URL + "/add")
+                .contentType(MediaType.APPLICATION_JSON) // 데이터가 요청안에 파라미터가 아닌 본문으로 들어온다. (JSON 타입)
+                .content(objectMapper.writeValueAsString(tagForm)) // objectMapper로 TagForm 객체를 JSON으로 변환해서 본문에 넣어준다.
+                .with(csrf())) // POST 요청이므로 csrf 토큰도 같이 보낸다.
+                .andExpect(status().isOk());
+
+        // 태그 저장 여부 확인
+        Tag newTag = tagRepository.findByTitle("newTag");
+        assertNotNull(newTag);
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        assertTrue(hayoung.getTags().contains(newTag));
+    }
+
+    @WithAccount("hayoung")
+    @DisplayName("계정에 태그 삭제")
+    @Test
+    void removeTag() throws Exception {
+        // 계정, 태그 만들어서 넣기
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        Tag newTag = tagRepository.save(Tag.builder().title("newTag").build());
+        accountService.addTag(hayoung, newTag);
+        
+        // 태그 저장 여부 확인
+        assertTrue(hayoung.getTags().contains(newTag));
+
+        TagForm tagForm = new TagForm();
+        tagForm.setTagTitle("newTag");
+
+        mockMvc.perform(post(SettingsController.SETTINGS_TAGS_URL + "/remove")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(tagForm))
+                .with(csrf()))
+                .andExpect(status().isOk());
+        
+        // 계정이 태그를 가지고 있는지 확인
+        assertFalse(hayoung.getTags().contains(newTag));
+    }
+}
+```
+<br>
