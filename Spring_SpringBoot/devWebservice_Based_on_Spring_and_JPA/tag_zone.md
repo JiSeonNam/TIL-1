@@ -503,3 +503,77 @@ class SettingsControllerTest {
 }
 ```
 <br>
+
+## 지역 도메인
+- 지역 도메인(Zone)을 추가하고 지역 정보 초기화
+- tag와 마찬가지로 Value가 아닌 Entity다. (JPA 관점)
+    - Zone의 생명 주기도 다른 엔티티에 종속적이지 않고 Study, Account에서도 사용되기 때문.
+- Zone
+    * City(영문 도시 이름)
+    * LocalNameOfCity (한국어 도시 이름)
+    * Province (주 이름, nullable)
+- 객체 관점에서의 관계
+    * Account -> Zone
+    * ManyToMany 단방향 관계
+- DB 관점에서의 관계
+    * Account <- Account_Zone -> Zone
+    * 조인 (join) 테이블을 사용해서 다대다 관계를 표현.
+<br>
+
+### 구현
+- Zone Entity 생성
+```java
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Zone {
+
+    @Id @GeneratedValue
+    private Long id;
+
+    @Column(nullable = false)
+    private String city;
+
+    @Column(nullable = false)
+    private String localNameOfCity;
+
+    @Column(nullable = true) //
+    private String province;
+
+}
+```
+- ZoneRepository 생성
+```java
+@Transactional(readOnly = true)
+public interface ZoneRepository extends JpaRepository<Zone, Long>{
+
+}
+```
+- 지역 정보를 .csv 파일로  resources 파일밑에 저장
+- zoneService 생성
+    * `@PostConstruct`
+        - 의존성 주입이 이루어진 후 초기화를 수행하는 메서드이다.
+        - `@PostConstruct`가 붙은 메서드는 클래스가 service를 수행하기 전에 발생한다. (다른 리소스에서 호출되지 않는다해도 수행된다.)
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class ZoneService {
+
+    private final ZoneRepository zoneRepository;
+
+    @PostConstruct
+    public void initZoneData() throws IOException {
+        if (zoneRepository.count() == 0) {
+            Resource resource = new ClassPathResource("zones_kr.csv");
+            List<Zone> zoneList = Files.readAllLines(resource.getFile().toPath(), StandardCharsets.UTF_8).stream()
+                    .map(line -> {
+                        String[] split = line.split(",");
+                        return Zone.builder().city(split[0]).localNameOfCity(split[1]).province(split[2]).build();
+                    }).collect(Collectors.toList());
+            zoneRepository.saveAll(zoneList);
+        }
+    }
+}
+```
+<br>
