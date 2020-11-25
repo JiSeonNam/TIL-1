@@ -577,3 +577,216 @@ public class ZoneService {
 }
 ```
 <br>
+
+## 지역 정보 추가 삭제 기능
+- 태그의 추가, 조회, 삭제와 거의 동일하다.
+- 지역 정보를 추가, 조회, 수정, 삭제 할 수 있는 기능
+- 영어로도 가능
+<br>
+
+### 구현
+- ZoneForm 생성
+    * `getZone()`
+        - Seoul(서울)/None 이렇게 들어온 데이터를 city, localNameOfCity, province로 잘라서 Zone으로 만든다.
+```java
+@Data
+public class ZoneForm {
+
+    private String zoneName;
+
+    public String getCityName() {
+        return zoneName.substring(0, zoneName.indexOf("("));
+    }
+
+    public String getProvinceName() {
+        return zoneName.substring(zoneName.indexOf("/") + 1);
+    }
+
+    public String getLocalNameOfCity() {
+        return zoneName.substring(zoneName.indexOf("(") + 1, zoneName.indexOf(")"));
+    }
+
+    public Zone getZone() {
+        return Zone.builder().city(this.getCityName())
+                .localNameOfCity(this.getLocalNameOfCity())
+                .province(this.getProvinceName()).build();
+    }
+}
+```
+- Zone 엔티티에 `toString()` 구현
+```java
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Zone {
+
+    ...
+
+    @Override
+    public String toString() {
+        return String.format("%s(%s)/%s", city, localNameOfCity, province);
+    }
+}
+```
+- SettingsController에 맵핑
+```java
+@Controller
+@RequestMapping(ROOT + SETTINGS)
+@RequiredArgsConstructor
+public class SettingsController {
+
+    ...
+    static final String ZONES = "/zones";
+
+    ...
+    private final ZoneRepository zoneRepository;
+
+    ...
+
+    @GetMapping(ZONES)
+    public String updateZonesForm(@CurrentAccount Account account, Model model) throws JsonProcessingException {
+        model.addAttribute(account);
+
+        Set<Zone> zones = accountService.getZones(account);
+        model.addAttribute("zones", zones.stream().map(Zone::toString).collect(Collectors.toList()));
+
+        List<String> allZones = zoneRepository.findAll().stream().map(Zone::toString).collect(Collectors.toList());
+        model.addAttribute("whitelist", objectMapper.writeValueAsString(allZones));
+
+        return SETTINGS + ZONES;
+    }
+
+    @PostMapping(ZONES + "/add")
+    @ResponseBody
+    public ResponseEntity addZone(@CurrentAccount Account account, @RequestBody ZoneForm zoneForm) {
+        Zone zone = zoneRepository.findByCityAndProvince(zoneForm.getCityName(), zoneForm.getProvinceName());
+        if (zone == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        accountService.addZone(account, zone);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(ZONES + "/remove")
+    @ResponseBody
+    public ResponseEntity removeZone(@CurrentAccount Account account, @RequestBody ZoneForm zoneForm) {
+        Zone zone = zoneRepository.findByCityAndProvince(zoneForm.getCityName(), zoneForm.getProvinceName());
+        if (zone == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        accountService.removeZone(account, zone);
+        return ResponseEntity.ok().build();
+    }
+}
+```
+- accountService에 조회, 추가, 삭제 기능 추가
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public Set<Zone> getZones(Account account) { // 조회
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        return byId.orElseThrow().getZones();
+    }
+
+    public void addZone(Account account, Zone zone) { // 추가
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        byId.ifPresent(a -> a.getZones().add(zone));
+    }
+
+    public void removeZone(Account account, Zone zone) { // 삭제
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        byId.ifPresent(a -> a.getZones().remove(zone));
+    }
+}
+```
+- 지역 정보 뷰 생성
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+<div th:replace="fragments.html :: main-nav"></div>
+<div class="container">
+    <div class="row mt-5 justify-content-center">
+        <div class="col-2">
+            <div th:replace="fragments.html :: settings-menu(currentMenu='zones')"></div>
+        </div>
+        <div class="col-8">
+            <div class="row">
+                <h2 class="col-12">주요 활동 지역</h2>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-info" role="alert">
+                        주로 스터디를 다닐 수 있는 지역을 등록하세요. 해당 지역에 스터디가 생기면 알림을 받을 수 있습니다.<br/>
+                        시스템에 등록된 지역만 선택할 수 있습니다.
+                    </div>
+                    <div id="whitelist" th:text="${whitelist}" hidden></div>
+                    <input id="tags" type="text" name="tags" th:value="${#strings.listJoin(zones, ',')}"
+                           class="tagify-outside" aria-describedby="tagHelp"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:replace="fragments.html :: ajax-csrf-header"></script>
+<script src="/node_modules/@yaireo/tagify/dist/tagify.min.js"></script>
+<script type="application/javascript">
+        $(function () {
+            function tagRequest(url, zoneName) {
+                $.ajax({
+                    dataType: "json",
+                    autocomplete: {
+                        enabled: true,
+                        rightKey: true,
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    method: "POST",
+                    url: "/settings/zones" + url,
+                    data: JSON.stringify({'zoneName': zoneName})
+                }).done(function (data, status) {
+                    console.log("${data} and status is ${status}");
+                });
+            }
+
+            function onAdd(e) {
+                tagRequest("/add", e.detail.data.value);
+            }
+
+            function onRemove(e) {
+                tagRequest("/remove", e.detail.data.value);
+            }
+
+            var tagInput = document.querySelector("#tags");
+
+            var tagify = new Tagify(tagInput, {
+                enforceWhitelist: true,
+                whitelist: JSON.parse(document.querySelector("#whitelist").textContent),
+                dropdown : {
+                    enabled: 1, // suggest tags after a single character input
+                } // map tags
+            });
+
+            tagify.on("add", onAdd);
+            tagify.on("remove", onRemove);
+
+            // add a class to Tagify's input element
+            tagify.DOM.input.classList.add('form-control');
+            // re-place Tagify's input element outside of the  element (tagify.DOM.scope), just before it
+            tagify.DOM.scope.parentNode.insertBefore(tagify.DOM.input, tagify.DOM.scope);
+        });
+    </script>
+</body>
+</html>
+```
+- 실행하면 관심주제와 같이 활동 지역도 정상적으로 동작한다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/tag_zone_4.jpg"></p>
+
+<br>
