@@ -55,3 +55,157 @@ spring.mail.properties.mail.smtp.starttls.enable=true
     * [Amazon](https://aws.amazon.com/ko/ses/)
     * [Google G Suite](https://workspace.google.com/)
 <br>
+
+## EmailService
+- 현재는 이메일을 보낼 때 SimpleMailMessage를 사용하고 있지만 실제 웹서비스에서는 대부분 html로 만들어진 이메일을 보낸다.
+    * 그렇게 하려면 mimemessage로 보내야 한다.
+
+### 구현
+- EmailService 인터페이스 생성
+```java
+public interface EmailService {
+
+    void sendEmail(EmailMessage emailMessage);
+}
+```
+- EmailMessage 클래스 생성
+```java
+@Data
+@Builder
+public class EmailMessage {
+
+    private String to;
+
+    private String subject;
+
+    private String message;
+
+}
+```
+- Profile이 local일 때 사용할 ConsoleEmailService 클래스 생성
+    * Bean을 주입받을 필요없고 logging만 하면 된다.
+```java
+@Slf4j
+@Profile("local")
+@Component
+public class ConsoleEmailService implements EmailService{
+
+    @Override
+    public void sendEmail(EmailMessage emailMessage) {
+        log.info("sent email: {}", emailMessage.getMessage());
+    }
+}
+```
+- Profile이 dev일 때 사용할 HtmlEmailService 클래스 생성
+    * MimeMessageHelper : MimeMessage 만들 때 사용할 수 있는 유틸리티
+```java
+@Slf4j
+@Profile("dev")
+@Component
+@RequiredArgsConstructor
+public class HtmlEmailService implements EmailService {
+
+    private final JavaMailSender javaMailSender;
+
+    @Override
+    public void sendEmail(EmailMessage emailMessage) {
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        try {
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
+            mimeMessageHelper.setTo(emailMessage.getTo());
+            mimeMessageHelper.setSubject(emailMessage.getSubject());
+            mimeMessageHelper.setText(emailMessage.getMessage(), false);
+            javaMailSender.send(mimeMessage);
+            log.info("sent email: {}", emailMessage.getMessage());
+        } catch (MessagingException e) {
+            log.error("failed to send email", e);
+        }
+    }
+}
+```
+- ConsoleMailSender는 더이상 필요없으므로 삭제
+- AccountService 수정
+    * JavaMailSender 대신 EmailService 사용
+        - EmailMessage을 만든 다음 EmailService를 통해 `senEmail()`한다.
+    * `sendSignUpConfirmEmail()`, `sendLoginLink()`
+        - JavaMailSender -> EmailMessage
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+    private final EmailService emailService;
+    ...
+
+    ...
+
+    public void sendSignUpConfirmEmail(Account newAccount) {
+        EmailMessage emailMessage = EmailMessage.builder()
+                .to(newAccount.getEmail())
+                .subject("스터디올래, 회원 가입 인증")
+                .message("/check-email-token?token=" + newAccount.getEmailCheckToken() +
+                        "&email=" + newAccount.getEmail())
+                .build();
+
+        emailService.sendEmail(emailMessage);
+    }
+
+    ...
+
+    public void sendLoginLink(Account account) {
+        EmailMessage emailMessage = EmailMessage.builder()
+                .to(account.getEmail())
+                .subject("스터디올래, 로그인 링크")
+                .message("/login-by-email?token=" + account.getEmailCheckToken() +
+                        "&email=" + account.getEmail())
+                .build();
+        emailService.sendEmail(emailMessage);
+    }
+
+    ...
+}
+```
+- 테스트 `signUpSubmit_with_correct_input()` : "회원 가입 처리 - 입력값 정상" 수정
+    * JavaMailSender -> EmailService
+```java
+@Transactional
+@SpringBootTest
+@AutoConfigureMockMvc
+class AccountControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @MockBean
+    EmailService emailService;
+
+    ...
+
+    @DisplayName("회원 가입 처리 - 입력값 정상")
+    @Test
+    void signUpSubmit_with_correct_input() throws Exception {
+        mockMvc.perform(post("/sign-up")
+                .param("nickname", "hayoung")
+                .param("email", "hayoung@email.com")
+                .param("password", "12345678")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/"))
+                .andExpect(authenticated().withUsername("hayoung"));
+
+        // 패스워드 인코딩 테스트
+        Account account = accountRepository.findByEmail("hayoung@email.com");
+        assertNotNull(account);
+        assertNotEquals(account.getPassword(), "12345678");
+        assertNotNull(account.getEmailCheckToken());
+        then(emailService).should().sendEmail(any(EmailMessage.class));
+    }
+}
+```
+- 이제 Profile을 local로 설정하면 콘솔에 이메일 인증 메세지가 출력되고, dev로 설정하면 실제 이메일 서버로 이메일이 온다.
+<br>
