@@ -212,7 +212,7 @@ class AccountControllerTest {
 <br>
 
 ## HTML 이메일 전송하기
-- 현재는 문자열로 간단한 메세지를 전송했지만 링크만 클릭하면 인증이 되도록 회원가입 인증이 되도록 구현
+- 현재는 문자열로 간단한 메세지를 전송했지만 링크만 클릭하면 회원가입 인증이 되도록 구현
 <br>
 
 ### 구현
@@ -249,11 +249,10 @@ mimeMessageHelper.setText(emailMessage.getMessage(), true);
 - AccountService에서 thymeleaf 사용
     * `templateEngine.process()`
         - 앞,뒤에 templates가 붙고 뒤에 .html이 붙는다.
-        - 2번째 인자는 context를 준다. (Model이라고 생각하면 된다.
+        - 2번째 인자는 context를 준다. (Model이라고 생각하면 된다.)
     * `appProperties.getHost()`
-        - 환경에 따라 값을 다르게 줘야한다.
+        - Profile에 따라 값을 다르게 줘야한다.
         - application.properties에 등록해서 사용한다.
-        
 ```java
 @Service
 @Transactional
@@ -309,6 +308,10 @@ public class AccountService implements UserDetailsService {
 
     ...
 }
+```
+- application.properties에 app.host 추가
+```properties
+app.host=http://localhost:8080
 ```
 - app.host라는 값을 스프링 부트가 제공하는 기능을 사용해서 받아온다.
     * `@ConfigurationProperties`를 사용해 host를 바인딩 받아온다.
