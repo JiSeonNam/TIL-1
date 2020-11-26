@@ -202,12 +202,12 @@ public class StudyForm {
 <link rel="stylesheet" href="/node_modules/summernote/dist/summernote-bs4.min.css">
 ```
 - 실행해서 스터디 개설 버튼을 클릭하면 다음과 같이 스터디를 생성할 수 있는 페이지가 나온다.
-<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_1.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_2.jpg"></p>
 
 - **계속해서 스터디 만들기 submit 버튼을 눌러 스터리를 생성한다면?**
 - StudyController POST 맵핑 추가
     * `URLEncoder.encode()`
-        - 스터디의 path가 한글의 경우도 있기 때문에 encoding을 해줘야 한다.
+        - 스터디의 path가 한글이 있는 경우도 있기 때문에 encoding을 해줘야 한다.
 ```java
 @Controller
 @RequiredArgsConstructor
