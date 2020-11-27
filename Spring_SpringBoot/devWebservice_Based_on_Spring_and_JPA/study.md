@@ -690,3 +690,65 @@ class StudyControllerTest {
 }
 ```
 <br>
+
+## 스터디 구성원 조회
+- 구성원 조회 맵핑 추가
+```java
+@Controller
+@RequiredArgsConstructor
+public class StudyController {
+
+    ...
+
+    @GetMapping("/study/{path}/members")
+    public String viewStudyMembers(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        model.addAttribute(account);
+        model.addAttribute(studyRepository.findByPath(path));
+        return "study/members";
+    }
+}
+```
+- 구성원 조회 뷰 추가
+```html
+<!-- fragments.html -->
+<div th:fragment="member-list (members, isManager)" class="row px-3 justify-content-center">
+    <ul class="list-unstyled col-10">
+        <li class="media mt-3" th:each="member: ${members}">
+            <svg th:if="${#strings.isEmpty(member?.profileImage)}" th:data-jdenticon-value="${member.nickname}" width="64" height="64" class="rounded border bg-light mr-3"></svg>
+            <img th:if="${!#strings.isEmpty(member?.profileImage)}" th:src="${member?.profileImage}" width="64" height="64" class="rounded border mr-3"/>
+            <div class="media-body">
+                <h5 class="mt-0 mb-1"><span th:text="${member.nickname}"></span> <span th:if="${isManager}" class="badge badge-primary">관리자</span></h5>
+                <span th:text="${member.bio}"></span>
+            </div>
+        </li>
+    </ul>
+</div>
+```
+```html
+<!-- members.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <div th:replace="fragments.html :: main-nav"></div>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: study-info"></div>
+        <div th:replace="fragments.html :: study-menu(studyMenu='members')"></div>
+    
+        <div th:replace="fragments.html :: member-list(members=${study.managers},isManager=${true})"></div>
+        <div th:replace="fragments.html :: member-list(members=${study.members},isManager=${false})"></div>
+    
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script type="application/javascript">
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+    </script>
+</body>
+</html> 
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_4.jpg"></p>
+
+<br>
