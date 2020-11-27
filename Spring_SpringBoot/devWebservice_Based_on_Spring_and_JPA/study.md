@@ -221,6 +221,7 @@ public class StudyController {
     @PostMapping("/new-study")
     public String newStudySubmit(@CurrentAccount Account account, @Valid StudyForm studyForm, Errors errors) {
         if (errors.hasErrors()) {
+            model.addAttribute(account);
             return "study/form";
         }
 
@@ -266,6 +267,10 @@ public class Study {
 
     public void addManager(Account account) {
         this.managers.add(account);
+    }
+
+    public void addMember(Account account) {
+        this.members.add(account);
     }
 }
 ```
@@ -518,4 +523,170 @@ public interface StudyRepository extends JpaRepository<Study, Long> {
 }
 ```
 - 실행해보면 한꺼번에 데이터를 가져온다.
+<br>
+
+### 테스트 코드 작성
+```java
+class StudyTest {
+
+    Study study;
+    Account account;
+    UserAccount userAccount;
+
+    @BeforeEach
+    void beforeEach() {
+        study = new Study();
+        account = new Account();
+        account.setNickname("hayoung");
+        account.setPassword("123");
+        userAccount = new UserAccount(account);
+
+    }
+
+    @DisplayName("스터디를 공개했고 인원 모집 중이고, 이미 멤버나 스터디 관리자가 아니라면 스터디 가입 가능")
+    @Test
+    void isJoinable() {
+        study.setPublished(true);
+        study.setRecruiting(true);
+
+        assertTrue(study.isJoinable(userAccount));
+    }
+
+    @DisplayName("스터디를 공개했고 인원 모집 중이더라도, 스터디 관리자는 스터디 가입이 불필요하다.")
+    @Test
+    void isJoinable_false_for_manager() {
+        study.setPublished(true);
+        study.setRecruiting(true);
+        study.addManager(account);
+
+        assertFalse(study.isJoinable(userAccount));
+    }
+
+    @DisplayName("스터디를 공개했고 인원 모집 중이더라도, 스터디 멤버는 스터디 재가입이 불필요하다.")
+    @Test
+    void isJoinable_false_for_member() {
+        study.setPublished(true);
+        study.setRecruiting(true);
+        study.addMember(account);
+
+        assertFalse(study.isJoinable(userAccount));
+    }
+
+    @DisplayName("스터디가 비공개거나 인원 모집 중이 아니면 스터디 가입이 불가능하다.")
+    @Test
+    void isJoinable_false_for_non_recruiting_study() {
+        study.setPublished(true);
+        study.setRecruiting(false);
+
+        assertFalse(study.isJoinable(userAccount));
+
+        study.setPublished(false);
+        study.setRecruiting(true);
+
+        assertFalse(study.isJoinable(userAccount));
+    }
+
+    @DisplayName("스터디 관리자인지 확인")
+    @Test
+    void isManager() {
+        study.addManager(account);
+        assertTrue(study.isManager(userAccount));
+    }
+
+    @DisplayName("스터디 멤버인지 확인")
+    @Test
+    void isMember() {
+        study.addMember(account);
+        assertTrue(study.isMember(userAccount));
+    }
+
+}
+```
+```java
+@Transactional
+@SpringBootTest
+@AutoConfigureMockMvc
+@RequiredArgsConstructor
+class StudyControllerTest {
+
+    @Autowired MockMvc mockMvc;
+    @Autowired StudyService studyService;
+    @Autowired StudyRepository studyRepository;
+    @Autowired AccountRepository accountRepository;
+
+    @AfterEach
+    void afterEach() {
+        accountRepository.deleteAll();
+    }
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 개설 폼 조회")
+    void createStudyForm() throws Exception {
+        mockMvc.perform(get("/new-study"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("study/form"))
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("studyForm"));
+    }
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 개설 - 완료")
+    void createStudy_success() throws Exception {
+        mockMvc.perform(post("/new-study")
+                .param("path", "test-path")
+                .param("title", "study title")
+                .param("shortDescription", "short description of a study")
+                .param("fullDescription", "full description of a study")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/study/test-path"));
+
+        Study study = studyRepository.findByPath("test-path");
+        assertNotNull(study);
+        Account account = accountRepository.findByNickname("hayoung");
+        assertTrue(study.getManagers().contains(account));
+    }
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 개설 - 실패")
+    void createStudy_fail() throws Exception {
+        mockMvc.perform(post("/new-study")
+                .param("path", "wrong path")
+                .param("title", "study title")
+                .param("shortDescription", "short description of a study")
+                .param("fullDescription", "full description of a study")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("study/form"))
+                .andExpect(model().hasErrors())
+                .andExpect(model().attributeExists("studyForm"))
+                .andExpect(model().attributeExists("account"));
+
+        Study study = studyRepository.findByPath("test-path");
+        assertNull(study);
+    }
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 조회")
+    void viewStudy() throws Exception {
+        Study study = new Study();
+        study.setPath("test-path");
+        study.setTitle("test study");
+        study.setShortDescription("short description");
+        study.setFullDescription("<p>full description</p>");
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        studyService.createNewStudy(study, hayoung);
+
+        mockMvc.perform(get("/study/test-path"))
+                .andExpect(view().name("study/view"))
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("study"));
+    }
+}
+```
 <br>
