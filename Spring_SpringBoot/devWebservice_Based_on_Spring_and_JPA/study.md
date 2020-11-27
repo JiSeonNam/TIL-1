@@ -310,3 +310,212 @@ public class StudyController {
 }
 ```
 <br>
+
+## 스터디 조회
+- 스터디 조회 맵핑
+```java
+@Controller
+@RequiredArgsConstructor
+public class StudyController {
+
+    ...
+    private final StudyRepository studyRepository;
+
+    ...
+
+    @GetMapping("/study/{path}")
+    public String viewStudy(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        model.addAttribute(account);
+        model.addAttribute(studyRepository.findByPath(path));
+        return "study/view";
+    }
+}
+```
+- Study 엔티티에 메서드 추가
+```java
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Study {
+
+    ...
+
+    public boolean isJoinable(UserAccount userAccount) { // 가입 가능한지
+        Account account = userAccount.getAccount();
+        return this.isPublished() && this.isRecruiting()
+                && !this.members.contains(account) && !this.managers.contains(account);
+
+    }
+
+    public boolean isMember(UserAccount userAccount) { // 스터디 구성원인지
+        return this.members.contains(userAccount.getAccount());
+    }
+
+    public boolean isManager(UserAccount userAccount) { // 스터디 관리자인지
+        return this.managers.contains(userAccount.getAccount());
+    }
+}
+```
+- 스터디 조회 뷰 생성
+```html
+<!-- fragments.html-->
+<div th:fragment="study-banner" th:if="${study.useBanner}" class="row" id="study-logo">
+    <img th:src="${study.image}"/>
+</div>
+
+<div th:fragment="study-info">
+    <div class="row pt-4 text-left justify-content-center bg-light">
+        <div class="col-6">
+            <a href="#" class="text-decoration-none" th:href="@{'/study/' + ${study.path}}">
+                <span class="h2" th:text="${study.title}">스터디 이름</span>
+            </a>
+        </div>
+        <div class="col-4 text-right justify-content-end">
+                <span th:if="${!study.published}"
+                      class="d-inline-block" tabindex="0" data-toggle="tooltip" data-placement="bottom"
+                      title="스터디 공개 준비중">
+                    <button class="btn btn-primary btn-sm" style="pointer-events: none;" type="button" disabled>DRAFT</button>
+                </span>
+            <span th:if="${study.closed}"
+                  class="d-inline-block" tabindex="0" data-toggle="tooltip" data-placement="bottom" title="스터디 종료함">
+                    <button class="btn btn-primary btn-sm" style="pointer-events: none;" type="button" disabled>CLOSED</button>
+                </span>
+            <span th:if="${!study.recruiting}"
+                  class="d-inline-block ml-1" tabindex="0" data-toggle="tooltip" data-placement="bottom" title="팀원 모집중 아님">
+                    <button class="btn btn-primary btn-sm" style="pointer-events: none;" type="button" disabled>OFF</button>
+                </span>
+            <span sec:authorize="isAuthenticated()" th:if="${study.isJoinable(#authentication.principal)}"
+                  class="btn-group" role="group" aria-label="Basic example">
+                    <a class="btn btn-primary" th:href="@{'/study/' + ${study.path} + '/join'}">
+                        스터디 가입
+                    </a>
+                    <a class="btn btn-outline-primary" th:href="@{'/study/' + ${study.path} + '/members'}"
+                       th:text="${study.members.size()}">1</a>
+                </span>
+            <span sec:authorize="isAuthenticated()"
+                  th:if="${!study.closed && study.isMember(#authentication.principal)}" class="btn-group" role="group">
+                    <a class="btn btn-outline-warning" th:href="@{'/study/' + ${study.path} + '/leave'}">
+                        스터디 탈퇴
+                    </a>
+                    <a class="btn btn-outline-primary" th:href="@{'/study/' + ${study.path} + '/members'}"
+                       th:text="${study.members.size()}">1</a>
+                </span>
+            <span sec:authorize="isAuthenticated()"
+                  th:if="${study.published && !study.closed && study.isManager(#authentication.principal)}">
+                    <a class="btn btn-outline-primary" th:href="@{'/study/' + ${study.path} + '/new-event'}">
+                        <i class="fa fa-plus"></i> 모임 만들기
+                    </a>
+                </span>
+        </div>
+    </div>
+    <div class="row justify-content-center bg-light">
+        <div class="col-10">
+            <p class="lead" th:text="${study.shortDescription}"></p>
+        </div>
+    </div>
+    <div class="row justify-content-center bg-light">
+        <div class="col-10">
+            <p>
+                <span th:each="tag: ${study.tags}"
+                      class="font-weight-light text-monospace badge badge-pill badge-info mr-3">
+                    <a th:href="@{'/search/tag/' + ${tag.title}}" class="text-decoration-none text-white">
+                        <i class="fa fa-tag"></i> <span th:text="${tag.title}">Tag</span>
+                    </a>
+                </span>
+                <span th:each="zone: ${study.zones}" class="font-weight-light text-monospace badge badge-primary mr-3">
+                    <a th:href="@{'/search/zone/' + ${zone.id}}" class="text-decoration-none text-white">
+                        <i class="fa fa-globe"></i> <span th:text="${zone.localNameOfCity}">City</span>
+                    </a>
+                </span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="study-menu (studyMenu)" class="row px-3 justify-content-center bg-light">
+    <nav class="col-10 nav nav-tabs">
+        <a class="nav-item nav-link" href="#" th:classappend="${studyMenu == 'info'}? active" th:href="@{'/study/' + ${study.path}}">
+            <i class="fa fa-info-circle"></i> 소개
+        </a>
+        <a class="nav-item nav-link" href="#" th:classappend="${studyMenu == 'members'}? active" th:href="@{'/study/' + ${study.path} + '/members'}">
+            <i class="fa fa-user"></i> 구성원
+        </a>
+        <a class="nav-item nav-link" th:classappend="${studyMenu == 'events'}? active" href="#" th:href="@{'/study/' + ${study.path} + '/events'}">
+            <i class="fa fa-calendar"></i> 모임
+        </a>
+        <a sec:authorize="isAuthenticated()" th:if="${study.isManager(#authentication.principal)}"
+           class="nav-item nav-link" th:classappend="${studyMenu == 'settings'}? active" href="#" th:href="@{'/study/' + ${study.path} + '/settings/description'}">
+            <i class="fa fa-cog"></i> 설정
+        </a>
+    </nav>
+</div>
+```
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <div th:replace="fragments.html :: main-nav"></div>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: study-info"></div>
+        <div th:replace="fragments.html :: study-menu(studyMenu='info')"></div>
+
+        <div class="row px-3 justify-content-center">
+            <div class="col-10 pt-3" th:utext="${study.fullDescription}"></div>
+        </div>
+
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script type="application/javascript">
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+    </script>
+</body>
+</html>
+```
+- 실행해서 스터디를 개설하면 다음과 같이 스터디 조회 화면이 나온다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_3.jpg"></p>
+
+<br>
+
+### 성능 개선
+- 현재 스터디를 조회할 경우 쿼리가 5개 발생한다. 
+    * 스터디 조회 1개
+    * member인지 확인 1개
+    * manager인지 확인 1개
+    * 스터디의 tag 1개
+    * 스터디의 zone 1개
+- 스터디를 조회할 경우 연결되어 있는 데이터를 가져와야 한다.
+    * 따라서 어차피 조회할 데이터라면 쿼리 개수를 줄이고 join을 해서 가져오자.
+    * Left outer join으로 연관 데이터를 한번에 조회할 수도 있다.
+- **Entity Graph 정의**
+```java
+@NamedEntityGraph(name = "Study.withAll", attributeNodes = {
+        @NamedAttributeNode("tags"),
+        @NamedAttributeNode("zones"),
+        @NamedAttributeNode("managers"),
+        @NamedAttributeNode("members")})
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Study {
+    
+    ...
+
+}
+```
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long> {
+
+    ...
+    
+    // EntityGraph에 명시한 연관관계는 EAGER로 가져오고 나머지는 기본 FetchType에 따른다.
+    @EntityGraph(value = "Study.withAll", type = EntityGraph.EntityGraphType.LOAD)
+    Study findByPath(String path);
+}
+```
+- 실행해보면 한꺼번에 데이터를 가져온다.
+<br>
