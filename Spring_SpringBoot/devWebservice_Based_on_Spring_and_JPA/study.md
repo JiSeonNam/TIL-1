@@ -752,3 +752,289 @@ public class StudyController {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_4.jpg"></p>
 
 <br>
+
+## 스터디 설정 - 소개 수정
+- 스터디 설정 관련 메뉴가 많아서 컨트롤러를 분리
+- 
+
+### 구현
+- account와 study 확인하는 작업을 Service로 위임
+    * account와 study를 getter로 가져오는 과정에서 없을 경우 처리를 해준다.
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public Study getStudy(String path) {
+        Study study = this.repository.findByPath(path);
+        if (study == null) {
+            throw new IllegalArgumentException(path + "에 해당하는 스터디가 없습니다.");
+        }
+
+        return study;
+    }
+}
+```
+```java
+@Controller
+@RequiredArgsConstructor
+public class StudyController {
+
+    ...
+
+    @GetMapping("/study/{path}")
+    public String viewStudy(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        Study study = studyService.getStudy(path);
+
+        model.addAttribute(account);
+        model.addAttribute(study);
+        return "study/view";
+    }
+
+    @GetMapping("/study/{path}/members")
+    public String viewStudyMembers(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        Study study = studyService.getStudy(path);
+
+        model.addAttribute(account);
+        model.addAttribute(study);
+        return "study/members";
+    }
+}
+```
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AccountService implements UserDetailsService {
+
+    ...
+
+    public Account getAccount(String nickname) {
+        Account account = accountRepository.findByNickname(nickname);
+        if (account == null) {
+            throw new IllegalArgumentException(nickname + "에 해당하는 사용자가 없습니다.");
+        }
+        return account;
+    }
+}
+```
+```java
+@Controller
+@RequiredArgsConstructor
+public class AccountController {
+
+    ...
+
+    @GetMapping("/profile/{nickname}")
+    public String viewProfile(@PathVariable String nickname, Model model, @CurrentAccount Account account) {
+        Account accountToView = accountService.getAccount(nickname);
+        model.addAttribute(accountToView);
+        model.addAttribute("isOwner", accountToView.equals(account));
+
+        model.addAttribute(accountToView);
+        model.addAttribute("isOwner", accountToView.equals(account));
+        return "account/profile";
+
+    }
+
+    ...
+}
+```
+- AccountService에 스터디 수정을 하는 것이 매니저인지 확인
+    * account가 manager인지 확인
+```java
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Account {
+
+    ...
+
+    public boolean isManagerOf(Study study) {
+        return study.getManagers().contains(this);
+    }
+}
+```
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public Study getStudyToUpdate(Account account, String path) {
+        Study study = this.getStudy(path);
+        if (!account.isManagerOf(study)) {
+            throw new AccessDeniedException("해당 기능을 사용할 수 없습니다.");
+        }
+
+        return study;
+    }
+}
+```
+- 스터디 소개 수정을 위한 폼 생성
+```java
+
+```
+- 스터디 소개 수정 맵핑
+```java
+@Controller
+@RequestMapping("/study/{path}/settings")
+@RequiredArgsConstructor
+public class StudySettingsController {
+
+    private final StudyService studyService;
+    private final ModelMapper modelMapper;
+
+    @GetMapping("/description")
+    public String viewStudySetting(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        model.addAttribute(account);
+        model.addAttribute(study);
+        // StudyDescriptionForm에 대한 정보를 modelMapper로 생성해서 화면에 전달
+        model.addAttribute(modelMapper.map(study, StudyDescriptionForm.class));
+        return "study/settings/description";
+    }
+
+    @PostMapping("/description")
+    public String updateStudyInfo(@CurrentAccount Account account, @PathVariable String path,
+                                  @Valid StudyDescriptionForm studyDescriptionForm, Errors errors,
+                                  Model model, RedirectAttributes attributes) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        // 여기서 study의 상태는 persist 상태이다.
+        // StudyService는 Transaction 안에서 가져온 것이다.
+
+        if (errors.hasErrors()) {
+            // 폼에서 받았던 데이터와 에러는 model에 기본으로 담아주지만 account와 study는 담아줘야 한다.
+            model.addAttribute(account);
+            model.addAttribute(study);
+            return "study/settings/description";
+        }
+
+        studyService.updateStudyDescription(study, studyDescriptionForm);
+        attributes.addFlashAttribute("message", "스터디 소개를 수정했습니다.");
+        return "redirect:/study/" + getPath(path) + "/settings/description";
+    }
+
+    private String getPath(String path) {
+        return URLEncoder.encode(path, StandardCharsets.UTF_8);
+    }
+}
+```
+- StudyService에 스터디 정보를 수정하는 `updateStudyDescription()` 생성
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+    private final ModelMapper modelMapper;
+
+    ...
+
+    public void updateStudyDescription(Study study, StudyDescriptionForm studyDescriptionForm) {
+        modelMapper.map(studyDescriptionForm, study);
+    }
+}
+```
+- 스터디 소개 수정 뷰 생성
+```html
+<!-- fragments.html-->
+<div th:fragment="study-settings-menu (currentMenu)" class="list-group">
+    <a class="list-group-item list-group-item-action" th:classappend="${currentMenu == 'description'}? active"
+       href="#" th:href="@{'/study/' + ${study.path} + '/settings/description'}">소개</a>
+    <a class="list-group-item list-group-item-action" th:classappend="${currentMenu == 'image'}? active"
+       href="#" th:href="@{'/study/' + ${study.path} + '/settings/image'}">배너 이미지</a>
+    <a class="list-group-item list-group-item-action" th:classappend="${currentMenu == 'tags'}? active"
+       href="#" th:href="@{'/study/' + ${study.path} + '/settings/tags'}">스터디 주제</a>
+    <a class="list-group-item list-group-item-action" th:classappend="${currentMenu == 'zones'}? active"
+       href="#" th:href="@{'/study/' + ${study.path} + '/settings/zones'}">활동 지역</a>
+    <a class="list-group-item list-group-item-action list-group-item-danger" th:classappend="${currentMenu == 'study'}? active"
+       href="#" th:href="@{'/study/' + ${study.path} + '/settings/study'}">스터디</a>
+</div>
+
+<div th:fragment="editor-script">
+    <script src="/node_modules/summernote/dist/summernote-bs4.js"></script>
+    <script type="application/javascript">
+        $(function () {
+            $('#fullDescription').summernote({
+                fontNames: ['Arial', 'Arial Black', 'Comic Sans MS', 'Courier New', 'Noto Sans KR', 'Merriweather'],
+                placeholder: '스터디의 목표, 일정, 진행 방식, 사용할 교재 또는 인터넷 강좌 그리고 모집중인 스터디원 등 스터디에 대해 자세히 적어 주세요.',
+                tabsize: 2,
+                height: 300
+            });
+        });
+    </script>
+</div>
+
+<div th:fragment="message" th:if="${message}" class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+    <span th:text="${message}">완료</span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+```
+```html
+<!-- description.html-->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body>
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: study-info"></div>
+        <div th:replace="fragments.html :: study-menu(studyMenu='settings')"></div>
+        <div class="row mt-3 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: study-settings-menu(currentMenu='description')"></div>
+            </div>
+            <div class="col-8">
+                <div th:replace="fragments.html :: message"></div>
+                <form class="needs-validation" th:action="@{'/study/' + ${study.getPath()} + '/settings/description'}"
+                      th:object="${studyDescriptionForm}" method="post" novalidate>
+                    <div class="form-group">
+                        <label for="shortDescription">짧은 소개</label>
+                        <textarea id="shortDescription" type="textarea" th:field="*{shortDescription}" class="form-control"
+                                  placeholder="스터디를 짧게 소개해 주세요." aria-describedby="shortDescriptionHelp" required maxlength="100">
+                            </textarea>
+                        <small id="shortDescriptionHelp" class="form-text text-muted">
+                            100자 이내로 스터디를 짧은 소개해 주세요.
+                        </small>
+                        <small class="invalid-feedback">짧은 소개를 입력하세요.</small>
+                        <small class="form-text text-danger" th:if="${#fields.hasErrors('shortDescription')}" th:errors="*{shortDescription}">ShortDescription Error</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fullDescription">상세 소개</label>
+                        <textarea id="fullDescription" type="textarea" th:field="*{fullDescription}" class="form-control"
+                                  placeholder="스터디를 자세히 설명해 주세요." aria-describedby="fullDescriptionHelp" required></textarea>
+                        <small id="fullDescriptionHelp" class="form-text text-muted">
+                            스터디의 목표, 일정, 진행 방식, 사용할 교재 또는 인터넷 강좌 그리고 모집중인 스터디원 등 스터디에 대해 자세히 적어 주세요.
+                        </small>
+                        <small class="invalid-feedback">상세 소개를 입력하세요.</small>
+                        <small class="form-text text-danger" th:if="${#fields.hasErrors('fullDescription')}" th:errors="*{fullDescription}">FullDescription Error</small>
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-primary btn-block" type="submit"
+                                aria-describedby="submitHelp">수정하기</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: form-validation"></script>
+    <script th:replace="fragments.html :: editor-script"></script>
+</body>
+</html> 
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_5.jpg"></p>
+
+<br>
