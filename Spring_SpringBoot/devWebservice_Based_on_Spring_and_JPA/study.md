@@ -755,7 +755,7 @@ public class StudyController {
 
 ## 스터디 설정 - 소개 수정
 - 스터디 설정 관련 메뉴가 많아서 컨트롤러를 분리
-- 
+<br>
 
 ### 구현
 - account와 study 확인하는 작업을 Service로 위임
@@ -878,7 +878,18 @@ public class StudyService {
 ```
 - 스터디 소개 수정을 위한 폼 생성
 ```java
+@Data
+@NoArgsConstructor
+public class StudyDescriptionForm {
 
+    @NotBlank
+    @Length(max = 100)
+    private String shortDescription;
+
+    @NotBlank
+    private String fullDescription;
+
+}
 ```
 - 스터디 소개 수정 맵핑
 ```java
@@ -1036,5 +1047,268 @@ public class StudyService {
 </html> 
 ```
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_5.jpg"></p>
+
+<br>
+
+## 스터디 설정 - 배너
+- 이미지 파일 업로드 시 고려할 점
+    * 이미지 파일인지 확인 (이미지가 아닌 파일을 업로드 하려는건 아닌지 확인)
+    * 이미지 크기 확인 (너무 큰 이미지 업로드 하지 않도록)
+<br>
+
+### 구현
+- 이미지 파일 확인 및 크기 관련 설정
+```html
+<!-- framents.html-->
+#study-logo {
+    height: 200px;
+    width: 100%;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+}
+
+#study-logo img {
+    height: auto;
+    width: 100%;
+    overflow: hidden;
+}
+
+<script th:fragment="tooltip" type="application/javascript">
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+</script>
+```
+- 톰캣 기본 요청 사이즈 수정
+```properties
+# 톰캣 기본 요청 사이즈는 2MB 입니다. 그것보다 큰 요청을 받고 싶은 경우에 이 값을 조정해야 합니다.
+server.tomcat.max-http-form-post-size=5MB
+```
+- 스터디 배너 관련 맵핑
+```java
+@Controller
+@RequestMapping("/study/{path}/settings")
+@RequiredArgsConstructor
+public class StudySettingsController {
+
+    ...
+
+    @GetMapping("/banner")
+    public String studyImageForm(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        model.addAttribute(account);
+        model.addAttribute(study);
+        return "study/settings/banner";
+    }
+
+    @PostMapping("/banner")
+    public String studyImageSubmit(@CurrentAccount Account account, @PathVariable String path,
+                                   String image, RedirectAttributes attributes) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        studyService.updateStudyImage(study, image);
+        attributes.addFlashAttribute("message", "스터디 이미지를 수정했습니다.");
+        return "redirect:/study/" + getPath(path) + "/settings/banner";
+    }
+
+    @PostMapping("/banner/enable")
+    public String enableStudyBanner(@CurrentAccount Account account, @PathVariable String path) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        studyService.enableStudyBanner(study);
+        return "redirect:/study/" + getPath(path) + "/settings/banner";
+    }
+
+    @PostMapping("/banner/disable")
+    public String disableStudyBanner(@CurrentAccount Account account, @PathVariable String path) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        studyService.disableStudyBanner(study);
+        return "redirect:/study/" + getPath(path) + "/settings/banner";
+    }
+}
+```
+- 만약 배너를 사용하지만 배너 이미지가 없는 경우 기본 이미지 사용
+```java
+...
+public class Study {
+
+    ...
+
+    public void addMember(Account account) {
+        this.members.add(account);
+    }
+
+    public String getImage() {
+        return image != null ? image : "/images/default_banner.jpg";
+    }
+}
+```
+- 배너 이미지 설정 뷰 생성
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body>
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: study-info"></div>
+        <div th:replace="fragments.html :: study-menu(studyMenu='settings')"></div>
+        <div class="row mt-3 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: study-settings-menu(currentMenu='image')"></div>
+            </div>
+            <div class="col-8">
+                <div th:replace="fragments.html :: message"></div>
+                <div class="row">
+                    <h2 class="col-sm-12">배너 이미지 사용</h2>
+                </div>
+                <form th:if="${!study.useBanner}" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/banner/enable'}" method="post" novalidate>
+                    <div class="alert alert-primary" role="alert">
+                        스터디 메뉴에서 스터디 배너 이미지를 사용합니다. 스터디 배너 이미지를 아직 설정하지 않았다면, 기본 배너 이미지를 사용합니다.
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-outline-primary btn-block" type="submit" aria-describedby="submitHelp">배너 이미지 사용하기</button>
+                    </div>
+                </form>
+                <form th:if="${study.useBanner}" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/banner/disable'}" method="post" novalidate>
+                    <div class="alert alert-info" role="alert">
+                        스터디 메뉴에서 스터디 배너 이미지를 사용하지 않습니다. 스터디 목록에서는 배너 이미지를 사용합니다.
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-outline-primary btn-block" type="submit" aria-describedby="submitHelp">배너 이미지 사용하지 않기</button>
+                    </div>
+                </form>
+                <hr/>
+                <div class="row">
+                    <h2 class="col-sm-12">배너 이미지 변경</h2>
+                </div>
+                <form id="imageForm" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/banner'}" method="post" novalidate>
+                    <div class="form-group">
+                        <input id="studyImage" type="hidden" name="image" class="form-control" />
+                    </div>
+                </form>
+                <div class="card text-center">
+                    <div id="current-study-image" class="mt-3">
+                        <img class="rounded" th:src="${study.image}" width="640" alt="name" th:alt="${study.title}"/>
+                    </div>
+                    <div id="new-study-image" class="mt-3"></div>
+                    <div class="card-body">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="study-image-file">
+                            <label class="custom-file-label" for="study-image-file">스터디 이미지 변경</label>
+                        </div>
+                        <div id="new-study-image-control" class="mt-3">
+                            <button class="btn btn-outline-primary btn-block" id="cut-button">자르기</button>
+                            <button class="btn btn-outline-success btn-block" id="confirm-button">확인</button>
+                            <button class="btn btn-primary btn-block" id="save-button">저장</button>
+                            <button class="btn btn-outline-warning btn-block" id="reset-button">취소</button>
+                        </div>
+                        <div id="cropped-new-study-image" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: tooltip"></script>
+    <link  href="/node_modules/cropper/dist/cropper.min.css" rel="stylesheet">
+    <script src="/node_modules/cropper/dist/cropper.min.js"></script>
+    <script src="/node_modules/jquery-cropper/dist/jquery-cropper.min.js"></script>
+    <script type="application/javascript">
+        $(function() {
+            cropper = '';
+            let $confirmBtn = $("#confirm-button");
+            let $resetBtn = $("#reset-button");
+            let $cutBtn = $("#cut-button");
+            let $saveBtn = $("#save-button");
+            let $newStudyImage = $("#new-study-image");
+            let $currentStudyImage = $("#current-study-image");
+            let $resultImage = $("#cropped-new-study-image");
+            let $studyImage = $("#studyImage");
+
+            $newStudyImage.hide();
+            $cutBtn.hide();
+            $resetBtn.hide();
+            $confirmBtn.hide();
+            $saveBtn.hide();
+
+            $("#study-image-file").change(function(e) {
+                if (e.target.files.length === 1) {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        if (e.target.result) {
+                            if (!e.target.result.startsWith("data:image")) {
+                                alert("이미지 파일을 선택하세요.");
+                                return;
+                            }
+
+                            let img = document.createElement("img");
+                            img.id = 'new-study';
+                            img.src = e.target.result;
+                            img.setAttribute('width', '100%');
+
+                            $newStudyImage.html(img);
+                            $newStudyImage.show();
+                            $currentStudyImage.hide();
+
+                            let $newImage = $(img);
+                            $newImage.cropper({aspectRatio: 13/2});
+                            cropper = $newImage.data('cropper');
+
+                            $cutBtn.show();
+                            $confirmBtn.hide();
+                            $resetBtn.show();
+                        }
+                    };
+
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            $resetBtn.click(function() {
+                $currentStudyImage.show();
+                $newStudyImage.hide();
+                $resultImage.hide();
+                $resetBtn.hide();
+                $cutBtn.hide();
+                $confirmBtn.hide();
+                $saveBtn.hide();
+                $studyImage.val('');
+            });
+
+            $cutBtn.click(function () {
+                let dataUrl = cropper.getCroppedCanvas().toDataURL();
+
+                if (dataUrl.length > 1000 * 1024) {
+                    alert("이미지 파일이 너무 큽니다. 1024000 보다 작은 파일을 사용하세요. 현재 이미지 사이즈 " + dataUrl.length);
+                    return;
+                }
+
+                let newImage = document.createElement("img");
+                newImage.id = "cropped-new-study-image";
+                newImage.src = dataUrl;
+                newImage.width = 640;
+                $resultImage.html(newImage);
+                $resultImage.show();
+                $confirmBtn.show();
+
+                $confirmBtn.click(function () {
+                    $newStudyImage.html(newImage);
+                    $cutBtn.hide();
+                    $confirmBtn.hide();
+                    $studyImage.val(dataUrl);
+                    $saveBtn.show();
+                });
+            });
+
+            $saveBtn.click(function() {
+                $("#imageForm").submit();
+            })
+        });
+    </script>
+</body>
+</html> 
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_6.jpg"></p>
 
 <br>
