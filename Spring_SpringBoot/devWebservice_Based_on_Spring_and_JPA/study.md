@@ -1312,3 +1312,451 @@ public class Study {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_6.jpg"></p>
 
 <br>
+
+## 스터디 설정 - 태그 / 지역
+- 데이터를 필요한 만큼만 읽어오기.
+    * 태그와 지역 정보를 Ajax로 수정할 때 스터디 (+멤버, +매니저, +태그, +지역) 정보를 전부 가져올 필요가 있는가?
+    * 스프링 데이터 JPA 메소드 작명, @EntityGraph와 @NamedEntityGraph 활용하기
+<br>
+
+### 구현
+- 태그, 지역 관련 맵핑 추가
+```java
+@Controller
+@RequestMapping("/study/{path}/settings")
+@RequiredArgsConstructor
+public class StudySettingsController {
+
+    ...
+    private final TagService tagService;
+    private final TagRepository tagRepository;
+    private final ZoneRepository zoneRepository;
+    private final ObjectMapper objectMapper;
+
+    ...
+
+    @GetMapping("/tags")
+    public String studyTagsForm(@CurrentAccount Account account, @PathVariable String path, Model model)
+            throws JsonProcessingException {
+        Study study = studyService.getStudyToUpdate(account, path);
+        model.addAttribute(account);
+        model.addAttribute(study);
+
+        model.addAttribute("tags", study.getTags().stream()
+                .map(Tag::getTitle).collect(Collectors.toList()));
+        List<String> allTagTitles = tagRepository.findAll().stream()
+                .map(Tag::getTitle).collect(Collectors.toList());
+        model.addAttribute("whitelist", objectMapper.writeValueAsString(allTagTitles));
+        return "study/settings/tags";
+    }
+
+    @PostMapping("/tags/add")
+    @ResponseBody
+    public ResponseEntity addTag(@CurrentAccount Account account, @PathVariable String path,
+                                 @RequestBody TagForm tagForm) {
+        Study study = studyService.getStudyToUpdateTag(account, path);
+        Tag tag = tagService.findOrCreateNew(tagForm.getTagTitle());
+        studyService.addTag(study, tag);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/tags/remove")
+    @ResponseBody
+    public ResponseEntity removeTag(@CurrentAccount Account account, @PathVariable String path,
+                                    @RequestBody TagForm tagForm) {
+        Study study = studyService.getStudyToUpdateTag(account, path);
+        Tag tag = tagRepository.findByTitle(tagForm.getTagTitle());
+        if (tag == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        studyService.removeTag(study, tag);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/zones")
+    public String studyZonesForm(@CurrentAccount Account account, @PathVariable String path, Model model)
+            throws JsonProcessingException {
+        Study study = studyService.getStudyToUpdate(account, path);
+        model.addAttribute(account);
+        model.addAttribute(study);
+        model.addAttribute("zones", study.getZones().stream()
+                .map(Zone::toString).collect(Collectors.toList()));
+        List<String> allZones = zoneRepository.findAll().stream().map(Zone::toString).collect(Collectors.toList());
+        model.addAttribute("whitelist", objectMapper.writeValueAsString(allZones));
+        return "study/settings/zones";
+    }
+
+    @PostMapping("/zones/add")
+    @ResponseBody
+    public ResponseEntity addZone(@CurrentAccount Account account, @PathVariable String path,
+                                  @RequestBody ZoneForm zoneForm) {
+        Study study = studyService.getStudyToUpdateZone(account, path);
+        Zone zone = zoneRepository.findByCityAndProvince(zoneForm.getCityName(), zoneForm.getProvinceName());
+        if (zone == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        studyService.addZone(study, zone);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/zones/remove")
+    @ResponseBody
+    public ResponseEntity removeZone(@CurrentAccount Account account, @PathVariable String path,
+                                     @RequestBody ZoneForm zoneForm) {
+        Study study = studyService.getStudyToUpdateZone(account, path);
+        Zone zone = zoneRepository.findByCityAndProvince(zoneForm.getCityName(), zoneForm.getProvinceName());
+        if (zone == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        studyService.removeZone(study, zone);
+        return ResponseEntity.ok().build();
+    }
+}
+```
+- TagService 생성
+    * `findOrCreateNew()`
+        - DB의 태그 확인 메서드
+        - 참고) SettingsController에 tag관련 코드에도 중복 코드 대신 `findOrCreateNew()` 메서드 사용
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class TagService {
+
+    private final TagRepository tagRepository;
+
+    public Tag findOrCreateNew(String tagTitle) {
+        Tag tag = tagRepository.findByTitle(tagTitle);
+        if (tag == null) {
+            tag = tagRepository.save(Tag.builder().title(tagTitle).build());
+        }
+        return tag;
+    }
+}
+```
+- StudyService에 태그/지역 관련 메서드 추가
+    * `getStudyToUpdateTag()`
+        - 스터디를 조회할 경우 모든 데이터를 가져와야 하지만 태그/지역 정보의 추가, 삭제는 매니저 여부, 태그 정보만 있으면 된다.
+    * account의 태그를 변경할 때 accountRepository를 통해서 가져오기 때문에 persist상태였지만 지금 study의 상태는 이미 repository에서 가져오기 때문에 persist 상태이다.
+        - 따라서 StudyService에서 repository 통해서 조회할 필요가 없다.
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public void addTag(Study study, Tag tag) {
+        study.getTags().add(tag);
+    }
+
+    public void removeTag(Study study, Tag tag) {
+        study.getTags().remove(tag);
+    }
+
+    public void addZone(Study study, Zone zone) {
+        study.getZones().add(zone);
+    }
+
+    public void removeZone(Study study, Zone zone) {
+        study.getZones().remove(zone);
+    }
+
+    public Study getStudyToUpdateTag(Account account, String path) {
+        Study study = repository.findAccountWithTagsByPath(path);
+        checkIfExistingStudy(path, study);
+        checkIfManager(account, study);
+        return study;
+    }
+
+    public Study getStudyToUpdateZone(Account account, String path) {
+        Study study = repository.findAccountWithZonesByPath(path);
+        checkIfExistingStudy(path, study);
+        checkIfManager(account, study);
+        return study;
+    }
+
+    private void checkIfManager(Account account, Study study) {
+        if (!account.isManagerOf(study)) {
+            throw new AccessDeniedException("해당 기능을 사용할 수 없습니다.");
+        }
+    }
+
+    private void checkIfExistingStudy(String path, Study study) {
+        if (study == null) {
+            throw new IllegalArgumentException(path + "에 해당하는 스터디가 없습니다.");
+        }
+    }
+}
+```
+- StudyRepository에 EntityGraph 관련 코드 추가
+    * 사실 WithTags와 WithZones는 스프링 데이터 JPA가 처리하는 키워드가 아니기 때문에 findByPath와 같은 역할을 한다.
+    * 같은 쿼리가 발생하지만 다른 엔티티 그래프를 사용하기 위해 이름을 다르게 하는 것이다.
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long> {
+
+    boolean existsByPath(String path);
+
+    @EntityGraph(value = "Study.withAll", type = EntityGraph.EntityGraphType.LOAD)
+    Study findByPath(String path);
+
+    @EntityGraph(value = "Study.withTagsAndManagers", type = EntityGraph.EntityGraphType.FETCH)
+    Study findAccountWithTagsByPath(String path);
+
+    @EntityGraph(value = "Study.withZonesAndManagers", type = EntityGraph.EntityGraphType.FETCH)
+    Study findAccountWithZonesByPath(String path);
+}
+```
+- Study 엔티티에 EntityGraph 관련 코드 추가
+```java
+...
+@NamedEntityGraph(name = "Study.withTagsAndManagers", attributeNodes = {
+        @NamedAttributeNode("tags"),
+        @NamedAttributeNode("managers")})
+@NamedEntityGraph(name = "Study.withZonesAndManagers", attributeNodes = {
+        @NamedAttributeNode("zones"),
+        @NamedAttributeNode("managers")})
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Study {
+    ...
+}
+```
+- fragments.html에 태그/지역 관련 뷰 추가
+```html
+<!-- fragments.html-->
+<script src="/node_modules/@yaireo/tagify/dist/tagify.min.js"></script>
+<script type="application/javascript" th:inline="javascript">
+    $(function() {
+        var studyPath = "[(${study.path})]";
+        function tagRequest(url, tagTitle) {
+            $.ajax({
+                dataType: "json",
+                autocomplete: {
+                    enabled: true,
+                    rightKey: true,
+                },
+                contentType: "application/json; charset=utf-8",
+                method: "POST",
+                url: "/study/" + studyPath + "/settings/tags" + url,
+                data: JSON.stringify({'tagTitle': tagTitle})
+            }).done(function (data, status) {
+                console.log("${data} and status is ${status}");
+            });
+        }
+
+        function onAdd(e) {
+            tagRequest("/add", e.detail.data.value);
+        }
+
+        function onRemove(e) {
+            tagRequest("/remove", e.detail.data.value);
+        }
+
+        var tagInput = document.querySelector("#tags");
+        var tagify = new Tagify(tagInput, {
+            pattern: /^.{0,20}$/,
+            whitelist: JSON.parse(document.querySelector("#whitelist").textContent),
+            dropdown : {
+                enabled: 1, // suggest tags after a single character input
+            } // map tags
+        });
+        tagify.on("add", onAdd);
+        tagify.on("remove", onRemove);
+        // add a class to Tagify's input element
+        tagify.DOM.input.classList.add('form-control');
+        // re-place Tagify's input element outside of the  element (tagify.DOM.scope), just before it
+        tagify.DOM.scope.parentNode.insertBefore(tagify.DOM.input, tagify.DOM.scope);
+    });
+</script>
+
+<div th:fragment="update-tags (baseUrl)">
+    <script src="/node_modules/@yaireo/tagify/dist/tagify.min.js"></script>
+    <script type="application/javascript" th:inline="javascript">
+        $(function() {
+            function tagRequest(url, tagTitle) {
+                $.ajax({
+                    dataType: "json",
+                    autocomplete: {
+                        enabled: true,
+                        rightKey: true,
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    method: "POST",
+                    url: "[(${baseUrl})]" + url,
+                    data: JSON.stringify({'tagTitle': tagTitle})
+                }).done(function (data, status) {
+                    console.log("${data} and status is ${status}");
+                });
+            }
+
+            function onAdd(e) {
+                tagRequest("/add", e.detail.data.value);
+            }
+
+            function onRemove(e) {
+                tagRequest("/remove", e.detail.data.value);
+            }
+
+            var tagInput = document.querySelector("#tags");
+            var tagify = new Tagify(tagInput, {
+                pattern: /^.{0,20}$/,
+                whitelist: JSON.parse(document.querySelector("#whitelist").textContent),
+                dropdown : {
+                    enabled: 1, // suggest tags after a single character input
+                } // map tags
+            });
+            tagify.on("add", onAdd);
+            tagify.on("remove", onRemove);
+            // add a class to Tagify's input element
+            tagify.DOM.input.classList.add('form-control');
+            // re-place Tagify's input element outside of the  element (tagify.DOM.scope), just before it
+            tagify.DOM.scope.parentNode.insertBefore(tagify.DOM.input, tagify.DOM.scope);
+        });
+    </script>
+</div>
+
+<div th:fragment="update-zones (baseUrl)">
+    <script src="/node_modules/@yaireo/tagify/dist/tagify.min.js"></script>
+    <script type="application/javascript">
+        $(function () {
+            function tagRequest(url, zoneName) {
+                $.ajax({
+                    dataType: "json",
+                    autocomplete: {
+                        enabled: true,
+                        rightKey: true,
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    method: "POST",
+                    url: "[(${baseUrl})]" + url,
+                    data: JSON.stringify({'zoneName': zoneName})
+                }).done(function (data, status) {
+                    console.log("${data} and status is ${status}");
+                });
+            }
+
+            function onAdd(e) {
+                tagRequest("/add", e.detail.data.value);
+            }
+
+            function onRemove(e) {
+                tagRequest("/remove", e.detail.data.value);
+            }
+
+            var tagInput = document.querySelector("#zones");
+
+            var tagify = new Tagify(tagInput, {
+                enforceWhitelist: true,
+                whitelist: JSON.parse(document.querySelector("#whitelist").textContent),
+                dropdown : {
+                    enabled: 1, // suggest tags after a single character input
+                } // map tags
+            });
+
+            tagify.on("add", onAdd);
+            tagify.on("remove", onRemove);
+
+            // add a class to Tagify's input element
+            tagify.DOM.input.classList.add('form-control');
+            // re-place Tagify's input element outside of the  element (tagify.DOM.scope), just before it
+            tagify.DOM.scope.parentNode.insertBefore(tagify.DOM.input, tagify.DOM.scope);
+        });
+    </script>
+</div>
+```
+- 설정의 태그/지역에 중복 코드 제거
+```html
+<!-- settings/tags.html-->
+<script th:replace="fragments.html :: update-tags(baseUrl='/settings/tags')"></script>
+```
+```html
+<!-- settings/zones.html-->
+<script th:replace="fragments.html :: update-zones(baseUrl='/settings/zones')"></script>
+```
+- 스터디의 태그/지역 관련 뷰 추가
+```html
+<!-- tags.html-->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body>
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: study-info"></div>
+        <div th:replace="fragments.html :: study-menu(studyMenu='settings')"></div>
+        <div class="row mt-3 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: study-settings-menu(currentMenu='tags')"></div>
+            </div>
+            <div class="col-8">
+                <div class="row">
+                    <h2 class="col-sm-12">스터디 주제</h2>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="alert alert-info" role="alert">
+                            스터디에서 주로 다루는 주제를 태그로 등록하세요. 태그를 입력하고 콤마(,) 또는 엔터를 입력하세요.
+                        </div>
+                        <div id="whitelist" th:text="${whitelist}" hidden>
+                        </div>
+                        <input id="tags" type="text" name="tags" th:value="${#strings.listJoin(tags, ',')}"
+                               class="tagify-outside" aria-describedby="tagHelp">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: ajax-csrf-header"></script>
+    <script th:replace="fragments.html :: update-tags(baseUrl='/study/' + ${study.path} + '/settings/tags')"></script>
+</body>
+</html>
+```
+```html
+<!-- zones.html-->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body>
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: study-info"></div>
+        <div th:replace="fragments.html :: study-menu(studyMenu='settings')"></div>
+        <div class="row mt-3 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: study-settings-menu(currentMenu='zones')"></div>
+            </div>
+            <div class="col-8">
+                <div class="row">
+                    <h2 class="col-sm-12">주요 활동 지역</h2>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="alert alert-info" role="alert">
+                            주로 스터디를 하는 지역을 등록하세요.<br/>
+                            시스템에 등록된 지역만 선택할 수 있습니다.
+                        </div>
+                        <div id="whitelist" th:text="${whitelist}" hidden></div>
+                        <input id="zones" type="text" name="zones" th:value="${#strings.listJoin(zones, ',')}"
+                               class="tagify-outside">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: ajax-csrf-header"></script>
+    <script th:replace="fragments.html :: update-zones(baseUrl='/study/' + ${study.path} + '/settings/zones')"></script>
+</body>
+</html>
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_7.jpg"></p>
