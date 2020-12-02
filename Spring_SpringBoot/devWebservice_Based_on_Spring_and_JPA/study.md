@@ -2301,3 +2301,90 @@ public class Study {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_10.jpg"></p>
 
 <br>
+
+## 스터디 참여 및 탈퇴
+- StudySettingsController에서 `@RequestMapping("/study/{path}/settings")`으로 기본값으로 세팅했기 때문에 StudyController에 기능을 추가한다.
+<br>
+
+### 구현
+- StudyController에 스터디 참여/탈퇴 관련 맵핑 추가
+```java
+@Controller
+@RequiredArgsConstructor
+public class StudyController {
+
+    ...
+
+    @GetMapping("/study/{path}/join")
+    public String joinStudy(@CurrentAccount Account account, @PathVariable String path) {
+        Study study = studyRepository.findStudyWithMembersByPath(path);
+        studyService.addMember(study, account);
+        return "redirect:/study/" + study.getEncodedPath() + "/members";
+    }
+
+    @GetMapping("/study/{path}/leave")
+    public String leaveStudy(@CurrentAccount Account account, @PathVariable String path) {
+        Study study = studyRepository.findStudyWithMembersByPath(path);
+        studyService.removeMember(study, account);
+        return "redirect:/study/" + study.getEncodedPath() + "/members";
+    }
+}
+```
+- StudyService에 참여/탈퇴 메서드 추가
+    * 객체의 엔티티 상태를 변경하는 요청은 POST가 원칙이다.
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public void addMember(Study study, Account account) {
+        study.addMember(account);
+    }
+
+    public void removeMember(Study study, Account account) {
+        study.removeMember(account);
+    }
+}
+```
+- StudyRepository에 EntityGraph 관련 코드 추가
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long> {
+
+    ...
+
+    @EntityGraph(value = "Study.withMembers", type = EntityGraph.EntityGraphType.FETCH)
+    Study findStudyWithMembersByPath(String path);
+}
+```
+- Study 엔티티
+    * `getEncodedPath()` 메서드 Study로 이동
+        - StudyController에도 사용해야 하기 때문에 기존의 StudySettingsController에서 Study 엔티티로 이동
+    * 스터디 인원을 탈퇴(제거)하는 `removeMember()` 메서드 추가 (add는 이미 존재)
+```java
+...
+@NamedEntityGraph(name = "Study.withMembers", attributeNodes = {
+        @NamedAttributeNode("members")})
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Study {
+
+    ...
+
+    public void removeMember(Account account) {
+        this.getMembers().remove(account);
+    }
+
+    public String getEncodedPath() {
+        return URLEncoder.encode(this.path, StandardCharsets.UTF_8);
+    }
+}
+```
+- 실행하면 다음과 같이 새로운 스터디원의 참여/탈퇴 기능이 성공적으로 수행된다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_11.jpg"></p>
+
+<br>
