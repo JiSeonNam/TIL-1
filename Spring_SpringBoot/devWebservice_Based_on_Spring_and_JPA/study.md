@@ -2199,3 +2199,105 @@ public class StudyService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_9.jpg"></p>
 
 <br>
+
+## 스터디 설정 - 삭제
+- 데이터를 삭제하기 전에 고민할 것
+    * 정말로 삭제할 것인가
+    * 아니면 삭제 한 척(?)을 하고 삭제 했다고 마킹을 해둘 것인가 ([Soft Delete](https://vladmihalcea.com/the-best-way-to-soft-delete-with-hibernate/))
+        - 삭제 시 UPDATE 쿼리를 사용해 삭제를 했다고 flag를 조정하고 쿼리할 때 삭제 되지 않은 데이터만 읽어오는 방법
+- 이 서비스에서는 스터디 데이터를 실제로 삭제한다.
+    * Soft Delete와 비슷한 역할을 할 수 있는 스터디 종료(closed) 개념이 있기 때문에 이 서비스에서의 삭제는 정말로 데이터를 삭제한다.
+    * 스터디가 공개되어 있는 상태에서는 삭제할 수 없다.
+<br>
+
+### 구현
+- StudySettingsController에 스터디 삭제 맵핑 추가
+```java
+@Controller
+@RequestMapping("/study/{path}/settings")
+@RequiredArgsConstructor
+public class StudySettingsController {
+
+    ...
+
+    @PostMapping("/study/remove")
+    public String removeStudy(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        Study study = studyService.getStudyToUpdateStatus(account, path);
+        studyService.remove(study);
+        return "redirect:/";
+    }
+}
+```
+- StudyService에 `remove()` 추가
+    * 관리자 권한을 확인하고 삭제 할 수 있는 상황이면 삭제
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public void remove(Study study) {
+        if (study.isRemovable()) {
+            repository.delete(study);
+        } else {
+            throw new IllegalArgumentException("스터디를 삭제할 수 없습니다.");
+        }
+    }
+}
+```
+- Study 엔티티에 `isRemovable()` 메서드 추가
+```java
+...
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Study {
+
+    ...
+
+    public boolean isRemovable() {
+        return !this.published; // TODO 모임을 했던 스터디는 삭제할 수 없다.
+    }
+}
+```
+- 스터디 설정 뷰에서 삭제하지 못하는 경우 추가
+```html
+<!-- study.html -->
+...
+
+<div class="row" th:if="${study.isRemovable()}">
+    <h5 class="col-sm-12 text-danger">스터디 삭제</h5>
+    <form class="col-sm-12" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/study/remove'}" method="post" novalidate>
+        <div class="alert alert-danger" role="alert">
+            스터디를 삭제하면 스터디 관련 모든 기록을 삭제하며 복구할 수 없습니다. <br/>
+            <b>다음에 해당하는 스터디는 자동으로 삭제 됩니다.</b>
+            <ul>
+                <li>만든지 1주일이 지난 비공개 스터디</li>
+                <li>스터디 공개 이후, 한달 동안 모임을 만들지 않은 스터디</li>
+                <li>스터디 공개 이후, 모임을 만들지 않고 종료한 스터디</li>
+            </ul>
+        </div>
+        <div class="form-group">
+            <button class="btn btn-outline-danger" type="submit" aria-describedby="submitHelp">스터디 삭제</button>
+        </div>
+    </form>
+</div>
+<div class="row" th:if="${!study.isRemovable()}">
+    <h5 class="col-sm-12 text-danger">스터디 삭제</h5>
+    <form class="col-sm-12" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/study/remove'}" method="post" novalidate>
+        <div class="alert alert-danger" role="alert">
+            공개 중이고 모임을 했던 스터디는 삭제할 수 없습니다.
+        </div>
+        <div class="form-group">
+            <button class="btn btn-outline-danger" type="submit" aria-describedby="submitHelp" disabled>스터디 삭제</button>
+        </div>
+    </form>
+</div>
+
+...
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_10.jpg"></p>
+
+<br>
