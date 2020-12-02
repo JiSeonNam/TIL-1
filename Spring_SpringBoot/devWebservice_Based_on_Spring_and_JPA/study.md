@@ -1770,8 +1770,8 @@ public class Study {
     * 종료 상태에서는 상태 변경 불가.
 - 스터디 공개 상태
     * 팀원 모집 시작 및 중단 가능
-    * 다른 사용자에게 스터디 정보가 공개 됩니다. (조회 가능)
-    * 해당 스터디의 주제와 지역에 대응하는 사용자에게 알림을 전달 한다.
+    * 다른 사용자에게 스터디 정보가 공개된다.(조회 가능)
+    * 해당 스터디의 주제와 지역에 대응하는 사용자에게 알림을 전달한다.
     * 모임을 만들 수 있다.
 - 스터디 종료 상태
     * 조회만 가능.
@@ -2094,5 +2094,108 @@ public class Study {
 ```
 - 실행하면 다음 화면과 같이 스터디 공개 및 종료, 팀원 모집/중단 기능을 사용할 수 있다.
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_8.jpg"></p>
+
+<br>
+
+## 스터디 설정 - 경로 및 이름 수정
+- 경로는 중복되지 않고 특정한 패턴의 값을 만족하는 값이 들어와야 한다.
+- 스터디 이름은 중복을 허용하고 50자 이내에서 얼마든지 변경 가능하다.
+ <br>
+
+ ### 구현
+ - StudySettingsController에 경로 및 이름 수정 관련 맵핑 추가
+    * `updateStudyPath()`
+        - Form에서 들어오는 데이터를 검증할 때 지금까지는 Validator를 만들고 InitBinder를 등록했지만 이렇게 할 수도 있다. 
+        - 데이터가 복합 객체가 아니라 단일 데이터이므로 `@RequestParam`으로 데이터를 바로 받아 뷰에서 처리한다.
+        - `@RequestParam`은 별도로 `@Valid`로 에러를 받을 수가 없기 때문에 직접 validation해야 한다.(복합 객체 ModelAttribute만 가능)
+        - **개발할 때는 둘 중에 하나로 일관성을 유지하는 것이 좋다.**
+ ```java
+ @Controller
+@RequestMapping("/study/{path}/settings")
+@RequiredArgsConstructor
+public class StudySettingsController {
+
+    ...
+
+    @PostMapping("/study/path")
+    public String updateStudyPath(@CurrentAccount Account account, @PathVariable String path, String newPath,
+                                  Model model, RedirectAttributes attributes) {
+        Study study = studyService.getStudyToUpdateStatus(account, path);
+        if (!studyService.isValidPath(newPath)) { // 직접 validation
+            model.addAttribute(account);
+            model.addAttribute(study);
+            model.addAttribute("studyPathError", "해당 스터디 경로는 사용할 수 없습니다. 다른 값을 입력하세요.");
+            return "study/settings/study";
+        }
+
+        studyService.updateStudyPath(study, newPath);
+        attributes.addFlashAttribute("message", "스터디 경로를 수정했습니다.");
+        return "redirect:/study/" + getPath(newPath) + "/settings/study";
+    }
+
+    @PostMapping("/study/title")
+    public String updateStudyTitle(@CurrentAccount Account account, @PathVariable String path, String newTitle,
+                                   Model model, RedirectAttributes attributes) {
+        Study study = studyService.getStudyToUpdateStatus(account, path);
+        if (!studyService.isValidTitle(newTitle)) {
+            model.addAttribute(account);
+            model.addAttribute(study);
+            model.addAttribute("studyTitleError", "스터디 이름을 다시 입력하세요.");
+            return "study/settings/study";
+        }
+
+        studyService.updateStudyTitle(study, newTitle);
+        attributes.addFlashAttribute("message", "스터디 이름을 수정했습니다.");
+        return "redirect:/study/" + getPath(path) + "/settings/study";
+    }
+}
+```
+- path pattern을 따로 만들기
+```java
+@Data
+public class StudyForm {
+
+    public static final String VALID_PATH_PATTERN = "^[ㄱ-ㅎ가-힣a-z0-9_-]{2,20}$";
+
+    @NotBlank
+    @Length(min = 2, max = 20)
+    @Pattern(regexp = VALID_PATH_PATTERN)
+    private String path;
+
+    ```
+}
+```
+- StudyService에 경로 및 이름 수정 관련 메서드 추가
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public boolean isValidPath(String newPath) {
+        if (!newPath.matches(VALID_PATH_PATTERN)) {
+            return false;
+        }
+
+        return !repository.existsByPath(newPath);
+    }
+
+    public void updateStudyPath(Study study, String newPath) {
+        study.setPath(newPath);
+    }
+
+    public boolean isValidTitle(String newTitle) {
+        return newTitle.length() <= 50; // 중복 검사 X
+    }
+
+    public void updateStudyTitle(Study study, String newTitle) {
+        study.setTitle(newTitle);
+    }
+}
+```
+- 뷰는 이미 스터디 상태에서 만들었었다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_9.jpg"></p>
 
 <br>
