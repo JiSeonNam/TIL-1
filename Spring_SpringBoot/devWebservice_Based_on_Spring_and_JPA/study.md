@@ -2388,3 +2388,141 @@ public class Study {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_11.jpg"></p>
 
 <br>
+
+## 스터디 테스트
+- StudyControllerTest
+    * StudySettingsControllerTest가 StudyControllerTest를 상속받아 테스트 할 수 있도록 protected
+```java
+@Transactional
+@SpringBootTest
+@AutoConfigureMockMvc
+@RequiredArgsConstructor
+class StudyControllerTest {
+
+    @Autowired protected MockMvc mockMvc;
+    @Autowired protected StudyService studyService;
+    @Autowired protected StudyRepository studyRepository;
+    @Autowired protected AccountRepository accountRepository;
+
+    ...
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 가입")
+    void joinStudy() throws Exception {
+        Account kimhayoung = createAccount("kimhayoung");
+
+        Study study = createStudy("test-study", kimhayoung);
+
+        mockMvc.perform(get("/study/" + study.getPath() + "/join"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/study/" + study.getPath() + "/members"));
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        assertTrue(study.getMembers().contains(hayoung));
+    }
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 탈퇴")
+    void leaveStudy() throws Exception {
+        Account kimhayoung = createAccount("kimhayoung");
+        Study study = createStudy("test-study", kimhayoung);
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        studyService.addMember(study, hayoung);
+
+        mockMvc.perform(get("/study/" + study.getPath() + "/leave"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/study/" + study.getPath() + "/members"));
+
+        assertFalse(study.getMembers().contains(hayoung));
+    }
+
+    protected Study createStudy(String path, Account manager) {
+        Study study = new Study();
+        study.setPath(path);
+        studyService.createNewStudy(study, manager);
+        return study;
+    }
+
+    protected Account createAccount(String nickname) {
+        Account kimhayoung = new Account();
+        kimhayoung.setNickname(nickname);
+        kimhayoung.setEmail(nickname + "@email.com");
+        accountRepository.save(kimhayoung);
+        return kimhayoung;
+    }
+}
+```
+- StudySettingsControllerTest
+```java
+@Transactional
+@SpringBootTest
+@AutoConfigureMockMvc
+@RequiredArgsConstructor
+class StudySettingsControllerTest extends StudyControllerTest {
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 소개 수정 폼 조회 - 실패 (권한 없는 유저)")
+    void updateDescriptionForm_fail() throws Exception {
+        Account kimhayoung = createAccount("kimhayoung");
+        Study study = createStudy("test-study", kimhayoung);
+
+        mockMvc.perform(get("/study/" + study.getPath() + "/settings/description"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 소개 수정 폼 조회 - 성공")
+    void updateDescriptionForm_success() throws Exception {
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        Study study = createStudy("test-study", hayoung);
+
+        mockMvc.perform(get("/study/" + study.getPath() + "/settings/description"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("study/settings/description"))
+                .andExpect(model().attributeExists("studyDescriptionForm"))
+                .andExpect(model().attributeExists("account"))
+                .andExpect(model().attributeExists("study"));
+    }
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 소개 수정 - 성공")
+    void updateDescription_success() throws Exception {
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        Study study = createStudy("test-study", hayoung);
+
+        String settingsDescriptionUrl = "/study/" + study.getPath() + "/settings/description";
+        mockMvc.perform(post(settingsDescriptionUrl)
+                .param("shortDescription", "short description")
+                .param("fullDescription", "full description")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(settingsDescriptionUrl))
+                .andExpect(flash().attributeExists("message"));
+    }
+
+    @Test
+    @WithAccount("hayoung")
+    @DisplayName("스터디 소개 수정 - 실패")
+    void updateDescription_fail() throws Exception {
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        Study study = createStudy("test-study", hayoung);
+
+        String settingsDescriptionUrl = "/study/" + study.getPath() + "/settings/description";
+        mockMvc.perform(post(settingsDescriptionUrl)
+                .param("shortDescription", "")
+                .param("fullDescription", "full description")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(model().hasErrors())
+                .andExpect(model().attributeExists("studyDescriptionForm"))
+                .andExpect(model().attributeExists("study"))
+                .andExpect(model().attributeExists("account"));
+    }
+}
+```
