@@ -1467,14 +1467,14 @@ public class StudyService {
     }
 
     public Study getStudyToUpdateTag(Account account, String path) {
-        Study study = repository.findAccountWithTagsByPath(path);
+        Study study = repository.findStudyWithTagsByPath(path);
         checkIfExistingStudy(path, study);
         checkIfManager(account, study);
         return study;
     }
 
     public Study getStudyToUpdateZone(Account account, String path) {
-        Study study = repository.findAccountWithZonesByPath(path);
+        Study study = repository.findStudyWithZonesByPath(path);
         checkIfExistingStudy(path, study);
         checkIfManager(account, study);
         return study;
@@ -1506,10 +1506,10 @@ public interface StudyRepository extends JpaRepository<Study, Long> {
     Study findByPath(String path);
 
     @EntityGraph(value = "Study.withTagsAndManagers", type = EntityGraph.EntityGraphType.FETCH)
-    Study findAccountWithTagsByPath(String path);
+    Study findStudyWithTagsByPath(String path);
 
     @EntityGraph(value = "Study.withZonesAndManagers", type = EntityGraph.EntityGraphType.FETCH)
-    Study findAccountWithZonesByPath(String path);
+    Study findStudyWithZonesByPath(String path);
 }
 ```
 - Study 엔티티에 EntityGraph 관련 코드 추가
@@ -1760,3 +1760,339 @@ public class Study {
 </html>
 ```
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_7.jpg"></p>
+
+<br>
+
+## 스터디 설정 - 상태 변경
+- 스터디 공개 및 종료
+    * 드래프트 상태에서 공개 상태로 전환 가능.
+    * 공개 상태에서 종료 상태로 전환 가능.
+    * 종료 상태에서는 상태 변경 불가.
+- 스터디 공개 상태
+    * 팀원 모집 시작 및 중단 가능
+    * 다른 사용자에게 스터디 정보가 공개 됩니다. (조회 가능)
+    * 해당 스터디의 주제와 지역에 대응하는 사용자에게 알림을 전달 한다.
+    * 모임을 만들 수 있다.
+- 스터디 종료 상태
+    * 조회만 가능.
+    * 모임을 만들거나, 팀원을 모집할 수 없다.
+<br>
+
+### 구현
+- StudySettingsController에 상태 관련 맵핑 추가
+```java
+@Controller
+@RequestMapping("/study/{path}/settings")
+@RequiredArgsConstructor
+public class StudySettingsController {
+
+    ...
+
+    @GetMapping("/study")
+    public String studySettingForm(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        model.addAttribute(account);
+        model.addAttribute(study);
+        return "study/settings/study";
+    }
+
+    @PostMapping("/study/publish")
+    public String publishStudy(@CurrentAccount Account account, @PathVariable String path,
+                               RedirectAttributes attributes) {
+        Study study = studyService.getStudyToUpdateStatus(account, path);
+        studyService.publish(study);
+        attributes.addFlashAttribute("message", "스터디를 공개했습니다.");
+        return "redirect:/study/" + getPath(path) + "/settings/study";
+    }
+
+    @PostMapping("/study/close")
+    public String closeStudy(@CurrentAccount Account account, @PathVariable String path,
+                             RedirectAttributes attributes) {
+        Study study = studyService.getStudyToUpdateStatus(account, path);
+        studyService.close(study);
+        attributes.addFlashAttribute("message", "스터디를 종료했습니다.");
+        return "redirect:/study/" + getPath(path) + "/settings/study";
+    }
+
+    @PostMapping("/recruit/start")
+    public String startRecruit(@CurrentAccount Account account, @PathVariable String path, Model model,
+                               RedirectAttributes attributes) {
+        Study study = studyService.getStudyToUpdateStatus(account, path);
+        if (!study.canUpdateRecruiting()) {
+            attributes.addFlashAttribute("message", "1시간 안에 인원 모집 설정을 여러번 변경할 수 없습니다.");
+            return "redirect:/study/" + getPath(path) + "/settings/study";
+        }
+
+        studyService.startRecruit(study);
+        attributes.addFlashAttribute("message", "인원 모집을 시작합니다.");
+        return "redirect:/study/" + getPath(path) + "/settings/study";
+    }
+
+    @PostMapping("/recruit/stop")
+    public String stopRecruit(@CurrentAccount Account account, @PathVariable String path, Model model,
+                              RedirectAttributes attributes) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        if (!study.canUpdateRecruiting()) {
+            attributes.addFlashAttribute("message", "1시간 안에 인원 모집 설정을 여러번 변경할 수 없습니다.");
+            return "redirect:/study/" + getPath(path) + "/settings/study";
+        }
+
+        studyService.stopRecruit(study);
+        attributes.addFlashAttribute("message", "인원 모집을 종료합니다.");
+        return "redirect:/study/" + getPath(path) + "/settings/study";
+    }
+}
+```
+- StudyService에 상태 관련 메서드 추가
+    * 스터디의 상태를 변경하는 것은 매니저인지만 확인하면 된다.
+```java
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public Study getStudyToUpdateStatus(Account account, String path) {
+        Study study = repository.findStudyWithManagersByPath(path);
+        checkIfExistingStudy(path, study);
+        checkIfManager(account, study);
+        return study;
+    }
+
+    ...
+
+    public void publish(Study study) {
+        study.publish();
+    }
+
+    public void close(Study study) {
+        study.close();
+    }
+
+    public void startRecruit(Study study) {
+        study.startRecruit();
+    }
+
+    public void stopRecruit(Study study) {
+        study.stopRecruit();
+    }
+}
+```
+- StudyRepository
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long> {
+
+    ...
+
+    @EntityGraph(value = "Study.withManagers", type = EntityGraph.EntityGraphType.FETCH)
+    Study findStudyWithManagersByPath(String path);
+}
+```
+- Study 엔티티
+    * 악의적인 사용자가 잘못된 요청을 보낼 경우를 대비해 에러를 던져서 예외처리
+```java
+...
+@NamedEntityGraph(name = "Study.withManagers", attributeNodes = {
+        @NamedAttributeNode("managers")})
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Study {
+
+    ...
+
+    public void publish() {
+        if (!this.closed && !this.published) {
+            this.published = true;
+            this.publishedDateTime = LocalDateTime.now();
+        } else {
+            throw new RuntimeException("스터디를 공개할 수 없는 상태입니다. 스터디를 이미 공개했거나 종료했습니다.");
+        }
+    }
+
+    public void close() {
+        if (this.published && !this.closed) {
+            this.closed = true;
+            this.closedDateTime = LocalDateTime.now();
+        } else {
+            throw new RuntimeException("스터디를 종료할 수 없습니다. 스터디를 공개하지 않았거나 이미 종료한 스터디입니다.");
+        }
+    }
+
+    public void startRecruit() {
+        if (canUpdateRecruiting()) {
+            this.recruiting = true;
+            this.recruitingUpdatedDateTime = LocalDateTime.now();
+        } else {
+            throw new RuntimeException("인원 모집을 시작할 수 없습니다. 스터디를 공개하거나 한 시간 뒤 다시 시도하세요.");
+        }
+    }
+
+    public void stopRecruit() {
+        if (canUpdateRecruiting()) {
+            this.recruiting = false;
+            this.recruitingUpdatedDateTime = LocalDateTime.now();
+        } else {
+            throw new RuntimeException("인원 모집을 멈출 수 없습니다. 스터디를 공개하거나 한 시간 뒤 다시 시도하세요.");
+        }
+    }
+
+    public boolean canUpdateRecruiting() {
+        return this.published && this.recruitingUpdatedDateTime == null || this.recruitingUpdatedDateTime.isBefore(LocalDateTime.now().minusHours(1));
+    }
+}
+```
+- 스터디 설정 관련 뷰 생성
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body>
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: study-info"></div>
+        <div th:replace="fragments.html :: study-menu(studyMenu='settings')"></div>
+        <div class="row mt-3 justify-content-center">
+            <div class="col-2">
+                <div th:replace="fragments.html :: study-settings-menu(currentMenu='study')"></div>
+            </div>
+            <div class="col-8">
+                <div th:replace="fragments.html :: message"></div>
+                <div class="row">
+                    <h5 class="col-sm-12">스터디 공개 및 종료</h5>
+                    <form th:if="${!study.published && !study.closed}" class="col-sm-12" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/study/publish'}" method="post" novalidate>
+                        <div class="alert alert-info" role="alert">
+                            스터디를 다른 사용자에게 공개할 준비가 되었다면 버튼을 클릭하세요.<br/>
+                            소개, 배너 이미지, 스터디 주제 및 활동 지역을 등록했는지 확인하세요.<br/>
+                            스터디를 공개하면 주요 활동 지역과 스터디 주제에 관심있는 다른 사용자에게 알림을 전송합니다.
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-primary" type="submit" aria-describedby="submitHelp">스터디 공개</button>
+                        </div>
+                    </form>
+                    <form th:if="${study.published && !study.closed}" class="col-sm-12" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/study/close'}" method="post" novalidate>
+                        <div class="alert alert-warning" role="alert">
+                            스터디 활동을 마쳤다면 스터디를 종료하세요.<br/>
+                            스터디를 종료하면 더이상 팀원을 모집하거나 모임을 만들 수 없으며, 스터디 경로와 이름을 수정할 수 없습니다.<br/>
+                            스터디 모임과 참여한 팀원의 기록은 그대로 보관합니다.
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-warning" type="submit" aria-describedby="submitHelp">스터디 종료</button>
+                        </div>
+                    </form>
+                    <div th:if="${study.closed}" class="col-sm-12 alert alert-info">
+                        이 스터디는 <span class="date-time" th:text="${study.closedDateTime}"></span>에 종료됐습니다.<br/>
+                        다시 스터디를 진행하고 싶다면 새로운 스터디를 만드세요.<br/>
+                    </div>
+                </div>
+
+                <hr th:if="${!study.closed && !study.recruiting && study.published}"/>
+                <div class="row" th:if="${!study.closed && !study.recruiting && study.published}">
+                    <h5 class="col-sm-12">팀원 모집</h5>
+                    <form class="col-sm-12" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/recruit/start'}" method="post" novalidate>
+                        <div class="alert alert-info" role="alert">
+                            팀원을 모집합니다.<br/>
+                            충분한 스터디 팀원을 모집했다면 모집을 멈출 수 있습니다.<br/>
+                            팀원 모집 정보는 1시간에 한번만 바꿀 수 있습니다.
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-primary" type="submit" aria-describedby="submitHelp">팀원 모집 시작</button>
+                        </div>
+                    </form>
+                </div>
+
+                <hr th:if="${!study.closed && study.recruiting && study.published}"/>
+                <div class="row" th:if="${!study.closed && study.recruiting && study.published}">
+                    <h5 class="col-sm-12">팀원 모집</h5>
+                    <form class="col-sm-12" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/recruit/stop'}" method="post" novalidate>
+                        <div class="alert alert-primary" role="alert">
+                            팀원 모집을 중답합니다.<br/>
+                            팀원 충원이 필요할 때 다시 팀원 모집을 시작할 수 있습니다.<br/>
+                            팀원 모집 정보는 1시간에 한번만 바꿀 수 있습니다.
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-primary" type="submit" aria-describedby="submitHelp">팀원 모집 중단</button>
+                        </div>
+                    </form>
+                </div>
+
+                <hr th:if="${!study.closed}"/>
+                <div class="row" th:if="${!study.closed}">
+                    <h5 class="col-sm-12">스터디 경로</h5>
+                    <form class="col-sm-12 needs-validation" action="#" th:action="@{'/study/' + ${study.path} + '/settings/study/path'}" method="post" novalidate>
+                        <div class="alert alert-warning" role="alert">
+                            스터디 경로를 수정하면 이전에 사용하던 경로로 스터디에 접근할 수 없으니 주의하세요. <br/>
+                        </div>
+                        <div class="form-group">
+                            <input id="path" type="text" name="newPath" th:value="${newPath}" class="form-control"
+                                   placeholder="예) study-path" aria-describedby="pathHelp" required>
+                            <small id="pathHelp" class="form-text text-muted">
+                                공백없이 문자, 숫자, 대시(-)와 언더바(_)만 3자 이상 20자 이내로 입력하세요. 스터디 홈 주소에 사용합니다. 예) /study/<b>study-path</b>
+                            </small>
+                            <small class="invalid-feedback">스터디 경로를 입력하세요.</small>
+                            <small class="form-text text-danger" th:if="${studyPathError}" th:text="${studyPathError}">Path Error</small>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-warning" type="submit" aria-describedby="submitHelp">경로 수정</button>
+                        </div>
+                    </form>
+                </div>
+
+                <hr th:if="${!study.closed}"/>
+                <div class="row" th:if="${!study.closed}">
+                    <h5 class="col-12">스터디 이름</h5>
+                    <form class="needs-validation col-12" action="#" th:action="@{'/study/' + ${study.path} + '/settings/study/title'}" method="post" novalidate>
+                        <div class="alert alert-warning" role="alert">
+                            스터디 이름을 수정합니다.<br/>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">스터디 이름</label>
+                            <input id="title" type="text" name="newTitle" th:value="${study.title}" class="form-control"
+                                   placeholder="스터디 이름" aria-describedby="titleHelp" required maxlength="50">
+                            <small id="titleHelp" class="form-text text-muted">
+                                스터디 이름을 50자 이내로 입력하세요.
+                            </small>
+                            <small class="invalid-feedback">스터디 이름을 입력하세요.</small>
+                            <small class="form-text text-danger" th:if="${studyTitleError}" th:text="${studyTitleError}">Title Error</small>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-warning" type="submit" aria-describedby="submitHelp">스터디 이름 수정</button>
+                        </div>
+                    </form>
+                </div>
+
+                <hr/>
+                <div class="row">
+                    <h5 class="col-sm-12 text-danger">스터디 삭제</h5>
+                    <form class="col-sm-12" action="#" th:action="@{'/study/' + ${study.getPath()} + '/settings/study/remove'}" method="post" novalidate>
+                        <div class="alert alert-danger" role="alert">
+                            스터디를 삭제하면 스터디 관련 모든 기록을 삭제하며 복구할 수 없습니다. <br/>
+                            <b>다음에 해당하는 스터디는 자동으로 삭제 됩니다.</b>
+                            <ul>
+                                <li>만든지 1주일이 지난 비공개 스터디</li>
+                                <li>스터디 공개 이후, 한달 동안 모임을 만들지 않은 스터디</li>
+                                <li>스터디 공개 이후, 모임을 만들지 않고 종료한 스터디</li>
+                            </ul>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline-danger" type="submit" aria-describedby="submitHelp">스터디 삭제</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: tooltip"></script>
+    <script th:replace="fragments.html :: form-validation"></script>
+</body>
+</html>
+```
+- 실행하면 다음 화면과 같이 스터디 공개 및 종료, 팀원 모집/중단 기능을 사용할 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/study_8.jpg"></p>
+
+<br>
