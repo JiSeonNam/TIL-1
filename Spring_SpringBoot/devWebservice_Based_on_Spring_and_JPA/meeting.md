@@ -1086,3 +1086,52 @@ public class EventService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/meeting_5.jpg"></p>
 
 <br>
+
+## 모임 취소
+- HTML의 FROM은 method로 GET과 POST만 지원한다.
+    * DELEET는 지원하지 않는다.
+- 기존의 일관성을 지키려면 Post로 받아야 하지만 DELETE로 받고 싶다면 스프링 부트에게 hiddenmethod를 쓰겠다고 알려줘야 한다.
+    * HTML `<FORM>`에 DELETE를 주면 _method라는 hidden field에 넣어주는 기능을 thymeleaf가 제공한다.
+    * 사실상 `<form>`의 METHOD는 POST다.
+<br>
+
+### 구현
+- DELETE METHOD 맵핑
+```properties
+# HTML <FORM>에서 th:method에서 PUT 또는 DELETE를 사용해서 보내는 _method를 사용해서 @PutMapping과 @DeleteMapping으로 요청을 맵핑.
+spring.mvc.hiddenmethod.filter.enabled=true
+```
+- EventController에 모임 취소 관련 맵핑 추가
+```java
+@Controller
+@RequestMapping("/study/{path}")
+@RequiredArgsConstructor
+public class EventController {
+
+    ...
+
+    @DeleteMapping("/events/{id}")
+    public String cancelEvent(@CurrentAccount Account account, @PathVariable String path, @PathVariable Long id) {
+        Study study = studyService.getStudyToUpdateStatus(account, path);
+        eventService.deleteEvent(eventRepository.findById(id).orElseThrow());
+        return "redirect:/study/" + study.getEncodedPath() + "/events";
+    }
+}
+```
+- EventService에 `deleteEvent()` 메서드 추가
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class EventService {
+
+    ...
+
+    public void deleteEvent(Event event) {
+        eventRepository.delete(event);
+    }
+}
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/meeting_6.jpg"></p>
+
+<br>
