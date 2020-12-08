@@ -666,3 +666,199 @@ public class Event {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/meeting_3.jpg"></p>
 
 <br>
+
+## 모임 목록 조회
+- EntityGraph를 사용하지 않으면 N + 1 문제가 발생한다.
+    * 발생하는 쿼리
+        - 스터디 조회 
+        - 모임 목록 조회   
+        - 모임 수 마다 enrollment 조회 (N)
+    * 해결 후 발생하는 쿼리
+        - 스터디 조회
+        - 모임 조회
+    * enrollment를 조회할 때는 account에 대한 자세한 정보를 가져오지 않고 필요한 정보(account_id)만 가져온다.
+### 구현
+- 목록 조회 맵핑
+```java
+@Controller
+@RequestMapping("/study/{path}")
+@RequiredArgsConstructor
+public class EventController {
+
+    ...
+    private final StudyRepository studyRepository;
+
+    @GetMapping("/events")
+    public String viewStudyEvents(@CurrentAccount Account account, @PathVariable String path, Model model) {
+        Study study = studyService.getStudy(path);
+        model.addAttribute(account);
+        model.addAttribute(study);
+
+        List<Event> events = eventRepository.findByStudyOrderByStartDateTime(study);
+        List<Event> newEvents = new ArrayList<>();
+        List<Event> oldEvents = new ArrayList<>();
+        events.forEach(e -> {
+            if (e.getEndDateTime().isBefore(LocalDateTime.now())) {
+                oldEvents.add(e);
+            } else {
+                newEvents.add(e);
+            }
+        });
+
+        model.addAttribute("newEvents", newEvents);
+        model.addAttribute("oldEvents", oldEvents);
+
+        return "study/events";
+    }
+}
+```
+- EventRepository에 `findByStudyOrderByStartDateTime()` `@EntityGraph` 추가
+```java
+@Transactional(readOnly = true)
+public interface EventRepository extends JpaRepository<Event, Long> {
+
+    @EntityGraph(value = "Event.withEnrollments", type = EntityGraph.EntityGraphType.LOAD)
+    List<Event> findByStudyOrderByStartDateTime(Study study);
+}
+```
+- Event 엔티티에 `@NamedEntityGraph`, `numberOfRemainSpots()` 추가
+```java
+@NamedEntityGraph(
+        name = "Event.withEnrollments",
+        attributeNodes = @NamedAttributeNode("enrollments")
+)
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+public class Event {
+
+    ...
+
+    public int numberOfRemainSpots() {
+        return this.limitOfEnrollments - (int) this.enrollments.stream().filter(Enrollment::isAccepted).count();
+    }
+}
+```
+- 모임 목록 조회 뷰 생성
+```html
+<!-- framents.html -->
+...
+
+<div th:fragment="date-time">
+    <script src="/node_modules/moment/min/moment-with-locales.min.js"></script>
+    <script type="application/javascript">
+        $(function () {
+            moment.locale('ko');
+            $(".date-time").text(function(index, dateTime) {
+                return moment(dateTime, "YYYY-MM-DD`T`hh:mm").format('LLL');
+            });
+            $(".date").text(function(index, dateTime) {
+                return moment(dateTime, "YYYY-MM-DD`T`hh:mm").format('LL');
+            });
+            $(".weekday").text(function(index, dateTime) {
+                return moment(dateTime, "YYYY-MM-DD`T`hh:mm").format('dddd');
+            });
+            $(".time").text(function(index, dateTime) {
+                return moment(dateTime, "YYYY-MM-DD`T`hh:mm").format('LT');
+            });
+            $(".calendar").text(function(index, dateTime) {
+                return moment(dateTime, "YYYY-MM-DD`T`hh:mm").calendar();
+            });
+            $(".fromNow").text(function(index, dateTime) {
+                return moment(dateTime, "YYYY-MM-DD`T`hh:mm").fromNow();
+            });
+            $(".date-weekday-time").text(function(index, dateTime) {
+                return moment(dateTime, "YYYY-MM-DD`T`hh:mm").format('LLLL');
+            });
+        })
+    </script>
+</div>
+```
+```html
+<!-- events.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body>
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: study-info"></div>
+        <div th:replace="fragments.html :: study-menu(studyMenu='events')"></div>
+        <div class="row my-3 mx-3 justify-content-center">
+            <div class="col-10 px-0 row">
+                <div class="col-2 px-0">
+                    <ul class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            새 모임
+                            <span th:text="${newEvents.size()}">2</span>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            지난 모임
+                            <span th:text="${oldEvents.size()}">5</span>
+                        </a>
+                    </ul>
+                </div>
+                <div class="col-10 row row-cols-1 row-cols-md-2">
+                    <div th:if="${newEvents.size() == 0}" class="col">
+                        새 모임이 없습니다.
+                    </div>
+                    <div class="col mb-4 pr-0" th:each="event: ${newEvents}">
+                        <div class="card">
+                            <div class="card-header">
+                                <span th:text="${event.title}">title</span>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fa fa-calendar"></i>
+                                    <span class="calendar" th:text="${event.startDateTime}"></span> 모임 시작
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fa fa-hourglass-end"></i> <span class="fromNow" th:text="${event.endEnrollmentDateTime}"></span> 모집 마감,
+                                    <span th:if="${event.limitOfEnrollments != 0}">
+                                        <span th:text="${event.limitOfEnrollments}"></span>명 모집 중
+                                        (<span th:text="${event.numberOfRemainSpots()}"></span> 자리 남음)
+                                    </span>
+                                </li>
+                                <li class="list-group-item">
+                                    <a href="#" th:href="@{'/study/' + ${study.path} + '/events/' + ${event.id}}" class="card-link">자세히 보기</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-10 px-0 row">
+                <div class="col-2"></div>
+                <div class="col-10">
+                    <table th:if="${oldEvents.size() > 0}" class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">지난 모임 이름</th>
+                            <th scope="col">모임 종료</th>
+                            <th scope="col"></th>
+                        </tr>
+                        </thead>
+                        <tbody th:each="event: ${oldEvents}">
+                        <tr>
+                            <th scope="row" th:text="${eventStat.count}">1</th>
+                            <td th:text="${event.title}">Title</td>
+                            <td>
+                                <span class="date-weekday-time" th:text="${event.endDateTime}"></span>
+                            </td>
+                            <td>
+                                <a href="#" th:href="@{'/study/' + ${study.path} + '/events/' + ${event.id}}" class="card-link">자세히 보기</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: tooltip"></script>
+    <script th:replace="fragments.html :: date-time"></script>
+</body>
+</html>
+```
