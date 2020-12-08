@@ -677,6 +677,8 @@ public class Event {
         - 스터디 조회
         - 모임 조회
     * enrollment를 조회할 때는 account에 대한 자세한 정보를 가져오지 않고 필요한 정보(account_id)만 가져온다.
+<br>
+
 ### 구현
 - 목록 조회 맵핑
 ```java
@@ -862,3 +864,225 @@ public class Event {
 </body>
 </html>
 ```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/meeting_4.jpg"></p>
+
+<br>
+
+## 모임 수정
+- 모집 방법은 수정할 수 없다.
+- 모집 인원은 확정된 참가 신청 수 보다는 커야 한다. 예) 5명의 참가 신청을 확정 상태로 변경했다면, 모임을 수정할 때 모집 인원 수가 5보다는 커야 한다. 3으로 줄이면 안된다.
+- 최대한 모임 개설하기 화면의 코드를 재사용한다.
+- 모집 인원을 늘린 선착순 모임의 경우에, 자동으로 추가 인원의 참가 신청을 확정 상태로 변경해야 한다. (나중에 할 일)
+<br>
+
+### 구현 
+- 모임 수정 관련 맵핑 추가
+    * `eventForm.setEventType(event.getEventType())`
+        - 뷰에는 모임 타입을 수정할 수 없지만 악의적으로 타입을 변경해서 서버에 전송할 경우를 막기 위해서
+        - eventForm에 들어오는 모임 타입을 기존에 있던 모임 타입으로 덮어쓴다.
+```java
+@Controller
+@RequestMapping("/study/{path}")
+@RequiredArgsConstructor
+public class EventController {
+
+    ...
+
+    @GetMapping("/events/{id}/edit")
+    public String updateEventForm(@CurrentAccount Account account,
+                                  @PathVariable String path, @PathVariable Long id, Model model) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        Event event = eventRepository.findById(id).orElseThrow();
+        model.addAttribute(study);
+        model.addAttribute(account);
+        model.addAttribute(event);
+        model.addAttribute(modelMapper.map(event, EventForm.class));
+        return "event/update-form";
+    }
+
+    @PostMapping("/events/{id}/edit")
+    public String updateEventSubmit(@CurrentAccount Account account, @PathVariable String path,
+                                    @PathVariable Long id, @Valid EventForm eventForm, Errors errors,
+                                    Model model) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        Event event = eventRepository.findById(id).orElseThrow();
+        eventForm.setEventType(event.getEventType());
+        eventValidator.validateUpdateForm(eventForm, event, errors);
+
+        if (errors.hasErrors()) { // 에러가 있으면 폼을 다시 보여준다.
+            model.addAttribute(account);
+            model.addAttribute(study);
+            model.addAttribute(event);
+            return "event/update-form";
+        }
+
+        eventService.updateEvent(event, eventForm);
+        return "redirect:/study/" + study.getEncodedPath() +  "/events/" + event.getId();
+    }
+}
+```
+- EventValidator에 `validateUpdateForm()` 메서드 추가
+    * 이미 확정된 인원 보다 모집 인원 수가 큰지 검증
+```java
+@Component
+public class EventValidator implements Validator {
+
+    ...
+
+    public void validateUpdateForm(EventForm eventForm, Event event, Errors errors) {
+        if (eventForm.getLimitOfEnrollments() < event.getNumberOfAcceptedEnrollments()) {
+            errors.rejectValue("limitOfEnrollments", "wrong.value", "확인된 참기 신청보다 모집 인원 수가 커야 합니다.");
+        }
+    }
+}
+```
+- Event 엔티티에 `getNumberOfAcceptedEnrollments()` 메서드 추가
+    * 참가 확정 인원을 반환한다.
+```java
+...
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+public class Event {
+
+    ...
+
+    public long getNumberOfAcceptedEnrollments() {
+        return this.enrollments.stream().filter(Enrollment::isAccepted).count();
+    }
+}
+```
+- EventService에 `updateEvent()` 메서드 추가
+    * 모임 업데이트는 eventForm에 있는 데이터를 event에 넣어주면 된다.
+    * 모임 타입이 선착순인 경우, 대기 인원이 있다면 자동으로 참가 확정을 해줘야 한다.
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class EventService {
+
+    ...
+
+    public void updateEvent(Event event, EventForm eventForm) {
+        modelMapper.map(eventForm, event);
+        // TODO 모집 인원을 늘린 선착순 모임의 경우에, 자동으로 추가 인원의 참가 신청을 확정 상태로 변경해야 한다.
+    }
+}
+```
+- 모임 수정 뷰 생성 및 중복 코드 제거
+```html
+<!-- fragments.html -->
+<div th:fragment="event-form (mode, action)">
+    <div class="py-5 text-center">
+        <h2>
+            <a th:href="@{'/study/' + ${study.path}}"><span th:text="${study.title}">스터디</span></a> /
+            <span th:if="${mode == 'edit'}" th:text="${event.title}"></span>
+            <span th:if="${mode == 'new'}">새 모임 만들기</span>
+        </h2>
+    </div>
+    <div class="row justify-content-center">
+        <form class="needs-validation col-sm-10"
+              th:action="@{${action}}"
+              th:object="${eventForm}" method="post" novalidate>
+            <div class="form-group">
+                <label for="title">모임 이름</label>
+                <input id="title" type="text" th:field="*{title}" class="form-control"
+                       placeholder="모임 이름" aria-describedby="titleHelp" required>
+                <small id="titleHelp" class="form-text text-muted">
+                    모임 이름을 50자 이내로 입력하세요.
+                </small>
+                <small class="invalid-feedback">모임 이름을 입력하세요.</small>
+                <small class="form-text text-danger" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">Error</small>
+            </div>
+            <div class="form-group" th:if="${mode == 'new'}">
+                <label for="eventType">모집 방법</label>
+                <select th:field="*{eventType}"  class="custom-select mr-sm-2" id="eventType" aria-describedby="eventTypeHelp">
+                    <option th:value="FCFS">선착순</option>
+                    <option th:value="CONFIRMATIVE">관리자 확인</option>
+                </select>
+                <small id="eventTypeHelp" class="form-text text-muted">
+                    두가지 모집 방법이 있습니다.<br/>
+                    <strong>선착순</strong>으로 모집하는 경우, 모집 인원 이내의 접수는 자동으로 확정되며, 제한 인원을 넘는 신청은 대기 신청이 되며 이후에 확정된 신청 중에 취소가 발생하면 선착순으로 대기 신청자를 확정 신청자도 변경합니다. 단, 등록 마감일 이후에는 취소해도 확정 여부가 바뀌지 않습니다.<br/>
+                    <strong>확인</strong>으로 모집하는 경우, 모임 및 스터디 관리자가 모임 신청 목록을 조회하고 직접 확정 여부를 정할 수 있습니다. 등록 마감일 이후에는 변경할 수 없습니다.
+                </small>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-3">
+                    <label for="limitOfEnrollments">모집 인원</label>
+                    <input id="limitOfEnrollments" type="number" th:field="*{limitOfEnrollments}" class="form-control" placeholder="0"
+                           aria-describedby="limitOfEnrollmentsHelp">
+                    <small id="limitOfEnrollmentsHelp" class="form-text text-muted">
+                        최대 수용 가능한 모임 참석 인원을 설정하세요. 최소 2인 이상 모임이어야 합니다.
+                    </small>
+                    <small class="invalid-feedback">모임 신청 마감 일시를 입력하세요.</small>
+                    <small class="form-text text-danger" th:if="${#fields.hasErrors('limitOfEnrollments')}" th:errors="*{limitOfEnrollments}">Error</small>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="endEnrollmentDateTime">등록 마감 일시</label>
+                    <input id="endEnrollmentDateTime" type="datetime-local" th:field="*{endEnrollmentDateTime}" class="form-control"
+                           aria-describedby="endEnrollmentDateTimeHelp" required>
+                    <small id="endEnrollmentDateTimeHelp" class="form-text text-muted">
+                        등록 마감 이전에만 스터디 모임 참가 신청을 할 수 있습니다.
+                    </small>
+                    <small class="invalid-feedback">모임 신청 마감 일시를 입력하세요.</small>
+                    <small class="form-text text-danger" th:if="${#fields.hasErrors('endEnrollmentDateTime')}" th:errors="*{endEnrollmentDateTime}">Error</small>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="startDateTime">모임 시작 일시</label>
+                    <input id="startDateTime" type="datetime-local" th:field="*{startDateTime}" class="form-control"
+                           aria-describedby="startDateTimeHelp" required>
+                    <small id="startDateTimeHelp" class="form-text text-muted">
+                        모임 시작 일시를 입력하세요. 상세한 모임 일정은 본문에 적어주세요.
+                    </small>
+                    <small class="invalid-feedback">모임 시작 일시를 입력하세요.</small>
+                    <small class="form-text text-danger" th:if="${#fields.hasErrors('startDateTime')}" th:errors="*{startDateTime}">Error</small>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="startDateTime">모임 종료 일시</label>
+                    <input id="endDateTime" type="datetime-local" th:field="*{endDateTime}" class="form-control"
+                           aria-describedby="endDateTimeHelp" required>
+                    <small id="endDateTimeHelp" class="form-text text-muted">
+                        모임 종료 일시가 지나면 모임은 자동으로 종료 상태로 바뀝니다.
+                    </small>
+                    <small class="invalid-feedback">모임 종료 일시를 입력하세요.</small>
+                    <small class="form-text text-danger" th:if="${#fields.hasErrors('endDateTime')}" th:errors="*{endDateTime}">Error</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="description">모임 설명</label>
+                <textarea id="description" type="textarea" th:field="*{description}" class="editor form-control"
+                          placeholder="모임을 자세히 설명해 주세요." aria-describedby="descriptionHelp" required></textarea>
+                <small id="descriptionHelp" class="form-text text-muted">
+                    모임에서 다루는 주제, 장소, 진행 방식 등을 자세히 적어 주세요.
+                </small>
+                <small class="invalid-feedback">모임 설명을 입력하세요.</small>
+                <small class="form-text text-danger" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Error</small>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary btn-block" type="submit"
+                        aria-describedby="submitHelp" th:text="${mode == 'edit' ? '모임 수정' : '모임 만들기'}">모임 수정</button>
+            </div>
+        </form>
+    </div>
+</div>
+```
+```html
+<!-- update-form.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div th:replace="fragments.html :: study-banner"></div>
+    <div class="container">
+        <div th:replace="fragments.html :: event-form (mode='edit', action='/study/' + ${study.path}
+            + '/events/' + ${event.id} + '/edit')"></div>
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: form-validation"></script>
+    <script th:replace="fragments.html :: editor-script"></script>
+</body>
+</html>
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/meeting_5.jpg"></p>
+
+<br>
