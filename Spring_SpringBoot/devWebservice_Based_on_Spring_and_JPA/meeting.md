@@ -1135,3 +1135,339 @@ public class EventService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/meeting_6.jpg"></p>
 
 <br>
+
+## 모임 참가 신청 및 취소
+- 모임 참가 신청 및 취소 시 스터디 조회
+    *  스터디 관리자가 아니어도 참가 신청이 가능해야 하므로 조회하는 스터디는 관리자 권한 없이 읽어올 수 있어야 하며 데이터를 필요한 만큼만 가져오도록 주의해야 한다.
+- 모임 참가 신청
+    * 선착순 모임이고 현재까지 수락한 참가 신청 개수와 총 모집 인원수를 확인하고, 가능하다면 해당 참가 신청을 확정 상태로 저장한다.
+- 모임 참가 신청 취소
+    * 선착순 모임이라면, 대기 중인 모임 참가 신청 중에 가장 빨리 신청한 것을 확정 상태로 변경한다.
+- 모임 수정 로직 보완
+    * 선착순 모임 수정시 모집 인원이 늘었고 대기 중인 참가 신청이 있다면 가능한 만큼 대기 중인 신청을 확정 상태로 변경한다.
+<br>
+
+### 구현
+- EventController에 참가 신청/취소 관련 맵핑 추가
+    * 참가 신청은 관리자가 아니어도 할 수 있으므로 관리자 권한이 아니어도 스터디 정보를 가져올 수 있어야 한다.
+```java
+@Controller
+@RequestMapping("/study/{path}")
+@RequiredArgsConstructor
+public class EventController {
+
+    ...
+
+    @PostMapping("/events/{id}/enroll")
+    public String newEnrollment(@CurrentAccount Account account,
+                                @PathVariable String path, @PathVariable Long id) {
+        Study study = studyService.getStudyToEnroll(path);
+        eventService.newEnrollment(eventRepository.findById(id).orElseThrow(), account);
+        return "redirect:/study/" + study.getEncodedPath() +  "/events/" + id;
+    }
+
+    @PostMapping("/events/{id}/disenroll")
+    public String cancelEnrollment(@CurrentAccount Account account,
+                                   @PathVariable String path, @PathVariable Long id) {
+        Study study = studyService.getStudyToEnroll(path);
+        eventService.cancelEnrollment(eventRepository.findById(id).orElseThrow(), account);
+        return "redirect:/study/" + study.getEncodedPath() +  "/events/" + id;
+    }
+}
+```
+- StudyRepository에 경로를 통해 스터디 정보만을 가져올 수 있도록 메서드 추가
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long> {
+
+    ...
+
+    Study findStudyOnlyByPath(String path);
+}
+```
+- StudyService에 `getStudyToEnroll()` 메서드 추가
+    * 경로를 통해 스터디 정보를 받아와서 있는지 없는지 체크하고 스터디 반환
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public Study getStudyToEnroll(String path) {
+        Study study = repository.findStudyOnlyByPath(path);
+        checkIfExistingStudy(path, study);
+        return study;
+    }
+}
+```
+- EnrollmentRepository 생성
+```java
+public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
+    boolean existsByEventAndAccount(Event event, Account account);
+
+    Enrollment findByEventAndAccount(Event event, Account account);
+}
+```
+- Event 엔티티에 참가 신청/취소 관련 메서드 추가
+    * `addEnrollment()`
+        - 양방향 관계를 맺어주고 있는 것.
+        - event에 새로 만든 enrollment 추가해주고 enrollment에 event를 this로 세팅해준다.
+    * `isAbleToAcceptWaitingEnrollment()`
+        - 선착순이면서 제한인원을 넘지 않았으면 참가 신청이 바로 확정날 수 있도록 true로 변경해준다.
+    * `removeEnrollment()`
+        - enrollment 관계를 끊어준다.
+    * `acceptNextWaitingEnrollment()`
+        - 모임이 추가적으로 인원을 받을 수 있으면 가장 첫 번째 대기 enrollment를 가져와서 확정(true)시켜준다.
+    * `acceptWaitingList()`
+        - 모집 인원이 늘어난 숫자만큼 자동으로 참가 확정해준다.
+```java
+...
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+public class Event {
+
+    ...
+
+    public void addEnrollment(Enrollment enrollment) {
+        this.enrollments.add(enrollment);
+        enrollment.setEvent(this);
+    }
+
+    public void removeEnrollment(Enrollment enrollment) {
+        this.enrollments.remove(enrollment);
+        enrollment.setEvent(null);
+    }
+
+    public boolean isAbleToAcceptWaitingEnrollment() {
+        return this.eventType == EventType.FCFS && this.limitOfEnrollments > this.getNumberOfAcceptedEnrollments();
+    }
+
+    public boolean canAccept(Enrollment enrollment) {
+        return this.eventType == EventType.CONFIRMATIVE
+                && this.enrollments.contains(enrollment)
+                && !enrollment.isAttended()
+                && !enrollment.isAccepted();
+    }
+
+    public boolean canReject(Enrollment enrollment) {
+        return this.eventType == EventType.CONFIRMATIVE
+                && this.enrollments.contains(enrollment)
+                && !enrollment.isAttended()
+                && enrollment.isAccepted();
+    }
+
+    private List<Enrollment> getWaitingList() {
+        return this.enrollments.stream().filter(enrollment -> !enrollment.isAccepted()).collect(Collectors.toList());
+    }
+
+    public void acceptWaitingList() {
+        if (this.isAbleToAcceptWaitingEnrollment()) {
+            var waitingList = getWaitingList();
+            int numberToAccept = (int) Math.min(this.limitOfEnrollments - this.getNumberOfAcceptedEnrollments(), waitingList.size());
+            waitingList.subList(0, numberToAccept).forEach(e -> e.setAccepted(true));
+        }
+    }
+
+    public void acceptNextWaitingEnrollment() {
+        if (this.isAbleToAcceptWaitingEnrollment()) {
+            Enrollment enrollmentToAccept = this.getTheFirstWaitingEnrollment();
+            if (enrollmentToAccept != null) {
+                enrollmentToAccept.setAccepted(true);
+            }
+        }
+    }
+
+    private Enrollment getTheFirstWaitingEnrollment() {
+        for (Enrollment e : this.enrollments) {
+            if (!e.isAccepted()) {
+                return e;
+            }
+        }
+
+        return null;
+    }
+}
+```
+- EventService에 참가 신청/ 취소 메서드 추가
+    * `newEnrollment()`
+        - 혹시나 enrollment가 있으면 무시하고 없으면 참가 신청 객체(Enrollment)를 새로 만든다.
+    * `cancelEnrollment()`
+        - enrollment 관계를 끊어주고 삭제
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class EventService {
+
+    ...
+
+    public void updateEvent(Event event, EventForm eventForm) {
+        modelMapper.map(eventForm, event);
+        event.acceptWaitingList(); // 모임 수정 때 acceptWaitingList()를 호출해서 참가 확정시켜준다.
+    }
+
+    ...
+
+    public void newEnrollment(Event event, Account account) {
+        if (!enrollmentRepository.existsByEventAndAccount(event, account)) {
+            Enrollment enrollment = new Enrollment();
+            enrollment.setEnrolledAt(LocalDateTime.now());
+            enrollment.setAccepted(event.isAbleToAcceptWaitingEnrollment());
+            enrollment.setAccount(account);
+            event.addEnrollment(enrollment);
+            enrollmentRepository.save(enrollment);
+        }
+    }
+
+    public void cancelEnrollment(Event event, Account account) {
+        Enrollment enrollment = enrollmentRepository.findByEventAndAccount(event, account);
+        event.removeEnrollment(enrollment);
+        enrollmentRepository.delete(enrollment);
+        event.acceptNextWaitingEnrollment();
+    }
+}
+```
+<br>
+
+### 테스트 코드 작성
+```java
+class EventControllerTest extends StudyControllerTest {
+
+    @Autowired EventService eventService;
+    @Autowired EnrollmentRepository enrollmentRepository;
+
+    @Test
+    @DisplayName("선착순 모임에 참가 신청 - 자동 수락")
+    @WithAccount("hayoung")
+    void newEnrollment_to_FCFS_event_accepted() throws Exception {
+        Account kimhayoung = createAccount("kimhayoung");
+        Study study = createStudy("test-study", kimhayoung);
+        Event event = createEvent("test-event", EventType.FCFS, 2, study, kimhayoung);
+
+        mockMvc.perform(post("/study/" + study.getPath() + "/events/" + event.getId() + "/enroll")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/study/" + study.getPath() + "/events/" + event.getId()));
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        isAccepted(hayoung, event);
+    }
+
+    @Test
+    @DisplayName("선착순 모임에 참가 신청 - 대기중 (이미 인원이 꽉차서)")
+    @WithAccount("hayoung")
+    void newEnrollment_to_FCFS_event_not_accepted() throws Exception {
+        Account kimhayoung = createAccount("kimhayoung");
+        Study study = createStudy("test-study", kimhayoung);
+        Event event = createEvent("test-event", EventType.FCFS, 2, study, kimhayoung);
+
+        Account may = createAccount("may");
+        Account june = createAccount("june");
+        eventService.newEnrollment(event, may);
+        eventService.newEnrollment(event, june);
+
+        mockMvc.perform(post("/study/" + study.getPath() + "/events/" + event.getId() + "/enroll")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/study/" + study.getPath() + "/events/" + event.getId()));
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        isNotAccepted(hayoung, event);
+    }
+
+    @Test
+    @DisplayName("참가신청 확정자가 선착순 모임에 참가 신청을 취소하는 경우, 바로 다음 대기자를 자동으로 신청 확인한다.")
+    @WithAccount("hayoung")
+    void accepted_account_cancelEnrollment_to_FCFS_event_not_accepted() throws Exception {
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        Account kimhayoung = createAccount("kimhayoung");
+        Account may = createAccount("may");
+        Study study = createStudy("test-study", kimhayoung);
+        Event event = createEvent("test-event", EventType.FCFS, 2, study, kimhayoung);
+
+        eventService.newEnrollment(event, may);
+        eventService.newEnrollment(event, hayoung);
+        eventService.newEnrollment(event, kimhayoung);
+
+        isAccepted(may, event);
+        isAccepted(hayoung, event);
+        isNotAccepted(kimhayoung, event);
+
+        mockMvc.perform(post("/study/" + study.getPath() + "/events/" + event.getId() + "/disenroll")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/study/" + study.getPath() + "/events/" + event.getId()));
+
+        isAccepted(may, event);
+        isAccepted(kimhayoung, event);
+        assertNull(enrollmentRepository.findByEventAndAccount(event, hayoung));
+    }
+
+    @Test
+    @DisplayName("참가신청 비확정자가 선착순 모임에 참가 신청을 취소하는 경우, 기존 확정자를 그대로 유지하고 새로운 확정자는 없다.")
+    @WithAccount("hayoung")
+    void not_accepterd_account_cancelEnrollment_to_FCFS_event_not_accepted() throws Exception {
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        Account kimhayoung = createAccount("kimhayoung");
+        Account may = createAccount("may");
+        Study study = createStudy("test-study", kimhayoung);
+        Event event = createEvent("test-event", EventType.FCFS, 2, study, kimhayoung);
+
+        eventService.newEnrollment(event, may);
+        eventService.newEnrollment(event, kimhayoung);
+        eventService.newEnrollment(event, hayoung);
+
+        isAccepted(may, event);
+        isAccepted(kimhayoung, event);
+        isNotAccepted(hayoung, event);
+
+        mockMvc.perform(post("/study/" + study.getPath() + "/events/" + event.getId() + "/disenroll")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/study/" + study.getPath() + "/events/" + event.getId()));
+
+        isAccepted(may, event);
+        isAccepted(kimhayoung, event);
+        assertNull(enrollmentRepository.findByEventAndAccount(event, hayoung));
+    }
+
+    private void isNotAccepted(Account kimhayoung, Event event) {
+        assertFalse(enrollmentRepository.findByEventAndAccount(event, kimhayoung).isAccepted());
+    }
+
+    private void isAccepted(Account account, Event event) {
+        assertTrue(enrollmentRepository.findByEventAndAccount(event, account).isAccepted());
+    }
+
+    @Test
+    @DisplayName("관리자 확인 모임에 참가 신청 - 대기중")
+    @WithAccount("hayoung")
+    void newEnrollment_to_CONFIMATIVE_event_not_accepted() throws Exception {
+        Account kimhayoung = createAccount("kimhayoung");
+        Study study = createStudy("test-study", kimhayoung);
+        Event event = createEvent("test-event", EventType.CONFIRMATIVE, 2, study, kimhayoung);
+
+        mockMvc.perform(post("/study/" + study.getPath() + "/events/" + event.getId() + "/enroll")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/study/" + study.getPath() + "/events/" + event.getId()));
+
+        Account hayoung = accountRepository.findByNickname("hayoung");
+        isNotAccepted(hayoung, event);
+    }
+
+    private Event createEvent(String eventTitle, EventType eventType, int limit, Study study, Account account) {
+        Event event = new Event();
+        event.setEventType(eventType);
+        event.setLimitOfEnrollments(limit);
+        event.setTitle(eventTitle);
+        event.setCreatedDateTime(LocalDateTime.now());
+        event.setEndEnrollmentDateTime(LocalDateTime.now().plusDays(1));
+        event.setStartDateTime(LocalDateTime.now().plusDays(1).plusHours(5));
+        event.setEndDateTime(LocalDateTime.now().plusDays(1).plusHours(7));
+        return eventService.createEvent(event, study, account);
+    }
+}
+```
