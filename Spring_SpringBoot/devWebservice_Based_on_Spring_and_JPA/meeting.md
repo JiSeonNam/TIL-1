@@ -1562,6 +1562,8 @@ public class EventService {
 }
 ```
 - Event에 메서드 추가
+    * `@OrderBy("enrolledAt")`
+        - Event의 Enrollment 목록 순서를 정하려면 이렇게 정렬 조건을 줘야 매번 순서가 랜덤하게 바뀌지 않는다.
 ```java
 ...
 @Entity
@@ -1569,6 +1571,10 @@ public class EventService {
 public class Event {
 
     ...
+
+    @OneToMany(mappedBy = "event")
+    @OrderBy("enrolledAt")
+    private List<Enrollment> enrollments = new ArrayList<>();
 
     public void accept(Enrollment enrollment) {
         if (this.eventType == EventType.CONFIRMATIVE
