@@ -1471,3 +1471,116 @@ class EventControllerTest extends StudyControllerTest {
     }
 }
 ```
+<br>
+
+## 모임 참가 신청 수락 취소 및 출석 체크
+- 정석은 POST로 하는 것이지만 프론트 쪽의 코드를 간결하게 하고 줄맞춤을 맞추기 위해 GET맵핑을 사용한다.
+<br>
+
+### 구현
+- EventController에 모임 참가 신청 수락 취소 및 출석 체크 관련 맵핑 추가
+    * 맵핑을 추가할 때 다음 코드와 같이 eventId와 enrollmentId를 가지고 해당하는 enrollment의 정보를 바꿔줘도 된다.
+```java
+@GetMapping("events/{eventId}/enrollments/{enrollmentId}/accept")
+public String acceptEnrollment(@CurrentAccount Account account, @PathVariable String path,
+                               @PathVariable Long eventId, @PathVariable Long enrollmentId) {
+    Study study = studyService.getStudyToUpdate(account, path);
+    Event event = eventRepository.findById(evendId).orElseThrow();
+    Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElseThrow();
+    eventService.acceptEnrollment(event, enrollment);
+    return "redirect:/study/" + study.getEncodedPath() + "/events/" + eventId();
+}
+```
+- 그러나 DB에 저장되어 있는 id값으로 가져오는 경우 Spring Data JPA가 제공하는 Entity Converter를 사용해서 코드를 줄일 수 있다.
+    * `@PathVariable("eventId") Event event`와 같이 eventId에 해당하는 event를 바로 바인딩 받을 수 있다.
+    * 참고) 다른 id를 가져오는 부분도 코드 수정을 한다.(refactoring)
+```java
+@Controller
+@RequestMapping("/study/{path}")
+@RequiredArgsConstructor
+public class EventController {
+
+    ...
+
+    @GetMapping("events/{eventId}/enrollments/{enrollmentId}/accept")
+    public String acceptEnrollment(@CurrentAccount Account account, @PathVariable String path,
+                                   @PathVariable("eventId") Event event, @PathVariable("enrollmentId") Enrollment enrollment) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        eventService.acceptEnrollment(event, enrollment);
+        return "redirect:/study/" + study.getEncodedPath() + "/events/" + event.getId();
+    }
+
+    @GetMapping("/events/{eventId}/enrollments/{enrollmentId}/reject")
+    public String rejectEnrollment(@CurrentAccount Account account, @PathVariable String path,
+                                   @PathVariable("eventId") Event event, @PathVariable("enrollmentId") Enrollment enrollment) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        eventService.rejectEnrollment(event, enrollment);
+        return "redirect:/study/" + study.getEncodedPath() + "/events/" + event.getId();
+    }
+
+    @GetMapping("/events/{eventId}/enrollments/{enrollmentId}/checkin")
+    public String checkInEnrollment(@CurrentAccount Account account, @PathVariable String path,
+                                    @PathVariable("eventId") Event event, @PathVariable("enrollmentId") Enrollment enrollment) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        eventService.checkInEnrollment(enrollment);
+        return "redirect:/study/" + study.getEncodedPath() + "/events/" + event.getId();
+    }
+
+    @GetMapping("/events/{eventId}/enrollments/{enrollmentId}/cancel-checkin")
+    public String cancelCheckInEnrollment(@CurrentAccount Account account, @PathVariable String path,
+                                          @PathVariable("eventId") Event event, @PathVariable("enrollmentId") Enrollment enrollment) {
+        Study study = studyService.getStudyToUpdate(account, path);
+        eventService.cancelCheckInEnrollment(enrollment);
+        return "redirect:/study/" + study.getEncodedPath() + "/events/" + event.getId();
+    }
+}
+```
+- EventService에 메서드 추가
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class EventService {
+
+    ...
+
+    public void acceptEnrollment(Event event, Enrollment enrollment) {
+        event.accept(enrollment);
+    }
+
+    public void rejectEnrollment(Event event, Enrollment enrollment) {
+        event.reject(enrollment);
+    }
+
+    public void checkInEnrollment(Enrollment enrollment) {
+        enrollment.setAttended(true);
+    }
+
+    public void cancelCheckInEnrollment(Enrollment enrollment) {
+        enrollment.setAttended(false);
+    }
+}
+```
+- Event에 메서드 추가
+```java
+...
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+public class Event {
+
+    ...
+
+    public void accept(Enrollment enrollment) {
+        if (this.eventType == EventType.CONFIRMATIVE
+                && this.limitOfEnrollments > this.getNumberOfAcceptedEnrollments()) {
+            enrollment.setAccepted(true);
+        }
+    }
+
+    public void reject(Enrollment enrollment) {
+        if (this.eventType == EventType.CONFIRMATIVE) {
+            enrollment.setAccepted(false);
+        }
+    }
+}
+```
