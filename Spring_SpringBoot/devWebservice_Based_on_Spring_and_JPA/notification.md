@@ -159,3 +159,206 @@ public class StudyEventListener {
 }
 ```
 <br>
+
+## 스터디 개설 알림
+- 스터디를 만들때가 아니라 공개할 때 알림
+    * 알림 받을 사람: 스터디 주제와 지역에 매칭이 되는 Account
+    * 알림 제목: 스터디 이름
+    * 알림 메시지: 스터디 짧은 소개
+<br>
+
+### 구현
+- 현재는 스터디를 만들었을 때 알림을 보내지만 사실 그렇게 하면 안된다.
+    * 스터디가 공개되었을 때 알림을 보내야 한다.
+    * 따라서 StudyService의 `createNewStudy()` 메서드의 `eventPublisher.publishEvent(new StudyCreatedEvent(newStudy));`를 삭제한다.
+- 스터디가 공개되었을 때 알림을 보낸다.
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public void publish(Study study) {
+        study.publish();
+        this.eventPublisher.publishEvent(new StudyCreatedEvent(study));
+    }
+
+    ...
+}
+```
+- 알림을 보내면 StudyEventListener에 들어오고 이벤트를 처리해야 한다.
+    * 먼저 스터디 정보를 조회해서 tag와 zone의 정보로 맵핑되는 account 정보를 조회해온다.
+```java
+@Slf4j
+@Async
+@Component
+@Transactional
+@RequiredArgsConstructor
+public class StudyEventListener {
+
+    private final StudyRepository studyRepository;
+
+    @EventListener
+    public void handleStudyCreatedEvent(StudyCreatedEvent studyCreatedEvent) {
+        // studyCreatedEvent로 넘어올 때 study는 detached 객체이므로 이벤트를 처리할 때 조회한다.
+        Study study = studyRepository.findStudyWithTagsAndZonesById(studyCreatedEvent.getStudy().getId());
+        
+    }
+}
+```
+- StudyRepository에 `findStudyWithTagsAndZonesById()` 추가
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long> {
+
+    ...
+
+    @EntityGraph(value = "Study.withTagsAndZones", type = EntityGraph.EntityGraphType.FETCH)
+    Study findStudyWithTagsAndZonesById(Long id);
+}
+```
+- Study 엔티티에 엔티티 그래프 추가
+```java
+@NamedEntityGraph(name = "Study.withTagsAndZones", attributeNodes = {
+        @NamedAttributeNode("tags"),
+        @NamedAttributeNode("zones")})
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Study {
+    ...
+}
+```
+- QueryDSL 설치
+    * 복잡한 쿼리를 스프링 데이터 JPA에서 자바 코드를 사용해서 구현할 수 있게 도와주는 라이브러리
+    * Type-safe한 쿼리를 만들 때 사용할 수 있는 Q클래스들을 만들어줘야 한다.
+        - 생성해주는 작업을 plugin이 해준다.
+        - 반드시 메이븐 컴파일 빌드(mvn compile)를 해야 Q클래스를 생성해준다.
+```xml
+<dependency>
+    <groupId>com.querydsl</groupId>
+    <artifactId>querydsl-jpa</artifactId>
+</dependency>
+
+...
+
+<plugin>
+    <groupId>com.mysema.maven</groupId>
+    <artifactId>apt-maven-plugin</artifactId>
+    <version>1.1.3</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>process</goal>
+            </goals>
+            <configuration>
+                <outputDirectory>target/generated-sources/java</outputDirectory>
+                <processor>com.querydsl.apt.jpa.JPAAnnotationProcessor</processor>
+            </configuration>
+        </execution>
+    </executions>
+    <dependencies>
+        <dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-apt</artifactId>
+            <version>${querydsl.version}</version>
+        </dependency>
+    </dependencies>
+</plugin>
+```
+- 스프링 데이터 JPA와 QueryDSL 연동
+    * JpaRepository에 QueryDSL 기능을 쓸 수 있게 QuerydslPredicateExecutor 인터페이스를 추가
+```java
+@Transactional(readOnly = true)
+public interface AccountRepository extends JpaRepository<Account, Long>, QuerydslPredicateExecutor<Account> {
+
+    ...
+}
+```
+- Account를 조회하는 Predicate 사용하기
+```java
+public class AccountPredicates {
+
+    public static Predicate findByTagsAndZones(Set<Tag> tags, Set<Zone> zones) {
+        QAccount account = QAccount.account;
+        // account가 가지고 있는 zone와 tag에 해당하는 것이 맵핑이 되는지 return
+        return account.zones.any().in(zones).and(account.tags.any().in(tags));
+    }
+}
+```
+-
+```java
+@Slf4j
+@Async
+@Component
+@Transactional
+@RequiredArgsConstructor
+public class StudyEventListener {
+
+    private final StudyRepository studyRepository;
+    private final AccountRepository accountRepository;
+    private final EmailService emailService;
+    private final TemplateEngine templateEngine;
+    private final AppProperties appProperties;
+    private final NotificationRepository notificationRepository;
+
+    @EventListener
+    public void handleStudyCreatedEvent(StudyCreatedEvent studyCreatedEvent) {
+        Study study = studyRepository.findStudyWithTagsAndZonesById(studyCreatedEvent.getStudy().getId());
+        Iterable<Account> accounts = accountRepository.findAll(AccountPredicates.findByTagsAndZones(study.getTags(), study.getZones()));
+        accounts.forEach(account -> {
+            if (account.isStudyCreatedByEmail()) { // 이메일 알림
+                sendStudyCreatedEmail(study, account);
+            }
+
+            if (account.isStudyCreatedByWeb()) { // 웹 알림
+                saveStudyCreatedNotification(study, account);
+            }
+        });
+    }
+    // 웹 알림
+    private void saveStudyCreatedNotification(Study study, Account account) {
+        Notification notification = new Notification();
+        notification.setTitle(study.getTitle());
+        notification.setLink("/study/" + study.getEncodedPath());
+        notification.setChecked(false);
+        notification.setCreatedLocalDateTime(LocalDateTime.now());
+        notification.setMessage(study.getShortDescription());
+        notification.setAccount(account);
+        notification.setNotificationType(NotificationType.STUDY_CREATED);
+        notificationRepository.save(notification);
+    }
+    // 이메일 알림
+    private void sendStudyCreatedEmail(Study study, Account account) {
+        Context context = new Context();
+        context.setVariable("nickname", account.getNickname());
+        context.setVariable("link", "/study/" + study.getEncodedPath());
+        context.setVariable("linkName", study.getTitle());
+        context.setVariable("message", "새로운 스터디가 생겼습니다.");
+        context.setVariable("host", appProperties.getHost());
+        String message = templateEngine.process("mail/simple-link", context);
+
+        EmailMessage emailMessage = EmailMessage.builder()
+                .subject("스터디올래, '" + study.getTitle() + "' 스터디가 생겼습니다.")
+                .to(account.getEmail())
+                .message(message)
+                .build();
+
+        emailService.sendEmail(emailMessage);
+    }
+}
+```
+- NotificationRepository 생성
+```java
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+}
+```
+- 실행해서 스터디를 만들고 스터디 주제와 지역을 account가 가지고 있는 tag와 zone 중 하나로 설정하면 다음과 같이 알림이 온다.
+    * 웹 알림이 왔는지 조회하는 기능은 아직 구현하지 않았지만 DB에는 알림이 저장된 것을 볼 수 있다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_2.jpg"></p>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_3.jpg"></p>
+
+<br>
