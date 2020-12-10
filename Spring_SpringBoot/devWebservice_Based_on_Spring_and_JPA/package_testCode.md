@@ -1,6 +1,8 @@
 # 패키지 및 테스트 코드 정리
 
 ## 패키지 정리
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/package_testCode_1.jpg"></p>
+
 - 지금까지 만든 도메인 엔티티 클래스 간의 관계는 그림과 같이 5개의 묶음으로 나눌 수 있다.
     * 단방향
 - 양방향이 되거나 circular한 관계가 되버리면 모듈화로 분리하기가 힘들다.
