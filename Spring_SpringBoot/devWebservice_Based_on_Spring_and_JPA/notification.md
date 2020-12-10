@@ -231,6 +231,7 @@ public class Study {
     ...
 }
 ```
+- account중 스터디와 적절한 tag, zone을 가진 account를 조회하는 것은 쿼리가 매우 복잡하다. 따라서 QueryDSL을 사용한다.
 - QueryDSL 설치
     * 복잡한 쿼리를 스프링 데이터 JPA에서 자바 코드를 사용해서 구현할 수 있게 도와주는 라이브러리
     * Type-safe한 쿼리를 만들 때 사용할 수 있는 Q클래스들을 만들어줘야 한다.
@@ -288,7 +289,7 @@ public class AccountPredicates {
     }
 }
 ```
--
+- StudyEventListener에 QueryDSL을 사용하고 웹, 이메일 알림 기능 구현
 ```java
 @Slf4j
 @Async
