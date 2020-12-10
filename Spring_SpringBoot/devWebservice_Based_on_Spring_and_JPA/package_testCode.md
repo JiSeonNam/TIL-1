@@ -56,15 +56,14 @@ public class PackageDependencyTests {
     @ArchTest
     ArchRule studyPackageRule = classes().that().resideInAPackage("..modules.study..")
             .should().onlyBeAccessed().byClassesThat()
-            .resideInAnyPackage(STUDY, EVENT); // Study 클래스는 Study, Event 클래스에서만 접근이 가능해야 한다.
+            .resideInAnyPackage(STUDY, EVENT); // Study 패키지에 있는 클래스는 Event, Study에 들어있는 클래스에서만 사용한다.
 
     @ArchTest
     ArchRule eventPackageRule = classes().that().resideInAPackage(EVENT)
-            .should().accessClassesThat().resideInAnyPackage(STUDY, ACCOUNT, EVENT); // Event는 Event, Study, Account를 참조한다.
-
+            .should().accessClassesThat().resideInAnyPackage(STUDY, ACCOUNT, EVENT); // Event패키지에 있는 클래스는 Study, Account, Event패키지에 들어있는 클래스를 사용한다.
     @ArchTest
     ArchRule accountPackageRule = classes().that().resideInAPackage(ACCOUNT)
-            .should().accessClassesThat().resideInAnyPackage(TAG, ZONE, ACCOUNT); // Account는 TAG, ZONE, ACCOUNT를 참조한다.
+            .should().accessClassesThat().resideInAnyPackage(TAG, ZONE, ACCOUNT); // Account패키지에 있는 클래스는 TAG, ZONE, ACCOUNT패키지에 들어있는 클래스를 사용한다.
 
     @ArchTest
     ArchRule cycleCheck = slices().matching("com.studyolle.modules.(*)..") // 각각의 모듈 간의 순환 참조 문제가 없는지 확인
@@ -109,4 +108,59 @@ public class StudyService {
     * settings 패키지가 모두 Account와 관련된 것이므로 Account 패키지로 옮겨준다.
 - modulesPackage 에러는 WithAccountSecurityContextFactory와 WithAccount클래스를 account쪽으로 옮겨주면 해결 가능하다.
     * Account와 관련된 것
+<br>
+
+## 테스트 클래스 정리
+- 테스트 코드 간의 상속을 만들어서 하위 클래스를 실행하면 상위 클래스의 테스트가 실행되는 문제점이 생겼다.
+- 따라서 Martin Fowler가 썼던 [ObjectMother](https://martinfowler.com/bliki/ObjectMother.html)라는 글을 참고하여 정리한다.
+    * 여기서는 Mother라는 표현보다는 Factory라는 단어를 사용한다.
+- 애노테이션 중복 사용을 막기 위해 MockMvcTest 인터페이스 생성
+    * 커스텀 애노테이션으로 테스트 애노테이션 묶음 만들기
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Transactional
+@SpringBootTest
+@AutoConfigureMockMvc
+public @interface MockMvcTest {
+    
+}
+```
+- AccountFactory 생성
+```java
+@Component
+@RequiredArgsConstructor
+public class AccountFactory {
+
+    @Autowired AccountRepository accountRepository;
+
+    public Account createAccount(String nickname) {
+        Account kimhayoung = new Account();
+        kimhayoung.setNickname(nickname);
+        kimhayoung.setEmail(nickname + "@email.com");
+        accountRepository.save(kimhayoung);
+        return kimhayoung;
+    }
+}
+```
+- StudyFactory 생성
+```java
+@Component
+@RequiredArgsConstructor
+public class StudyFactory {
+
+    @Autowired StudyService studyService;
+    @Autowired StudyRepository studyRepository;
+
+    public Study createStudy(String path, Account manager) {
+        Study study = new Study();
+        study.setPath(path);
+        studyService.createNewStudy(study, manager);
+        return study;
+    }
+}
+```
+- 이제 나머지 클래스들에 테스트 클래스들의 상속 관계를 없애고 `@MockMvcTest`, AccountFactory, StudyFactory를 사용하면 된다.
+    * [코드 커밋 참고](https://github.com/qlalzl9/studyolle/commit/e0c2097c88ef76beb4bc23b8ce00aafc07b73725)
+    * 수정 후 전체 테스트를 실행하면 성공적으로 수행된다.
 <br>
