@@ -363,3 +363,80 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_3.jpg"></p>
 
 <br>
+
+## 알림 아이콘 변경
+- 읽지 않은 웹 알림이 있는 경우, 메인 네비게이션 바의 알림 아이콘을 색이 있는 아이콘으로 변경한다.
+    * 핸들러 처리 이후, 뷰 랜더링 전에 스프링 웹 MVC HandlerInterceptor로 읽지 않은 메시지가 있는지 Model에 담아준다.
+- NotificationInterceptor 적용 범위
+    * redirect 요청에는 적용 X
+    * static 리소스 요청에는 적용 X
+<br>
+
+### 구현
+- NotificationInterceptor 생성
+    * `postHandle()`
+        - 뷰 렌더링 전, 핸들러 처리 이후에 동작
+```java
+@Component
+@RequiredArgsConstructor
+public class NotificationInterceptor implements HandlerInterceptor {
+
+    private final NotificationRepository notificationRepository;
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        // 인증 정보가 있는 요청에 대한 응답에만 실행할 것이기 때문에 authentication을 가져온다.
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); 
+        // modelAndView를 쓰는 경우에만 model에 넣는다.
+        if (modelAndView != null && !isRedirectView(modelAndView) && authentication != null && authentication.getPrincipal() instanceof UserAccount) {
+            Account account = ((UserAccount)authentication.getPrincipal()).getAccount();
+            long count = notificationRepository.countByAccountAndChecked(account, false);
+            modelAndView.addObject("hasNotification", count > 0);
+        }
+    }
+    // redirect인지 아닌지 확인
+    private boolean isRedirectView(ModelAndView modelAndView) {
+        return modelAndView.getViewName().startsWith("redirect:") || modelAndView.getView() instanceof RedirectView;
+    }
+}
+```
+- NotificationRepository에 `countByAccountAndChecked()` 생성
+```java
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+    long countByAccountAndChecked(Account account, boolean checked);
+}
+```
+- WebConfig 생성
+    * HandlerInterceptor를 만들어서 Bean으로 등록한다고 바로 사용되는 것은 아니다.
+    * 스프링 MVC 설정을 해야한다.
+    * `@EnableWebMvc`를 쓰면 스프링 부트가 제공하는 웹 MVC 자동설정을 사용하지 않겠다는 의미.(전부 직접 작성해야 한다.)
+```java
+@Configuration
+@RequiredArgsConstructor
+public class WebConfig implements WebMvcConfigurer {
+
+    private final NotificationInterceptor notificationInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // StaticResourceLocation이라는 enum이 staticResourcesPath를 가지고 있기 때문에 문자열로 바꿔서 List에 저장한다.
+        List<String> staticResourcesPath = Arrays.stream(StaticResourceLocation.values())
+                .flatMap(StaticResourceLocation::getPatterns)
+                .collect(Collectors.toList());
+        staticResourcesPath.add("/node_modules/**"); // 커스텀하게 추가도 가능하다.
+
+        registry.addInterceptor(notificationInterceptor)
+                .excludePathPatterns(staticResourcesPath); // static 리소스 요청에는 적용 X 
+    }
+}
+```
+- 뷰 수정
+```html
+<!-- fragments.html -->
+<!-- <i class="fa fa-bell-o" aria-hidden="true"></i> -->
+<i th:if="${!hasNotification}" class="fa fa-bell-o" aria-hidden="true"></i>
+<span class="text-info" th:if="${hasNotification}"><i class="fa fa-bell" aria-hidden="true"></i></span>
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_4.jpg"></p>
+
+<br>
