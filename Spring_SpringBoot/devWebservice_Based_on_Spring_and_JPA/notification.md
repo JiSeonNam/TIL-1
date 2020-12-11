@@ -440,3 +440,211 @@ public class WebConfig implements WebMvcConfigurer {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_4.jpg"></p>
 
 <br>
+
+## 알림 목록 조회 및 삭제
+- 기본적으로 알림 벨 아이콘을 클릭하면 읽지 않은 알림 보여주는 요청을 보낸다.
+    * 읽음 처리 된다.
+- 하나의 뷰로 읽지 않은 알림, 읽은 알림을 보여주는 데 쓴다.
+<br>
+
+### 구현
+- 알림 목록 조회 및 삭제 생성
+    * `@GetMapping("/notifications")`
+        - 읽지 않은 알림 메시지만 보여준다.
+        - 알림 메시지를 카테고리 별로 나눠서 Model에 담아주고 뷰에서 보여준다.
+        - 모든 읽지 않은 알림 메시지를 읽은 메시지로 수정한다.
+    * `@GetMapping("/notifications/old")`
+        - 읽은 알림 메시지를 보여준다.
+    * `@DeleteMapping("/notifications")`
+        - 읽은 알림 메시지를 삭제한다.
+    * `putCategorizedNotifications()`
+        - 읽지 않은 알림들을 카테고리로 나눠서 Model에 담는 메서드
+```java
+@Controller
+@RequiredArgsConstructor
+public class NotificationController {
+
+    private final NotificationRepository repository;
+    private final NotificationService service;
+
+    @GetMapping("/notifications")
+    public String getNotifications(@CurrentAccount Account account, Model model) {
+        List<Notification> notifications = repository.findByAccountAndCheckedOrderByCreatedDateTimeDesc(account, false);
+        long numberOfChecked = repository.countByAccountAndChecked(account, true);
+        putCategorizedNotifications(model, notifications, numberOfChecked, notifications.size());
+        model.addAttribute("isNew", true);
+        service.markAsRead(notifications);
+        return "notification/list";
+    }
+
+    @GetMapping("/notifications/old")
+    public String getOldNotifications(@CurrentAccount Account account, Model model) {
+        List<Notification> notifications = repository.findByAccountAndCheckedOrderByCreatedDateTimeDesc(account, true);
+        long numberOfNotChecked = repository.countByAccountAndChecked(account, false);
+        putCategorizedNotifications(model, notifications, notifications.size(), numberOfNotChecked);
+        model.addAttribute("isNew", false);
+        return "notification/list";
+    }
+
+    @DeleteMapping("/notifications")
+    public String deleteNotifications(@CurrentAccount Account account) {
+        repository.deleteByAccountAndChecked(account, true);
+        return "redirect:/notifications";
+    }
+
+    private void putCategorizedNotifications(Model model, List<Notification> notifications,
+                                             long numberOfChecked, long numberOfNotChecked) {
+        List<Notification> newStudyNotifications = new ArrayList<>(); // 새 스터디 관련 알림
+        List<Notification> eventEnrollmentNotifications = new ArrayList<>(); // 참가 신청 관련 알림
+        List<Notification> watchingStudyNotifications = new ArrayList<>(); // 이미 참여 중인 스터디 알림
+        for (var notification : notifications) {
+            switch (notification.getNotificationType()) {
+                case STUDY_CREATED: newStudyNotifications.add(notification); break;
+                case EVENT_ENROLLMENT: eventEnrollmentNotifications.add(notification); break;
+                case STUDY_UPDATED: watchingStudyNotifications.add(notification); break;
+            }
+        }
+
+        model.addAttribute("numberOfNotChecked", numberOfNotChecked);
+        model.addAttribute("numberOfChecked", numberOfChecked);
+        model.addAttribute("notifications", notifications);
+        model.addAttribute("newStudyNotifications", newStudyNotifications);
+        model.addAttribute("eventEnrollmentNotifications", eventEnrollmentNotifications);
+        model.addAttribute("watchingStudyNotifications", watchingStudyNotifications);
+    }
+}
+```
+- NotificationRepository
+    * `@Transactional`
+        - 알림의 상태가 바뀔 것이기 때문에 readOnly가 아니어야 한다.
+```java
+@Transactional(readOnly = true)
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+    long countByAccountAndChecked(Account account, boolean checked); // 읽은 알림 개수
+
+    @Transactional
+    List<Notification> findByAccountAndCheckedOrderByCreatedDateTimeDesc(Account account, boolean checked); // 읽지 않은 알림 조회
+
+    @Transactional
+    void deleteByAccountAndChecked(Account account, boolean checked);
+}
+```
+- NotificationService 생성
+    * `markAsRead()`
+        - 읽지 않은 알림을 모두 읽음 처리
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class NotificationService {
+
+    private final NotificationRepository notificationRepository;
+
+    public void markAsRead(List<Notification> notifications) {
+        notifications.forEach(n -> n.setChecked(true));
+        notificationRepository.saveAll(notifications);
+    }
+}
+```
+- 알림 목록 조회 및 삭제 관련 뷰 추가
+```html
+<!-- fragments.html -->
+<ul th:fragment="notification-list (notifications)" class="list-group list-group-flush">
+    <a href="#" th:href="@{${noti.link}}" th:each="noti: ${notifications}"
+       class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+            <small class="text-muted" th:text="${noti.title}">Noti title</small>
+            <small class="fromNow text-muted" th:text="${noti.createdDateTime}">3 days ago</small>
+        </div>
+        <p th:text="${noti.message}" class="text-left mb-0 mt-1">message</p>
+    </a>
+</ul>
+```
+```html
+<!-- list.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <nav th:replace="fragments.html :: main-nav"></nav>
+    <div class="container">
+        <div class="row py-5 text-center">
+            <div class="col-3">
+                <ul class="list-group">
+                    <a href="#" th:href="@{/notifications}" th:classappend="${isNew}? active"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        읽지 않은 알림
+                        <span th:text="${numberOfNotChecked}">3</span>
+                    </a>
+                    <a href="#" th:href="@{/notifications/old}" th:classappend="${!isNew}? active"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        읽은 알림
+                        <span th:text="${numberOfChecked}">0</span>
+                    </a>
+                </ul>
+
+                <ul class="list-group mt-4">
+                    <a href="#" th:if="${newStudyNotifications.size() > 0}"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        새 스터디 알림
+                        <span th:text="${newStudyNotifications.size()}">3</span>
+                    </a>
+                    <a href="#" th:if="${eventEnrollmentNotifications.size() > 0}"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        모임 참가 신청 알림
+                        <span th:text="${eventEnrollmentNotifications.size()}">0</span>
+                    </a>
+                    <a href="#" th:if="${watchingStudyNotifications.size() > 0}"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        관심있는 스터디 알림
+                        <span th:text="${watchingStudyNotifications.size()}">0</span>
+                    </a>
+                </ul>
+
+                <ul class="list-group mt-4" th:if="${numberOfChecked > 0}">
+                    <form th:action="@{/notifications}" th:method="delete">
+                        <button type="submit" class="btn btn-block btn-outline-warning" aria-describedby="deleteHelp">
+                            읽은 알림 삭제
+                        </button>
+                        <small id="deleteHelp">삭제하지 않아도 한달이 지난 알림은 사라집니다.</small>
+                    </form>
+                </ul>
+            </div>
+            <div class="col-9">
+                <div class="card" th:if="${notifications.size() == 0}">
+                    <div class="card-header">
+                        알림 메시지가 없습니다.
+                    </div>
+                </div>
+
+                <div class="card" th:if="${newStudyNotifications.size() > 0}">
+                    <div class="card-header">
+                        주요 활동 지역에 관심있는 주제의 스터디가 생겼습니다.
+                    </div>
+                    <div th:replace="fragments.html :: notification-list (notifications=${newStudyNotifications})"></div>
+                </div>
+
+                <div class="card mt-4" th:if="${eventEnrollmentNotifications.size() > 0}">
+                    <div class="card-header">
+                        모임 참가 신청 관련 소식이 있습니다.
+                    </div>
+                    <div th:replace="fragments.html :: notification-list (notifications=${eventEnrollmentNotifications})"></div>
+                </div>
+
+                <div class="card mt-4" th:if="${watchingStudyNotifications.size() > 0}">
+                    <div class="card-header">
+                        참여중인 스터디 관련 소식이 있습니다.
+                    </div>
+                    <div th:replace="fragments.html :: notification-list (notifications=${watchingStudyNotifications})"></div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="fragments.html :: footer"></div>
+    </div>
+    <script th:replace="fragments.html :: date-time"></script>
+</body>
+</html>
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_5.jpg"></p>
+
+<br>
