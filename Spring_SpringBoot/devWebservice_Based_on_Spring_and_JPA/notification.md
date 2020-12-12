@@ -648,3 +648,189 @@ public class NotificationService {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_5.jpg"></p>
 
 <br>
+
+## 스터디 변경 알림
+- 참여중인 스터디 변경 사항에 대한 알림
+    * 스터디 소개를 수정 했을 때
+    * 스터디 종료 시
+    * 스터디 팀원 모집 시작/중지
+<br>
+
+### 구현
+- StudyUpdateEvent 생성
+```java
+@Getter
+@RequiredArgsConstructor
+public class StudyUpdateEvent {
+
+    private final Study study;
+    private final String message;
+
+}
+```
+- StudyService에 StudyUpdateEvent 사용
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+
+    public void updateStudyDescription(Study study, StudyDescriptionForm studyDescriptionForm) {
+        modelMapper.map(studyDescriptionForm, study);
+        eventPublisher.publishEvent(new StudyUpdateEvent(study, "스터디 소개를 수정했습니다."));
+    }
+
+    ...
+
+    public void close(Study study) {
+        study.close();
+        eventPublisher.publishEvent(new StudyUpdateEvent(study, "스터디를 종료했습니다."));
+    }
+
+    public void startRecruit(Study study) {
+        study.startRecruit();
+        eventPublisher.publishEvent(new StudyUpdateEvent(study, "팀원 모집을 시작합니다."));
+    }
+
+    public void stopRecruit(Study study) {
+        study.stopRecruit();
+        eventPublisher.publishEvent(new StudyUpdateEvent(study, "팀원 모집을 중단했습니다."));
+    }
+
+    ...
+}
+```
+- StudyUpdateEvent 생성
+```java
+@Getter
+@RequiredArgsConstructor
+public class StudyUpdateEvent {
+
+    private final Study study;
+    private final String message;
+
+}
+```
+- StudyRepository에 `findStudyWithManagersAndMembersById()` 추가
+    * `@EntityGraph`는 기본이 FETCH기 때문에 attributePaths를 사용해서 줄일 수 있다.
+    * 따라서 Study 엔티티의 `@NamedEntityGraph` 애노테이션도 없앨 수 있다. 
+    * FETCH가 아닌 LOAD를 사용하고 싶다면 attributePaths를 설정하고  type을 따로 설정하면 된다.
+    * [해당 커밋 참고](https://github.com/qlalzl9/studyolle/commit/5862d618635d302b386c31b4c19b79dcc9006ad8)
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long> {
+
+    boolean existsByPath(String path);
+
+    @EntityGraph(attributePaths = {"tags", "zones", "managers", "members"}, type = EntityGraph.EntityGraphType.LOAD)
+    Study findByPath(String path);
+
+    @EntityGraph(attributePaths = {"tags", "managers"})
+    Study findStudyWithTagsByPath(String path);
+
+    @EntityGraph(attributePaths = {"zones", "managers"})
+    Study findStudyWithZonesByPath(String path);
+
+    @EntityGraph(attributePaths = "managers")
+    Study findStudyWithManagersByPath(String path);
+
+    @EntityGraph(attributePaths = "members")
+    Study findStudyWithMembersByPath(String path);
+
+    Study findStudyOnlyByPath(String path);
+
+    @EntityGraph(attributePaths = {"zones", "tags"})
+    Study findStudyWithTagsAndZonesById(Long id);
+
+    @EntityGraph(attributePaths = {"members", "managers"})
+    Study findStudyWithManagersAndMembersById(Long id);
+}
+```
+- StudyEventListener에 이벤트 수정 알림을 처리하는 `handleStudyUpdateEvent()` 생성
+    * 참고) 중복 코드를 없애기 위해 원래 private 메서드를 변수화해서 message, notificationType을 받도록 수정했다.
+```java
+@Slf4j
+@Async
+@Component
+@Transactional
+@RequiredArgsConstructor
+public class StudyEventListener {
+
+    private final StudyRepository studyRepository;
+    private final AccountRepository accountRepository;
+    private final EmailService emailService;
+    private final TemplateEngine templateEngine;
+    private final AppProperties appProperties;
+    private final NotificationRepository notificationRepository;
+
+    @EventListener
+    public void handleStudyCreatedEvent(StudyCreatedEvent studyCreatedEvent) {
+        Study study = studyRepository.findStudyWithTagsAndZonesById(studyCreatedEvent.getStudy().getId());
+        Iterable<Account> accounts = accountRepository.findAll(AccountPredicates.findByTagsAndZones(study.getTags(), study.getZones()));
+        accounts.forEach(account -> {
+            if (account.isStudyCreatedByEmail()) {
+                sendStudyCreatedEmail(study, account, "새로운 스터디가 생겼습니다",
+                        "스터디올래, '" + study.getTitle() + "' 스터디가 생겼습니다.");
+            }
+
+            if (account.isStudyCreatedByWeb()) {
+                createNotification(study, account, study.getShortDescription(), NotificationType.STUDY_CREATED);
+            }
+        });
+    }
+
+    @EventListener
+    public void handleStudyUpdateEvent(StudyUpdateEvent studyUpdateEvent) {
+        Study study = studyRepository.findStudyWithManagersAndMembersById(studyUpdateEvent.getStudy().getId());
+        Set<Account> accounts = new HashSet<>();
+        accounts.addAll(study.getManagers());
+        accounts.addAll(study.getMembers());
+
+        accounts.forEach(account -> {
+            if (account.isStudyUpdatedByEmail()) {
+                sendStudyCreatedEmail(study, account, studyUpdateEvent.getMessage(),
+                        "스터디올래, '" + study.getTitle() + "' 스터디에 새 소식이 있습니다.");
+            }
+
+            if (account.isStudyUpdatedByWeb()) {
+                createNotification(study, account, studyUpdateEvent.getMessage(), NotificationType.STUDY_UPDATED);
+            }
+        });
+    }
+
+    private void createNotification(Study study, Account account, String message, NotificationType notificationType) {
+        Notification notification = new Notification();
+        notification.setTitle(study.getTitle());
+        notification.setLink("/study/" + study.getEncodedPath());
+        notification.setChecked(false);
+        notification.setCreatedDateTime(LocalDateTime.now());
+        notification.setMessage(message);
+        notification.setAccount(account);
+        notification.setNotificationType(notificationType);
+        notificationRepository.save(notification);
+    }
+
+    private void sendStudyCreatedEmail(Study study, Account account, String contextMessage, String emailSubject) {
+        Context context = new Context();
+        context.setVariable("nickname", account.getNickname());
+        context.setVariable("link", "/study/" + study.getEncodedPath());
+        context.setVariable("linkName", study.getTitle());
+        context.setVariable("message", contextMessage);
+        context.setVariable("host", appProperties.getHost());
+        String message = templateEngine.process("mail/simple-link", context);
+
+        EmailMessage emailMessage = EmailMessage.builder()
+                .subject(emailSubject)
+                .to(account.getEmail())
+                .message(message)
+                .build();
+
+        emailService.sendEmail(emailMessage);
+    }
+}
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_6.jpg"></p>
+
+<br>
