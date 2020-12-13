@@ -834,3 +834,155 @@ public class StudyEventListener {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_6.jpg"></p>
 
 <br>
+
+## 모임 변경 알림
+- 스터디 수정 추가 알림
+    * 새 모임 추가
+    * 모임 변경
+    * 모임 취소
+- 모임 참가 신청
+    * 참가 신청 수락
+    * 참가 신청 거절
+<br>
+
+### 구현
+- EventService에 스터디 수정 추가 알림 및 모임 변경 알림 관련 코드 추가
+    * 스터디 수정 추가 알림은 이미 처리하는 코드가 있기 때문에 StudyUpdateEvent를 던져주기만 하면 된다.
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class EventService {
+
+    ...
+    private final ApplicationEventPublisher eventPublisher;
+
+    public Event createEvent(Event event, Study study, Account account) {
+        event.setCreatedBy(account);
+        event.setCreatedDateTime(LocalDateTime.now());
+        event.setStudy(study);
+        eventPublisher.publishEvent(new StudyUpdateEvent(event.getStudy(),
+                "'" + event.getTitle() + "' 모임을 만들었습니다."));
+        return eventRepository.save(event);
+    }
+
+    public void updateEvent(Event event, EventForm eventForm) {
+        modelMapper.map(eventForm, event);
+        event.acceptWaitingList();
+        eventPublisher.publishEvent(new StudyUpdateEvent(event.getStudy(),
+                "'" + event.getTitle() + "' 모임 정보를 수정했으니 확인하세요."));
+    }
+
+    public void deleteEvent(Event event) {
+        eventRepository.delete(event);
+        eventPublisher.publishEvent(new StudyUpdateEvent(event.getStudy(),
+                "'" + event.getTitle() + "' 모임을 취소했습니다."));
+    }
+
+    ...
+
+    public void acceptEnrollment(Event event, Enrollment enrollment) {
+        event.accept(enrollment);
+        eventPublisher.publishEvent(new EnrollmentAcceptedEvent(enrollment));
+    }
+
+    public void rejectEnrollment(Event event, Enrollment enrollment) {
+        event.reject(enrollment);
+        eventPublisher.publishEvent(new EnrollmentRejectedEvent(enrollment));
+    }
+
+    ...
+}
+```
+- EnrollmentEvent 생성
+```java
+@Getter
+@RequiredArgsConstructor
+public abstract class EnrollmentEvent {
+
+    protected final Enrollment enrollment;
+    protected final String message;
+
+}
+```
+- EnrollmentAcceptedEvent 생성
+```java
+public class EnrollmentAcceptedEvent extends EnrollmentEvent{
+
+    public EnrollmentAcceptedEvent(Enrollment enrollment) {
+        super(enrollment, "모임 참가 신청을 확인했습니다. 모임에 참석하세요.");
+    }
+}
+```
+- EnrollmentRejectedEvent 생성
+```java
+public class EnrollmentRejectedEvent extends EnrollmentEvent {
+
+    public EnrollmentRejectedEvent(Enrollment enrollment) {
+        super(enrollment, "모임 참가 신청을 거절했습니다.");
+    }
+}
+```
+- EnrollmentEventListener 생성
+```java
+@Slf4j
+@Async
+@Component
+@Transactional
+@RequiredArgsConstructor
+public class EnrollmentEventListener {
+
+    private final NotificationRepository notificationRepository;
+    private final AppProperties appProperties;
+    private final TemplateEngine templateEngine;
+    private final EmailService emailService;
+
+    @EventListener
+    public void handleEnrollmentEvent(EnrollmentEvent enrollmentEvent) {
+        Enrollment enrollment = enrollmentEvent.getEnrollment();
+        Account account = enrollment.getAccount();
+        Event event = enrollment.getEvent();
+        Study study = event.getStudy();
+
+        if (account.isStudyEnrollmentResultByEmail()) {
+            sendEmail(enrollmentEvent, account, event, study);
+        }
+
+        if (account.isStudyEnrollmentResultByWeb()) {
+            createNotification(enrollmentEvent, account, event, study);
+        }
+    }
+
+    private void sendEmail(EnrollmentEvent enrollmentEvent, Account account, Event event, Study study) {
+        Context context = new Context();
+        context.setVariable("nickname", account.getNickname());
+        context.setVariable("link", "/study/" + study.getEncodedPath() + "/events/" + event.getId());
+        context.setVariable("linkName", study.getTitle());
+        context.setVariable("message", enrollmentEvent.getMessage());
+        context.setVariable("host", appProperties.getHost());
+        String message = templateEngine.process("mail/simple-link", context);
+
+        EmailMessage emailMessage = EmailMessage.builder()
+                .subject("스터디올래, " + event.getTitle() + " 모임 참가 신청 결과입니다.")
+                .to(account.getEmail())
+                .message(message)
+                .build();
+
+        emailService.sendEmail(emailMessage);
+    }
+
+    private void createNotification(EnrollmentEvent enrollmentEvent, Account account, Event event, Study study) {
+        Notification notification = new Notification();
+        notification.setTitle(study.getTitle() + " / " + event.getTitle());
+        notification.setLink("/study/" + study.getEncodedPath() + "/events/" + event.getId());
+        notification.setChecked(false);
+        notification.setCreatedDateTime(LocalDateTime.now());
+        notification.setMessage(enrollmentEvent.getMessage());
+        notification.setAccount(account);
+        notification.setNotificationType(NotificationType.EVENT_ENROLLMENT);
+        notificationRepository.save(notification);
+    }
+}
+```
+
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/notification_7.jpg"></p>
