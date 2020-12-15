@@ -332,7 +332,7 @@ public class StudyRepositoryExtensionImpl extends QuerydslRepositorySupport impl
                 .leftJoin(study.members, QAccount.account).fetchJoin()
                 .distinct();
         // 페이징 적용
-        JPQLQuery<Study> pageableQuery = getQuerydsl().applyPagination(pageable, query); // pagenation 적용
+        JPQLQuery<Study> pageableQuery = getQuerydsl().applyPagination(pageable, query); // pagination 적용
         QueryResults<Study> fetchResults = pageableQuery.fetchResults(); // fetch가 아닌 fetchResults를 사용해야 한다.(fetch는 데이터만 가져온다.)
         return new PageImpl<>(fetchResults.getResults(), pageable, fetchResults.getTotal());
     }
@@ -358,5 +358,168 @@ public class StudyRepositoryExtensionImpl extends QuerydslRepositorySupport impl
                     ...
 ```
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_3.jpg"></p>
+
+<br>
+
+## 검색 뷰 개선
+- 부트스트랩을 사용하여 페이지 네비게이션 추가
+- 정렬 조건 추가
+    * 스터디 공개 일시
+    * 멤버 수
+- 키워드 하이라이팅
+    * [mark.js](https://markjs.io/) 사용
+<br>
+
+### 구현
+- 부트스트랩의 Pagination라는 뷰를 사용해서 페이지 네비게이션 추가
+```html
+<!-- search.html -->
+<div class="row justify-content-center">
+    <div class="col-sm-10">
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${!studyPage.hasPrevious()}? disabled">
+                    <a th:href="@{'/search/study?keyword=' + ${keyword} + '&sort=' + ${sortProperty} + ',desc&page=' + ${studyPage.getNumber() - 1}}"
+                       class="page-link" tabindex="-1" aria-disabled="true">
+                        Previous
+                    </a>
+                </li>
+                <li class="page-item" th:classappend="${i == studyPage.getNumber()}? active"
+                    th:each="i: ${#numbers.sequence(0, studyPage.getTotalPages() - 1)}">
+                    <a th:href="@{'/search/study?keyword=' + ${keyword} + '&sort=' + ${sortProperty} + ',desc&page=' + ${i}}"
+                       class="page-link" href="#" th:text="${i + 1}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${!studyPage.hasNext()}? disabled">
+                    <a th:href="@{'/search/study?keyword=' + ${keyword} + '&sort=' + ${sortProperty} + ',desc&page=' + ${studyPage.getNumber() + 1}}"
+                       class="page-link">
+                        Next
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+```
+- 부트스트랩의 Dropdowns을 사용해 정렬 조건 추가
+```html
+<div class="dropdown">
+    <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        검색 결과 정렬 방식
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <a class="dropdown-item" th:classappend="${#strings.equals(sortProperty, 'publishedDateTime')}? active"
+           th:href="@{'/search/study?sort=publishedDateTime,desc&keyword=' + ${keyword}}">
+            스터디 공개일
+        </a>
+        <a class="dropdown-item" th:classappend="${#strings.equals(sortProperty, 'memberCount')}? active"
+           th:href="@{'/search/study?sort=memberCount,desc&keyword=' + ${keyword}}">
+            멤버 수
+        </a>
+    </div>
+</div>
+```
+- 서버 쪽에서는 Model에 sortProperty를 넘겨줘야 한다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class MainController {
+
+    ...
+
+    @GetMapping("/search/study")
+    public String searchStudy(String keyword, Model model,
+                              @PageableDefault(size = 9, sort = "publishedDateTime", direction = Sort.Direction.DESC)
+                                      Pageable pageable) {
+        Page<Study> studyPage = studyRepository.findByKeyword(keyword, pageable);
+        model.addAttribute("studyPage", studyPage);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortProperty",
+                pageable.getSort().toString().contains("publishedDateTime") ? "publishedDateTime" : "memberCount");
+        return "search";
+    }
+}
+```
+- 스터디의 멤버 수를 자주 쿼리하는데 쿼리 개수를 줄이기 위해 Study엔티티에 memberCount추가
+```java
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+@Builder @AllArgsConstructor @NoArgsConstructor
+public class Study {
+
+    ...
+
+    private int memberCount;
+
+    ...
+
+    public void addMember(Account account) {
+        this.members.add(account);
+        this.memberCount++;
+
+    }
+
+    public void removeMember(Account account) {
+        this.getMembers().remove(account);
+        this.memberCount--;
+    }
+
+    ...
+}
+```
+- 키워드 하이라이팅(mark.js 사용)
+    * `npm install mark.js --save`
+```html
+<img th:src="${study.image}" class="context card-img-top" th:alt="${study.title}" >
+
+...
+
+<script src="/node_modules/mark.js/dist/jquery.mark.min.js"></script>
+    <script type="application/javascript">
+        $(function(){
+            var mark = function() {
+                // Read the keyword
+                var keyword = $("#keyword").text();
+
+                // Determine selected options
+                var options = {
+                    "each": function(element) {
+                        setTimeout(function() {
+                            $(element).addClass("animate");
+                        }, 150);
+                    }
+                };
+
+                // Mark the keyword inside the context
+                $(".context").unmark({
+                    done: function() {
+                        $(".context").mark(keyword, options);
+                    }
+                });
+            };
+
+            mark();
+        });
+    </script>
+```
+```html
+<style>
+    ...
+    
+    mark {
+        padding: 0;
+        background: transparent;
+        background: linear-gradient(to right, #f0ad4e 50%, transparent 50%);
+        background-position: right bottom;
+        background-size: 200% 100%;
+        transition: all .5s ease;
+        color: #fff;
+    }
+    mark.animate {
+        background-position: left bottom;
+        color: #000;
+    }
+</style>
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_4.jpg"></p>
 
 <br>
