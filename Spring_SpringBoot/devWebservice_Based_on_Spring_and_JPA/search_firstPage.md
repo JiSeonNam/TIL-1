@@ -199,3 +199,164 @@ public class StudyRepositoryExtensionImpl extends QuerydslRepositorySupport impl
 - 실행해서 쿼리를 확인하면 QueryDSL 실행 쿼리 1개, 알림 조회 쿼리 1개 총 2개만 나온다.
 
 <br>
+
+## 페이징 적용
+- 페이징을 위해 임의의 데이터(스터디 30개)를 추가해서 사용한다.
+- 고전적인 방식의 페이징
+    * SQL의 limit과 offset 사용하기
+- 스프링 데이터 JPA가 제공하는 Pageable 사용하기
+    * page와 size
+    * sort도 지원한다.
+    * 기본값을 설정하는 방법 `@PageableDefault`
+<br>
+
+### 테스트용 데이터 생성
+- 기능 확인을 위해 데이터를 넣어주는 기능 구현
+    * 잠시 넣었다가 데이터를 삭제하면 된다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class StudyController {
+
+    ...
+
+    @GetMapping("/study/data")
+    public String generateTestData(@CurrentAccount Account account) {
+        studyService.generateTestStudies(account);
+        return "redirect:/";
+    }
+}
+```
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class StudyService {
+
+    ...
+    private final TagRepository tagRepository;
+
+    ...
+
+    public void generateTestStudies(Account account) {
+        // 스터디 30개 생성
+        for(int i = 0; i < 30; i++) {
+            String randomValue = RandomString.make(5);
+            Study study = Study.builder()
+                    .title("테스트 스터디 " + randomValue)
+                    .path("test-" + randomValue)
+                    .shortDescription("테스트용 스터디입니다.")
+                    .fullDescription("test")
+                    .tags(new HashSet<>())
+                    .zones(new HashSet<>())
+                    .managers(new HashSet<>())
+                    .build();
+            study.publish(); // 스터디 공개 설정
+            Study newStudy = this.createNewStudy(study, account);
+            // 30개의 스터디 모두 JPA라는 태그를 가지고 있도록 설정
+            Tag jpa = tagRepository.findByTitle("JPA");
+            newStudy.getTags().add(jpa);
+
+        }
+    }
+}
+```
+- 실행해서 데이터를 추가하고 작성했던 코드를 되돌린다.
+    * 실행하면 다음과 같이 DB에 랜덤값이 달린 스터디 30개가 생성된다.
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_2.jpg"></p>
+
+<br>
+
+### 페이징 구현
+- Pageable 사용
+    * Pageable로 받을 수 있는 파라미터
+        - size
+        - page
+        - sort
+    * `@PageableDefault`
+        - 페이징 기본값 설정
+```java
+@Controller
+@RequiredArgsConstructor
+public class MainController {
+
+    ...
+
+    @GetMapping("/search/study")
+    public String searchStudy(String keyword, Model model,
+                              @PageableDefault(size = 9, sort = "publishedDateTime", direction = Sort.Direction.DESC)
+                                      Pageable pageable) {
+        Page<Study> studyPage = studyRepository.findByKeyword(keyword, pageable);
+        model.addAttribute("studyPage", studyPage);
+        model.addAttribute("keyword", keyword);
+        return "search";
+    }
+}
+```
+- StudyRepositoryExtension, StudyRepositoryExtensionImpl에 Pageable 설정
+    * IDE에서 QuickFix 이용하면 편하다.
+```java
+@Transactional(readOnly = true)
+public interface StudyRepositoryExtension {
+
+    Page<Study> findByKeyword(String keyword, Pageable pageable);
+
+}
+```
+```java
+public class StudyRepositoryExtensionImpl extends QuerydslRepositorySupport implements StudyRepositoryExtension {
+
+    ...
+
+    @Override
+    public Page<Study> findByKeyword(String keyword, Pageable pageable) {
+        ...
+    }
+}
+```
+- 
+```java
+public class StudyRepositoryExtensionImpl extends QuerydslRepositorySupport implements StudyRepositoryExtension {
+
+    ...
+
+    @Override
+    public Page<Study> findByKeyword(String keyword, Pageable pageable) {
+        QStudy study = QStudy.study;
+        JPQLQuery<Study> query = from(study).where(study.published.isTrue()
+                .and(study.title.containsIgnoreCase(keyword))
+                .or(study.tags.any().title.containsIgnoreCase(keyword))
+                .or(study.zones.any().localNameOfCity.containsIgnoreCase(keyword)))
+                .leftJoin(study.tags, QTag.tag).fetchJoin()
+                .leftJoin(study.zones, QZone.zone).fetchJoin()
+                .leftJoin(study.members, QAccount.account).fetchJoin()
+                .distinct();
+        // 페이징 적용
+        JPQLQuery<Study> pageableQuery = getQuerydsl().applyPagination(pageable, query); // pagenation 적용
+        QueryResults<Study> fetchResults = pageableQuery.fetchResults(); // fetch가 아닌 fetchResults를 사용해야 한다.(fetch는 데이터만 가져온다.)
+        return new PageImpl<>(fetchResults.getResults(), pageable, fetchResults.getTotal());
+    }
+}
+```
+- 화면에서도 List를 참조하는 대신 Page 타입을 사용하기 때문에 Page가 제공하는 기능을 사용한다.
+```html
+...
+
+<p class="lead" th:if="${studyPage.getTotalElements() == 0}">
+                <strong th:text="${keyword}" id="keyword" class="context"></strong>에 해당하는 스터디가 없습니다.
+            </p>
+            <p class="lead" th:if="${studyPage.getTotalElements() > 0}">
+                <strong th:text="${keyword}" id="keyword" class="context"></strong>에 해당하는 스터디를
+                <span th:text="${studyPage.getTotalElements()}"></span>개
+                찾았습니다.
+            </p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-sm-10">
+                <div class="row">
+                    <div class="col-md-4" th:each="study: ${studyPage.getContent()}">
+                    ...
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_3.jpg"></p>
+
+<br>
