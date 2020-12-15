@@ -161,3 +161,41 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_1.jpg"></p>
 
 <br>
+
+## N+1 Select 문제 해결
+- 현재 검색 쿼리는 N + 1 문제가 발생한다.
+    * QueryDSL 쿼리 1개
+    * 알림 조회
+    * 스터디 당
+        - 태그 조회
+        - 지역 정보 조회
+        - 멤버 조회
+- 지금까지는 EntityGraph를 사용해 해결했지만  QueryDSL을 썼기 때문에 fetching할 내용도 쿼리에서 설정해야 한다.
+    * left (outer) join + fetchJoin + distinct로 해결한다.
+<br>
+
+### 구현
+- 스터디를 기준으로 연관돼있는 데이터를 가져오는 left join 설정
+```java
+public class StudyRepositoryExtensionImpl extends QuerydslRepositorySupport implements StudyRepositoryExtension {
+
+    ...
+
+    @Override
+    public List<Study> findByKeyword(String keyword) {
+        QStudy study = QStudy.study;
+        JPQLQuery<Study> query = from(study).where(study.published.isTrue()
+                .and(study.title.containsIgnoreCase(keyword))
+                .or(study.tags.any().title.containsIgnoreCase(keyword))
+                .or(study.zones.any().localNameOfCity.containsIgnoreCase(keyword)))
+                .leftJoin(study.tags, QTag.tag).fetchJoin() // study의 tags는 QTag에 join
+                .leftJoin(study.zones, QZone.zone).fetchJoin() // study의 zones는 Qzone에 join
+                .leftJoin(study.members, QAccount.account).fetchJoin() // study의 members는 QAccount에 join
+                .distinct(); // 중복 데이터 제거
+        return query.fetch();
+    }
+}
+```
+- 실행해서 쿼리를 확인하면 QueryDSL 실행 쿼리 1개, 알림 조회 쿼리 1개 총 2개만 나온다.
+
+<br>
