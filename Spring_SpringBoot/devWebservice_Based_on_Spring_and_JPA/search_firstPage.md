@@ -523,3 +523,144 @@ public class Study {
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_4.jpg"></p>
 
 <br>
+
+## 첫페이지 - 로그인 전
+- 최근 9개의 스터디를 조회해서 화면에 띄운다.
+    * 공개했고, 아직 종료하지 않은 스터디 중에서 9개
+- 페이징 없고 List<Study>로 조회
+- 쿼리 만들지 말고, 스프링 데이터 JPA 쿼리 메소드로 만들기
+- 뷰 코드는 최대한 재사용
+<br>
+
+### 구현
+- MainController에서 studyList를 넘겨준다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class MainController {
+
+    private final StudyRepository studyRepository;
+
+    @GetMapping("/")
+    public String home(@CurrentAccount Account account, Model model) {
+        if (account != null) {
+            model.addAttribute(account);
+        }
+
+        model.addAttribute("studyList", studyRepository.findFirst9ByPublishedAndClosedOrderByPublishedDateTimeDesc(true, false));
+        return "index";
+    }
+
+    ...
+}
+```
+- StudyRepository에 `findFirst9ByPublishedAndClosedOrderByPublishedDateTimeDesc()` 추가
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long>, StudyRepositoryExtension {
+
+    ...
+
+    List<Study> findFirst9ByPublishedAndClosedOrderByPublishedDateTimeDesc(boolean published, boolean closed);
+}
+```
+- 첫 페이지 뷰 수정
+    *  부트스트랩의 Jumbotron을 사용
+```html
+<style>
+
+    ...
+
+    .jumbotron {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+        margin-bottom: 0;
+        background-color: #fff;
+    }
+    @media (min-width: 768px) {
+        .jumbotron {
+            padding-top: 6rem;
+            padding-bottom: 6rem;
+        }
+    }
+    .jumbotron p:last-child {
+        margin-bottom: 0;
+    }
+    .jumbotron h1 {
+        font-weight: 300;
+    }
+    .jumbotron .container {
+        max-width: 40rem;
+    }
+</style>
+
+...
+
+<div th:fragment="study-list (studyList)" class="col-sm-10">
+    <div class="row">
+        <div class="col-md-4" th:each="study: ${studyList}">
+            <div class="card mb-4 shadow-sm">
+                <img th:src="${study.image}" class="card-img-top" th:alt="${study.title}" >
+                <div class="card-body">
+                    <a th:href="@{'/study/' + ${study.path}}" class="text-decoration-none">
+                        <h5 class="card-title context" th:text="${study.title}"></h5>
+                    </a>
+                    <p class="card-text" th:text="${study.shortDescription}">Short description</p>
+                    <p class="card-text context">
+                                <span th:each="tag: ${study.tags}" class="font-weight-light text-monospace badge badge-pill badge-info mr-3">
+                                    <a th:href="@{'/search/tag/' + ${tag.title}}" class="text-decoration-none text-white">
+                                        <i class="fa fa-tag"></i> <span th:text="${tag.title}">Tag</span>
+                                    </a>
+                                </span>
+                        <span th:each="zone: ${study.zones}" class="font-weight-light text-monospace badge badge-primary mr-3">
+                                    <a th:href="@{'/search/zone/' + ${zone.id}}" class="text-decoration-none text-white">
+                                        <i class="fa fa-globe"></i> <span th:text="${zone.localNameOfCity}" class="text-white">City</span>
+                                    </a>
+                                </span>
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fa fa-user-circle"></i>
+                            <span th:text="${study.memberCount}"></span>명
+                        </small>
+                        <small class="text-muted date" th:text="${study.publishedDateTime}">9 mins</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+```html
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+
+<body class="bg-light">
+    <div th:replace="fragments.html :: main-nav"></div>
+    <section class="jumbotron text-center">
+        <div class="container">
+            <h1>스터디올래</h1>
+            <p class="lead text-muted">
+                태그와 지역 기반으로 스터디를 찾고 참여하세요.<br/>
+                스터디 모임 관리 기능을 제공합니다.
+            </p>
+            <p>
+                <a th:href="@{/signup}" class="btn btn-primary my-2">회원 가입</a>
+            </p>
+        </div>
+    </section>
+    <div class="container">
+        <div class="row justify-content-center pt-3">
+            <div th:replace="fragments.html :: study-list (studyList=${studyList})"></div>
+        </div>
+    </div>
+    <div th:replace="fragments.html :: footer"></div>
+    <div th:replace="fragments.html :: date-time"></div>
+</body>
+</html>
+```
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_5.jpg"></p>
+
+<br>
