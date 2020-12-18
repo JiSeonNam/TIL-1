@@ -561,6 +561,7 @@ public interface StudyRepository extends JpaRepository<Study, Long>, StudyReposi
 
     ...
 
+    @EntityGraph(attributePaths = {"zones", "tags"})
     List<Study> findFirst9ByPublishedAndClosedOrderByPublishedDateTimeDesc(boolean published, boolean closed);
 }
 ```
@@ -662,5 +663,244 @@ public interface StudyRepository extends JpaRepository<Study, Long>, StudyReposi
 </html>
 ```
 <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_5.jpg"></p>
+
+<br>
+
+## 첫 페이지 - 로그인 후
+- 화면을 N+1 Select 문제 없이, 쿼리 6개를 사용해서 만들기
+    * 계정 조회 (관심 주제, 지역 정보 포함)
+    * 참석할 모임 조회
+    * 나의 주요 활동 지역과 관심 주제에 해당하는 스터디 조회 (Tag와 Zone은 && 조건이다.)
+    * 관리중인 스터디 조회
+    * 참여중인 스터디 조회
+    * 알림 조회
+- 뷰에 전달해야 할 모델 데이터
+    * account: 현재 로그인한 사용자의 정보
+    * enrollmentList: 참석 확정된 참가 신청 정보를 통해 참석할 모임 목록 출력
+    * studyList: 주요 활동 지역의 관심 주제 스터디 목록 출력
+    * studyManagerOf: 관리중인 스터디 목록 출력
+    * studyMemberOf: 참여중인 스터디 목록 출력
+<br>
+
+### 구현
+- MainController에 맵핑 코드 수정
+    * 모임 목록은 enrollment에서 가져온다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class MainController {
+
+    private final StudyRepository studyRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final AccountRepository accountRepository;
+
+    @GetMapping("/")
+    public String home(@CurrentAccount Account account, Model model) {
+        if (account != null) {
+            // account는 detached 상태이므로 새롭게 받아온다.
+            Account accountLoaded = accountRepository.findAccountWithTagsAndZonesById(account.getId());
+            model.addAttribute(accountLoaded);
+            // 참가신청을 했고, 수락된 모임을 정렬해서 가져온다.
+            model.addAttribute("enrollmentList", enrollmentRepository.findByAccountAndAcceptedOrderByEnrolledAtDesc(accountLoaded, true));
+            model.addAttribute("studyList", studyRepository.findByAccount(
+                    accountLoaded.getTags(),
+                    accountLoaded.getZones()));
+            model.addAttribute("studyManagerOf",
+                    studyRepository.findFirst5ByManagersContainingAndClosedOrderByPublishedDateTimeDesc(account, false));
+            model.addAttribute("studyMemberOf",
+                    studyRepository.findFirst5ByMembersContainingAndClosedOrderByPublishedDateTimeDesc(account, false));
+            return "index-after-login";
+        }
+
+        model.addAttribute("studyList", studyRepository.findFirst9ByPublishedAndClosedOrderByPublishedDateTimeDesc(true, false));
+        return "index";
+    }
+
+    ...
+
+}
+```
+- AccountRepository에 `findAccountWithTagsAndZonesById()` 메서드 추가
+```java
+@Transactional(readOnly = true)
+public interface AccountRepository extends JpaRepository<Account, Long>, QuerydslPredicateExecutor<Account> {
+
+    ...
+
+    @EntityGraph(attributePaths = {"tags", "zones"})
+    Account findAccountWithTagsAndZonesById(Long id);
+}
+```
+- EnrollmentRepository에 `findByAccountAndAcceptedOrderByEnrolledAtDesc()` 메서드 추가
+    * find~ 메서드는 아무리 Enrollment가 `@ManyToOne`으로 Event와 Account 정보를 가지고 있다 하더라도 가져오지 않는다.
+    * FETCH 모드는 JPQL로 쿼리가 만들어져서 조회해오는 경우 조회가 되지 않는다. 
+    * 따라서 `@EntityGraph`를 사용해야 한다.
+```java
+@Transactional(readOnly = true)
+public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
+    
+    ...
+
+    @EntityGraph("Enrollment.withEventAndStudy")
+    List<Enrollment> findByAccountAndAcceptedOrderByEnrolledAtDesc(Account account, boolean accepted);
+}
+```
+- Enrollment에 `@NamedEntityGraph` 애노테이션 추가
+    * enrollment가 가지고 있는 event의 study까지 가져와야 하므로 `@NamedSubgraph`를 사용해야 한다.
+    * 직접적인 연관관계가 있는 event, event가 가지고 있는 study까지 같이 가져오고 싶은 경우 subgraph를 사용한다.
+```java
+@NamedEntityGraph(
+        name = "Enrollment.withEventAndStudy",
+        attributeNodes = {
+                @NamedAttributeNode(value = "event", subgraph = "study")
+        },
+        subgraphs = @NamedSubgraph(name = "study", attributeNodes = @NamedAttributeNode("study"))
+)
+@Entity
+@Getter @Setter @EqualsAndHashCode(of = "id")
+public class Enrollment {
+
+    ...
+
+}
+```
+- 스터디는 QueryDSL을 사용하여 Account가 가지고 있는 Zone과 Tag에 대한 스터디 목록을 가져와야 한다.
+    * 페이징이 필요없기 때문에 쿼리가 1개만 날아간다.
+```java
+@Transactional(readOnly = true)
+public interface StudyRepositoryExtension {
+
+    ...
+
+    List<Study> findByAccount(Set<Tag> tags, Set<Zone> zones);
+}
+```
+```java
+public class StudyRepositoryExtensionImpl extends QuerydslRepositorySupport implements StudyRepositoryExtension {
+
+    ...
+
+    @Override
+    public List<Study> findByAccount(Set<Tag> tags, Set<Zone> zones) {
+        QStudy study = QStudy.study;
+        JPQLQuery<Study> query = from(study).where(study.published.isTrue()
+                .and(study.closed.isFalse())
+                .and(study.tags.any().in(tags)) 
+                .and(study.zones.any().in(zones)))
+                .leftJoin(study.tags, QTag.tag).fetchJoin()
+                .leftJoin(study.zones, QZone.zone).fetchJoin()
+                .orderBy(study.publishedDateTime.desc())
+                .distinct()
+                .limit(9);
+        return query.fetch();
+    }
+}
+```
+- StudyRepository에 스프링 데이터 JPA를 사용해 메서드 구현
+    * `findFirst5ByManagersContainingAndClosedOrderByPublishedDateTimeDesc()`
+    * `findFirst5ByMembersContainingAndClosedOrderByPublishedDateTimeDesc()`
+    * `@EntityGraph`를 사용해 연관관계를 추가할 필요없다.
+        - zone이나 tag정보를 안보여주고 스터디 이름과 링크만 필요하기 때문.
+        - 스터디가 가지고 있는 기본정보들만 보여준다.
+```java
+@Transactional(readOnly = true)
+public interface StudyRepository extends JpaRepository<Study, Long>, StudyRepositoryExtension {
+
+    ...
+
+    @EntityGraph(attributePaths = {"zones", "tags"})
+    List<Study> findFirst9ByPublishedAndClosedOrderByPublishedDateTimeDesc(boolean published, boolean closed);
+
+    List<Study> findFirst5ByManagersContainingAndClosedOrderByPublishedDateTimeDesc(Account account, boolean closed);
+
+    List<Study> findFirst5ByMembersContainingAndClosedOrderByPublishedDateTimeDesc(Account account, boolean closed);
+}
+```
+- 로그인 한 사용자를 위한 첫 페이지 뷰 생성
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="bg-light">
+    <div th:replace="fragments.html :: main-nav"></div>
+    <div class="alert alert-warning" role="alert" th:if="${account != null && !account?.emailVerified}">
+        스터디올레 가입을 완료하려면 <a href="#" th:href="@{/check-email(email=${account.email})}" class="alert-link">계정 인증 이메일을 확인</a>하세요.
+    </div>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-2">
+                <h5 class="font-weight-light">관심 스터디 주제</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item" th:each="tag: ${account.tags}">
+                        <i class="fa fa-tag"></i> <span th:text="${tag.title}"></span>
+                    </li>
+                    <li class="list-group-item" th:if="${account.tags.size() == 0}">
+                        <a th:href="@{/settings/tags}" class="btn-text">관심 스터디 주제</a>를 등록하세요.
+                    </li>
+                </ul>
+                <h5 class="mt-3 font-weight-light">주요 활동 지역</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item" th:each="zone: ${account.zones}">
+                        <i class="fa fa-globe"></i> <span th:text="${zone.getLocalNameOfCity()}">Zone</span>
+                    </li>
+                    <li class="list-group-item" th:if="${account.zones.size() == 0}">
+                        <a th:href="@{/settings/zones}" class="btn-text">주요 활동 지역</a>을 등록하세요.
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-7">
+                <h5 th:if="${#lists.isEmpty(enrollmentList)}" class="font-weight-light">참석할 모임이 없습니다.</h5>
+                <h5 th:if="${!#lists.isEmpty(enrollmentList)}" class="font-weight-light">참석할 모임</h5>
+                <div class="row row-cols-1 row-cols-md-2" th:if="${!#lists.isEmpty(enrollmentList)}">
+                    <div class="col mb-4" th:each="enrollment: ${enrollmentList}">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title" th:text="${enrollment.event.title}">Event title</h5>
+                                <h6 class="card-subtitle mb-2 text-muted" th:text="${enrollment.event.study.title}">Study title</h6>
+                                <p class="card-text">
+                                    <span>
+                                        <i class="fa fa-calendar-o"></i>
+                                        <span class="calendar" th:text="${enrollment.event.startDateTime}">Last updated 3 mins ago</span>
+                                    </span>
+                                </p>
+                                <a th:href="@{'/study/' + ${enrollment.event.study.path} + '/events/' + ${enrollment.event.id}}" class="card-link">모임 조회</a>
+                                <a th:href="@{'/study/' + ${enrollment.event.study.path}}" class="card-link">스터디 조회</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h5 class="font-weight-light mt-3" th:if="${#lists.isEmpty(studyList)}">관련 스터디가 없습니다.</h5>
+                <h5 class="font-weight-light mt-3" th:if="${!#lists.isEmpty(studyList)}">주요 활동 지역의 관심 주제 스터디</h5>
+                <div class="row justify-content-center">
+                    <div th:replace="fragments.html :: study-list (studyList=${studyList})"></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <h5 class="font-weight-light" th:if="${#lists.isEmpty(studyManagerOf)}">관리중인 스터디가 없습니다.</h5>
+                <h5 class="font-weight-light" th:if="${!#lists.isEmpty(studyManagerOf)}">관리중인 스터디</h5>
+                <div class="list-group" th:if="${!#lists.isEmpty(studyManagerOf)}">
+                    <a href="#" th:href="@{'/study/' + ${study.path}}" th:text="${study.title}"
+                       class="list-group-item list-group-item-action" th:each="study: ${studyManagerOf}">
+                        Study title
+                    </a>
+                </div>
+
+                <h5 class="font-weight-light mt-3" th:if="${#lists.isEmpty(studyMemberOf)}">참여중인 스터디가 없습니다.</h5>
+                <h5 class="font-weight-light mt-3" th:if="${!#lists.isEmpty(studyMemberOf)}">참여중인 스터디</h5>
+                <div class="list-group" th:if="${!#lists.isEmpty(studyMemberOf)}">
+                    <a href="#" th:href="@{'/study/' + ${study.path}}" th:text="${study.title}"
+                       class="list-group-item list-group-item-action" th:each="study: ${studyManagerOf}">
+                        Study title
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:replace="fragments.html :: footer"></div>
+    <div th:replace="fragments.html :: date-time"></div>
+</body>
+</html>
+```
+- <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_6.jpg"></p>
 
 <br>
