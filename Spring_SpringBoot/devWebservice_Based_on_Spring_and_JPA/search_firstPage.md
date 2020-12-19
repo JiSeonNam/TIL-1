@@ -901,6 +901,4 @@ public interface StudyRepository extends JpaRepository<Study, Long>, StudyReposi
 </body>
 </html>
 ```
-- <p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_6.jpg"></p>
-
-<br>
+<p align="center"><img src = "https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/img/search_firstPage_6.jpg"></p>
