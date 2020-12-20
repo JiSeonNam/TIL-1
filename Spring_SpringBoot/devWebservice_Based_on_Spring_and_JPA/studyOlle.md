@@ -9,7 +9,7 @@
 - [3. 계정 설정](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/account_settings.md)
 - [4. 관심 주제와 지역 정보](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/tag_zone.md)
 - [5. DB와 이메일 설정](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/db_email_setting.md)
-- [6. 스터디]()
+- [6. 스터디](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/study.md)
 - [7. 모임]()
 - [8. 패키지 및 테스트 코드 정리]()
 - [9. 알림]()
