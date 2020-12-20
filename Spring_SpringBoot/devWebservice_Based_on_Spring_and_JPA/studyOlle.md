@@ -12,6 +12,6 @@
 - [6. 스터디](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/study.md)
 - [7. 모임](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/meeting.md)
 - [8. 패키지 및 테스트 코드 정리](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/package_testCode.md)
-- [9. 알림]()
+- [9. 알림](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/notification.md)
 - [10. 검색 및 첫 페이지]()
 - [11. 에러 처리 및 배포 준비]()
