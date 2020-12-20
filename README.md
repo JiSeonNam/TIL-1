@@ -19,6 +19,7 @@
     * [ 스프링 부트 활용 - MVC](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootMVC.md)
     * [ 스프링 부트 활용 - 스프링 데이터](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/SpringBootSpringData.md)
 - [스프링 부트와 AWS로 혼자 구현하는 웹 서비스](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/Springboot_AWS_Webservice.md)
+- [스프링과 JPA 기반 웹 애플리케이션 개발 : StudyOlle - 스터디 모임 관리 서비스](https://github.com/qlalzl9/TIL/blob/master/Spring_SpringBoot/devWebservice_Based_on_Spring_and_JPA/studyOlle.md)
 <br>
 
 ### JPA
