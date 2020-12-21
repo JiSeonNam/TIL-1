@@ -49,7 +49,7 @@ public class WebConfig implements WebMvcConfigurer {
 <br>
 
 ## [HttpMessageConverters](https://docs.spring.io/spring/docs/5.0.7.RELEASE/spring-framework-reference/web.html#mvc-config-message-converters)
-- 스프링 프레임 워크에서 제공하는 인테페이스로 스프링 MVC의 일부분.
+- 스프링 프레임 워크에서 제공하는 인터페이스로 스프링 MVC의 일부분.
 - HTTP 요청 본문을 객체로 변경하거나, 객체를 HTTP 응답 본문으로 변경할 때 사용.
 - 어떤 요청을 받았는지, 응답을 보내는지에 따라서 메세지컨버터가 달라진다. 
     * 요청이 JSON 이고, 본문도 JSON이면 JSON MessageConverter가 사용된다.
@@ -107,7 +107,7 @@ public class User {
 
 ## ViewResolver
 - 스프링부트에 등록 되어있는 스프링 웹 MVC의 ContentNegotiatingViewResolver가 어떤 contentType일 때 어떤 응답을 보내고, accept header 요청에 의해서 해당 요청에 맞는 응답을 보내는 작업을 알아서 해준다.
-- ContentNegotiatingViewResolver는 ViewResolver 중의 하나로 들어오는 요청에 accept header에 따라 응답이 달라진다.
+- ContentNegotiatingViewResolver는 ViewResolver 중의 하나로 들어오는 요청의 accept header에 따라 응답이 달라진다.
     * accept header : 브라우저 또는 클라이언트가 어떠한 타입의 응답을 원한다고 서버에게 알려주는 것.
     * 어떠한 요청이 들어오면 응답을 만들어 낼 수 있는 모든 View를 찾아내고, View의 타입을 Accept Header랑 비교를 해서 최종적으로 선택을 하고 리턴한다.
     * 판단하기 가장 좋은 정보는 Accept Header이지만 경우에 따라 Accept Header를 제공하지 않는 경우도 있다.
