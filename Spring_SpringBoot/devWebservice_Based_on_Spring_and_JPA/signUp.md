@@ -2163,7 +2163,7 @@ class MainControllerTest {
         - 쿠키를 탈취 당하면, 해커가 쿠키로 인증을 할 수 있고, 희생자는 쿠키로 인증하지 못한다.
 - 3. 조금 더 개선한 방법
     * [Improved Persistent Login Cookie Best Practice](https://www.programering.com/a/MDO0MzMwATA.html)
-    * 랜덤한 토큰 값을 쓰는 위의 방법에서 랜덤값이지만 고정된 시리즈라는 값을 사용한다.
+    * 랜덤한 토큰 값을 쓰는 위의 방법에서 랜덤값이지만 추가로 고정된 시리즈라는 값을 사용한다.
         - 쿠키 구성 : Username, 토큰(랜덤, 매번 바뀜), 시리즈(랜덤, 고정)
         - 토큰은 매번 쿠키로 인증할 때마다 값이 바뀌고 시리즈는 바뀌지 않는다.
     * 쿠키를 탈취 당한 경우, **희생자는 유효하지 않은 토큰과 유효한 시리즈와 Username으로 접속하게 된다.**
