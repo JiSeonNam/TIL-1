@@ -1043,7 +1043,7 @@ public class AppConfig {
 }
 ```
 - AccountService에 주입받아서 사용
-    * ModelMapper에는 `map()` 있는데 source에 있는 데이터를 destination으로 복사해주는 역할을 한다.
+    * ModelMapper에는 `map()`가 있는데 source에 있는 데이터를 destination으로 복사해주는 역할을 한다.
         - map(source, destination)
 ```java
 @Service
