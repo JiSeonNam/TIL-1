@@ -127,7 +127,7 @@ public class HtmlEmailService implements EmailService {
 - ConsoleMailSender는 더이상 필요없으므로 삭제
 - AccountService 수정
     * JavaMailSender 대신 EmailService 사용
-        - EmailMessage을 만든 다음 EmailService를 통해 `senEmail()`한다.
+        - EmailMessage을 만든 다음 EmailService를 통해 `sendEmail()`한다.
     * `sendSignUpConfirmEmail()`, `sendLoginLink()`
         - JavaMailSender -> EmailMessage
 ```java
