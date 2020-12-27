@@ -507,7 +507,7 @@ class SettingsControllerTest {
 ## 지역 도메인
 - 지역 도메인(Zone)을 추가하고 지역 정보 초기화
 - tag와 마찬가지로 Value가 아닌 Entity다. (JPA 관점)
-    - Zone의 생명 주기도 다른 엔티티에 종속적이지 않고 Study, Account에서도 사용되기 때문.
+    - Zone의 생명 주기도 다른 엔티티에 종속적이지 않고 Study, Account에서 사용되기 때문.
 - Zone
     * City(영문 도시 이름)
     * LocalNameOfCity (한국어 도시 이름)
