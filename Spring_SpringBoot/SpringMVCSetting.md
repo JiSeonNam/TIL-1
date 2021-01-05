@@ -56,7 +56,7 @@ public class WebConfig{
     * 따라서 처음부터 bean을 등록하는게 아니라 손쉽게 `DelegatingWebMvcConfiguration`가 상속하는 `WebMvcConfigurationSupport`가 설정해주는 bean에 추가하고 싶은 부분을 추가할 수 있다.
     * 원하는 데로 커스텀할 수 있도록 확장성이 좋다  
 - 이런 확장을 인터페이스를 통해서 지원하고 있는데 그 인터페이스가 WebMvcConfigurer이다. 
-- 예를 들어 ViewResolver를 직접 bean으로 등록하지 않아도 @EnableWebMvc가 등록해주는 viewResolver를 커스터마이징하면서 같은 결과를 얻을 수 있다.
+- 예를 들어 ViewResolver를 직접 bean으로 등록하지 않아도 @EnableWebMvc가 등록해주는 viewResolver를 커스터마이징해서 같은 결과를 얻을 수 있다.
 ```java
 @Configuration
 @ComponentScan
@@ -199,7 +199,7 @@ spring.mvc.view.suffix=.jsp
 ```
 <br>
 
-## WebMvcConfigurer 설정 - Fomatter 설정
+## WebMvcConfigurer 설정 - Formatter 설정
 
 ### Formatter
 - 어떠한 객체를 문자열로 변환하거나 문자열을 객체로 변환할 때 사용할 수 있는 인터페이스
@@ -252,7 +252,7 @@ public class PersonFormatter implements Formatter<Person> {
     }
 }
 ```
-- 스프링 설정 파일에 Fomatter를 등록
+- 스프링 설정 파일에 Formatter를 등록
     * WebMvcConfigurer 인터페이스를 구현할 때 FormatterRegistry를 제공하는 addFormatters 메소드를 구현하면 된다.
     * 이제는 스프링 MVC가 문자열을 Person이라는 객체로 어떻게 변환해야하는지 알고 있게 된다.
     * 애플리케이션을 실행하면 잘 동작한다. (localhost:8080/hello/hayoung)
