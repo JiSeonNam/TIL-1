@@ -210,6 +210,8 @@ spring.mvc.view.suffix=.jsp
 
 ### Formatter 실습
 - Controller와 Test코드 추가
+    * `@PathVariable`
+        - URL path에 있는 값을 받아올 수 있다.
 ```java
 @RestController
 public class SampleController {
@@ -231,12 +233,12 @@ public class SampleControllerTest {
     @Test
     public void hello() throws Exception {
         this.mockMvc.perform(get("/hello"))
-                .andDo(print())
+                .andDo(print()) // 요청과 응답을 콘솔에 출력할 수 있다.
                 .andExpect(content().string("hello"));
     }
 }
 ```
-- name에 들어오는 문자열을 Person으로 변환해야하는지 Spring MVC는 모르기 때문에 Formatter 추가
+- name에 들어오는 문자열을 Person으로 어떻게 변환해야하는지 Spring MVC는 모르기 때문에 Formatter 추가
 ```java
 public class PersonFormatter implements Formatter<Person> {
     @Override
